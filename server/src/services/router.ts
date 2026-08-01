@@ -15,6 +15,7 @@ import {
   getSoonestCooldownExpiry,
   modelWindowUsedFraction,
 } from './ratelimit.js';
+import { getObservedRequestTokens } from '../lib/client-context.js';
 import {
   BANDIT_PRESETS, DEFAULT_STRATEGY, type RoutingStrategy, type RoutingWeights,
   type KeySelectionStrategy,
@@ -1478,6 +1479,20 @@ function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: 
     // meter concurrency per credential.
     if (!canUseKeyConcurrency(entry.platform, key.id)) { note('key-concurrency'); continue; }
     if (!canMakeRequest(entry.platform, entry.model_id, key.id, limits)) { note('rpm/rpd-limit'); continue; }
+
+    // Sticky provider-reported size gate: when a prior attempt in this same
+    // request got a parseable 4xx body from Groq/OpenRouter/Cloudflare naming
+    // the real token count, skip THIS model whose per-minute TPM can't fit it.
+    // Distinct from canUseTokens below: that one is the headroom check
+    // (current usage + estimate vs limit), this one is the pure size check
+    // (is this request even physically possible on this model). Surfacing
+    // it as a separate skip reason lets the exhaustion diagnostic say
+    // "request-too-large-for-tpm" instead of a generic "tpm/tpd-limit".
+    const observed = getObservedRequestTokens();
+    if (observed != null && limits.tpm != null && observed > limits.tpm) {
+      note('request-too-large-for-tpm');
+      continue;
+    }
     if (!canUseTokens(entry.platform, entry.model_id, key.id, estimatedTokens, limits)) { note('tpm/tpd-limit'); continue; }
     if (!canUseProviderTokens(entry.platform, key.id, entry.model_id, estimatedTokens)) { note('provider-daily-token-cap'); continue; }
 
