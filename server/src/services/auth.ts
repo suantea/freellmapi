@@ -8,6 +8,16 @@ import { hashPassword, verifyPassword } from '../lib/password.js';
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 
+// The desktop shell authenticates as a hidden machine user with a random,
+// never-shown password (desktop/src/server-host.ts). Password re-verification
+// gates (reveal/export) cannot apply to it — the session is the whole
+// authentication on a local single-user install (#786).
+export const DESKTOP_MACHINE_EMAIL = 'desktop@localhost';
+
+export function isDesktopMachineUser(email: string): boolean {
+  return normalizeEmail(email) === DESKTOP_MACHINE_EMAIL;
+}
+
 export interface SessionUser {
   userId: number;
   email: string;

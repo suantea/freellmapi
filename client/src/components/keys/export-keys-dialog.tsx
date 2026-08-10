@@ -17,6 +17,12 @@ type ExportFormat = 'json' | 'env' | 'csv'
 // Two-step flow: choose what to export, then re-authenticate to actually get it.
 type Step = 'options' | 'password'
 
+// #786: the desktop shell logs in as a hidden machine user with no known
+// password, so the server exempts that session from re-verification — and the
+// dialog skips the password step entirely there (mirrors copy-key-dialog).
+const isDesktopApp = typeof window !== 'undefined'
+  && (window as Window & { __FREEAPI_DESKTOP__?: boolean }).__FREEAPI_DESKTOP__ === true
+
 const FORMAT_OPTIONS: { value: ExportFormat; label: string; ext: string }[] = [
   { value: 'json', label: 'JSON', ext: 'json' },
   { value: 'env', label: '.env', ext: 'env' },
@@ -76,8 +82,8 @@ export function ExportKeysDialog({ open, onOpenChange }: { open: boolean; onOpen
     ? exportableKeys.filter(k => k.status === 'healthy').length
     : exportableKeys.length
 
-  async function handleExport(e: FormEvent) {
-    e.preventDefault()
+  async function handleExport(e?: FormEvent) {
+    e?.preventDefault()
     setExporting(true)
     setError(null)
     try {
@@ -191,7 +197,7 @@ export function ExportKeysDialog({ open, onOpenChange }: { open: boolean; onOpen
           <Button
             type="button"
             className="w-full"
-            onClick={() => setStep('password')}
+            onClick={() => (isDesktopApp ? handleExport() : setStep('password'))}
             disabled={exportCount === 0}
           >
             <Download className="size-3.5" />

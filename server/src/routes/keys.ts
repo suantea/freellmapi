@@ -8,7 +8,7 @@ import { resolveProvider, getAllProviders } from '../providers/index.js';
 import { encrypt, decrypt, maskKey } from '../lib/crypto.js';
 import { parseKeysFromFile, stripJsoncComments, stripTrailingCommas } from '../lib/key-parser.js';
 import { assessProviderUrl } from '../lib/url-guard.js';
-import { verifyCredentials } from '../services/auth.js';
+import { verifyCredentials, isDesktopMachineUser } from '../services/auth.js';
 import { ensureModelInProfiles } from '../services/profile-models.js';
 import { getActiveCooldownsForKeys, clearCooldownsForKey } from '../services/ratelimit.js';
 import { resolveCustomEndpointKey, customEndpointKeyIds, siblingEndpointKeyId, endpointHasCredential } from '../services/custom-endpoint.js';
@@ -352,7 +352,10 @@ keysRouter.delete('/:id/cooldowns', (req: Request, res: Response) => {
 keysRouter.get('/export', (req: Request, res: Response) => {
   const user = (req as any).user;
   const password = req.headers['x-reauth-password'] as string | undefined;
-  if (!password || !verifyCredentials(user.email, password)) {
+  // The desktop shell's hidden machine user has no known password (#786), so
+  // the re-verification gate is skipped for it — the session is the whole
+  // authentication on a local single-user install.
+  if (!isDesktopMachineUser(user.email) && (!password || !verifyCredentials(user.email, password))) {
     res.status(403).json({ error: { message: 'Password verification required to export keys', type: 'authentication_error' } });
     return;
   }
@@ -469,7 +472,8 @@ keysRouter.get('/export', (req: Request, res: Response) => {
 keysRouter.post('/:id/reveal', (req: Request, res: Response) => {
   const user = (req as any).user;
   const password = req.headers['x-reauth-password'] as string | undefined;
-  if (!password || !verifyCredentials(user.email, password)) {
+  // Desktop machine user: same exemption as the export above (#786).
+  if (!isDesktopMachineUser(user.email) && (!password || !verifyCredentials(user.email, password))) {
     res.status(403).json({ error: { message: 'Password verification required to reveal a key', type: 'authentication_error' } });
     return;
   }

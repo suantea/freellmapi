@@ -3,18 +3,21 @@ import type { Express } from 'express';
 import { createApp } from '../../app.js';
 import { initDb, getDb } from '../../db/index.js';
 import { mintDashboardToken } from '../helpers/auth.js';
+import { DESKTOP_MACHINE_EMAIL } from '../../services/auth.js';
 
 // #705: the dashboard only ever renders a masked key, and reading one back meant
 // exporting every key to a file. Revealing ONE key is the same privilege, so it
 // carries the same gate: the session is not enough, the password is re-checked.
+// #786: the desktop shell's hidden machine user has no known password, so that
+// session is exempt — the session is the whole authentication there.
 
 let app: Express;
 let token: string;
 
-async function request(path: string, password?: string) {
+async function request(path: string, password?: string, authToken: string = token) {
   const server = app.listen(0);
   const addr = server.address() as { port: number };
-  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  const headers: Record<string, string> = { Authorization: `Bearer ${authToken}` };
   if (password !== undefined) headers['x-reauth-password'] = password;
   const res = await fetch(`http://127.0.0.1:${addr.port}${path}`, { method: 'POST', headers });
   const body = await res.json().catch(() => null);
@@ -60,6 +63,14 @@ describe('Reveal one key — password re-verification (#705)', () => {
     expect(status).toBe(403);
     expect(body.error.type).toBe('authentication_error');
     expect(body.key).toBeUndefined();
+  });
+
+  it('exempts the desktop machine user from re-verification (#786)', async () => {
+    const id = await addKey('gsk_desktop_secret');
+    const desktopToken = mintDashboardToken(DESKTOP_MACHINE_EMAIL);
+    const { status, body } = await request(`/api/keys/${id}/reveal`, undefined, desktopToken);
+    expect(status).toBe(200);
+    expect(body.key).toBe('gsk_desktop_secret');
   });
 
   it('refuses the wrong password', async () => {

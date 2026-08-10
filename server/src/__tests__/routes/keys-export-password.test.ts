@@ -3,14 +3,15 @@ import type { Express } from 'express';
 import { createApp } from '../../app.js';
 import { initDb, getDb } from '../../db/index.js';
 import { mintDashboardToken } from '../helpers/auth.js';
+import { DESKTOP_MACHINE_EMAIL } from '../../services/auth.js';
 
 let app: Express;
 let token: string;
 
-async function exportJson(app: Express, password?: string) {
+async function exportJson(app: Express, password?: string, authToken: string = token) {
   const server = app.listen(0);
   const addr = server.address() as { port: number };
-  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  const headers: Record<string, string> = { Authorization: `Bearer ${authToken}` };
   if (password) headers['x-reauth-password'] = password;
   const res = await fetch(`http://127.0.0.1:${addr.port}/api/keys/export?format=json`, { headers });
   const data = await res.json().catch(() => null);
@@ -58,6 +59,15 @@ describe('Key export — password re-verification', () => {
   it('returns 200 when the correct password is provided', async () => {
     await addKey(app);
     const { status, body } = await exportJson(app, 'password123');
+    expect(status).toBe(200);
+    expect(body.keys).toBeDefined();
+    expect(body.keys.length).toBe(1);
+  });
+
+  it('exempts the desktop machine user from re-verification (#786)', async () => {
+    await addKey(app);
+    const desktopToken = mintDashboardToken(DESKTOP_MACHINE_EMAIL);
+    const { status, body } = await exportJson(app, undefined, desktopToken);
     expect(status).toBe(200);
     expect(body.keys).toBeDefined();
     expect(body.keys.length).toBe(1);
