@@ -1,0 +1,398 @@
+/**
+ * Express router handles model fallback configuration and token budget reporting.
+ * It integrates named profiles dynamically into the fallback routing logic and aggregates
+ * monthly token consumption and rate limits (RPM/RPD/TPM/TPD) across configured models.
+ */
+import { Router } from 'express';
+import type { Request, Response } from 'express';
+import { z } from 'zod';
+import { getDb } from '../db/index.js';
+import { getAllPenalties, getRoutingScores, getRoutingStrategy, setRoutingStrategy, setCustomWeights, getExploreEnabled, setExploreEnabled } from '../services/router.js';
+import { BANDIT_PRESETS, type RoutingStrategy } from '../services/scoring.js';
+import { parseBudget } from '../lib/budget.js';
+import { getModelGroups } from '../services/model-groups.js';
+import { getPenaltyInspector } from '../services/penalty-inspector.js';
+import { getActiveProfileId } from '../services/profile-models.js';
+import { qualifiedModelMemberId } from '../lib/endpoint-scope.js';
+import { overriddenFieldNames } from '../services/model-state.js';
+
+export const fallbackRouter = Router();
+
+// ── Bandit routing strategy ─────────────────────────────────────────────────
+// GET  /routing → active strategy, preset weights, and the per-model score
+//                 breakdown (reliability / speed / intelligence + guardrails).
+fallbackRouter.get('/routing', (_req: Request, res: Response) => {
+  res.json(getRoutingScores());
+});
+
+fallbackRouter.get('/penalty-inspector', (_req: Request, res: Response) => {
+  res.json(getPenaltyInspector());
+});
+
+const routingSchema = z.object({
+  strategy: z.enum(['priority', 'balanced', 'smartest', 'fastest', 'reliable', 'custom']),
+  // Only meaningful with strategy 'custom': the user's weight vector. Any
+  // non-negative vector is accepted; setCustomWeights renormalizes to sum 1.
+  weights: z.object({
+    reliability: z.number().nonnegative(),
+    speed: z.number().nonnegative(),
+    intelligence: z.number().nonnegative(),
+  }).optional(),
+  // Exploration toggle: give unmeasured models a guaranteed chance to be tried.
+  exploreEnabled: z.boolean().optional(),
+});
+
+// PUT /routing → switch strategy. Presets are just weight vectors over the three
+// axes; 'priority' falls back to the legacy manual chain order; 'custom' uses
+// the user's saved weights (optionally updated in the same request).
+fallbackRouter.put('/routing', (req: Request, res: Response) => {
+  const parsed = routingSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: parsed.error.errors.map(e => e.message).join(', ') } });
+    return;
+  }
+  // Persist the weights before flipping the strategy so the new mode reads the
+  // intended vector immediately. setCustomWeights throws on an all-zero vector.
+  if (parsed.data.weights) {
+    try {
+      setCustomWeights(parsed.data.weights);
+    } catch (err: any) {
+      res.status(400).json({ error: { message: err?.message ?? 'Invalid custom weights' } });
+      return;
+    }
+  }
+  setRoutingStrategy(parsed.data.strategy as RoutingStrategy);
+  if (parsed.data.exploreEnabled !== undefined) {
+    setExploreEnabled(parsed.data.exploreEnabled);
+  }
+  res.json({ strategy: getRoutingStrategy(), exploreEnabled: getExploreEnabled(), presets: BANDIT_PRESETS });
+});
+
+// Get fallback chain (with dynamic penalties)
+fallbackRouter.get('/', (_req: Request, res: Response) => {
+  const db = getDb();
+  const activeProfileId = getActiveProfileId(db);
+  let rows = activeProfileId == null ? [] : db.prepare(`
+    SELECT pm.model_db_id, pm.priority, pm.enabled,
+           m.platform, m.model_id, m.display_name, m.intelligence_rank,
+           m.speed_rank, m.size_label, m.rpm_limit, m.rpd_limit,
+           m.tpm_limit, m.tpd_limit, m.context_window,
+           m.monthly_token_budget, m.supports_vision, m.supports_tools,
+           m.key_id, m.endpoint_scope, ak.label AS key_label,
+           mo.overrides_json IS NOT NULL AS has_overrides,
+           mo.overrides_json,
+           ts.source AS tombstone_source, ts.reason AS tombstone_reason
+    FROM profile_models pm
+    JOIN models m ON m.id = pm.model_db_id
+    LEFT JOIN api_keys ak ON ak.id = m.key_id
+    LEFT JOIN model_overrides mo ON mo.platform = m.platform AND mo.model_id = m.model_id
+    LEFT JOIN catalog_model_tombstones ts
+      ON ts.kind = 'chat' AND ts.platform = m.platform AND ts.model_id = m.model_id
+    WHERE pm.profile_id = ? AND m.enabled = 1
+    ORDER BY pm.priority ASC
+  `).all(activeProfileId) as any[];
+
+  if (rows.length === 0) {
+    rows = db.prepare(`
+    SELECT fc.model_db_id, fc.priority, fc.enabled,
+           m.platform, m.model_id, m.display_name, m.intelligence_rank,
+           m.speed_rank, m.size_label, m.rpm_limit, m.rpd_limit,
+           m.tpm_limit, m.tpd_limit, m.context_window,
+           m.monthly_token_budget, m.supports_vision, m.supports_tools,
+           m.key_id, m.endpoint_scope, ak.label AS key_label,
+           mo.overrides_json IS NOT NULL AS has_overrides,
+           mo.overrides_json,
+           ts.source AS tombstone_source, ts.reason AS tombstone_reason
+    FROM fallback_config fc
+    JOIN models m ON m.id = fc.model_db_id
+    LEFT JOIN api_keys ak ON ak.id = m.key_id
+    LEFT JOIN model_overrides mo ON mo.platform = m.platform AND mo.model_id = m.model_id
+    LEFT JOIN catalog_model_tombstones ts
+      ON ts.kind = 'chat' AND ts.platform = m.platform AND ts.model_id = m.model_id
+    WHERE m.enabled = 1
+    ORDER BY fc.priority ASC
+    `).all() as any[];
+  }
+
+  // Count usable keys per platform — enabled AND healthy/unknown status. Unified
+  // with /token-usage and the routing scorer (#456) so budget pooling is computed
+  // from the same key set everywhere (a disabled or invalid key adds no capacity).
+  const keyCounts = db.prepare(`
+    SELECT platform, COUNT(*) as count
+    FROM api_keys WHERE enabled = 1 AND status IN ('healthy', 'unknown')
+    GROUP BY platform
+  `).all() as { platform: string; count: number }[];
+  const keyCountMap = new Map(keyCounts.map(k => [k.platform, k.count]));
+
+  // Get current dynamic penalties
+  const penalties = getAllPenalties();
+  const penaltyMap = new Map(penalties.map(p => [p.modelDbId, p]));
+
+  // Logical-model grouping per row, so the dashboard can collapse the same
+  // model served by several providers into one expandable group. Always sent
+  // (cheap); the client renders grouped only when its unify toggle is on.
+  const groupByDbId = new Map<number, { groupKey: string; canonicalId: string; groupLabel: string }>();
+  for (const g of getModelGroups()) {
+    for (const m of g.members) {
+      groupByDbId.set(m.model_db_id, { groupKey: g.groupKey, canonicalId: g.canonicalId, groupLabel: g.groupLabel });
+    }
+  }
+
+  res.json(rows.map(r => {
+    const penalty = penaltyMap.get(r.model_db_id);
+    const group = groupByDbId.get(r.model_db_id);
+    return {
+      modelDbId: r.model_db_id,
+      groupKey: group?.groupKey,
+      canonicalId: group?.canonicalId,
+      groupLabel: group?.groupLabel,
+      priority: r.priority,
+      effectivePriority: r.priority + (penalty?.penalty ?? 0),
+      penalty: penalty?.penalty ?? 0,
+      rateLimitHits: penalty?.count ?? 0,
+      enabled: r.enabled === 1,
+      platform: r.platform,
+      modelId: r.model_id,
+      displayName: r.display_name,
+      intelligenceRank: r.intelligence_rank,
+      speedRank: r.speed_rank,
+      sizeLabel: r.size_label,
+      rpmLimit: r.rpm_limit,
+      rpdLimit: r.rpd_limit,
+      tpmLimit: r.tpm_limit,
+      tpdLimit: r.tpd_limit,
+      // Max context length (tokens), used by the dashboard catalog filter. Null
+      // for models whose context window the catalog doesn't record.
+      contextWindow: r.context_window,
+      monthlyTokenBudget: r.monthly_token_budget,
+      // Parsed once here (single source of truth) so the dashboard never re-implements
+      // budget-label parsing; 0 for rate-limited/placeholder labels. See lib/budget.ts.
+      // Scaled by healthy/enabled key count for multi-account pooled capacity.
+      monthlyTokenBudgetTokens: parseBudget(r.monthly_token_budget) * Math.max(1, keyCountMap.get(r.platform) ?? 1),
+      supportsVision: r.supports_vision === 1,
+      supportsTools: r.supports_tools === 1,
+      source: r.platform === 'custom' || r.key_id != null ? 'custom' : 'catalog',
+      keyId: r.key_id ?? null,
+      keyLabel: r.key_label ?? null,
+      // Which relay endpoint a custom row belongs to, and the id that names it
+      // unambiguously (#651). Null for catalog models only — every custom row
+      // bound to an endpoint carries both, including a lone one. Deciding when
+      // they are worth showing is the client's job (see memberProviderLabel /
+      // providerPinId / memberEndpointTitle): it reveals them only where two
+      // endpoints actually serve the same model id.
+      endpointScope: r.endpoint_scope || null,
+      qualifiedModelId: qualifiedModelMemberId(r.platform, r.model_id, r.endpoint_scope),
+      hasOverrides: Boolean(r.has_overrides),
+      // Which fields the local override actually replaces, so the model page
+      // can mark the individual inputs it edits (#551).
+      overrideFields: overriddenFieldNames(r.overrides_json),
+      // Why the switch is off: a model auto-disabled because the provider
+      // retired it upstream (410 / end of life, #634) is a different state from
+      // one the user turned off, and the dashboard says so. The reason is the
+      // provider's own (redacted) wording.
+      retiredUpstream: r.tombstone_source === 'upstream_eol',
+      retiredReason: r.tombstone_source === 'upstream_eol' ? (r.tombstone_reason ?? null) : null,
+      keyCount: keyCountMap.get(r.platform) ?? 0,
+    };
+  }));
+});
+
+const updateSchema = z.array(z.object({
+  modelDbId: z.number(),
+  priority: z.number(),
+  enabled: z.boolean(),
+}));
+
+// Update fallback chain (full replace)
+fallbackRouter.put('/', (req: Request, res: Response) => {
+  const parsed = updateSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: parsed.error.errors.map(e => e.message).join(', ') } });
+    return;
+  }
+
+  const db = getDb();
+  const activeProfileId = getActiveProfileId(db);
+  const useProfile = activeProfileId != null && Boolean(
+    db.prepare('SELECT 1 FROM profile_models WHERE profile_id = ? LIMIT 1').get(activeProfileId),
+  );
+  const update = useProfile
+    ? db.prepare('UPDATE profile_models SET priority = ?, enabled = ? WHERE profile_id = ? AND model_db_id = ?')
+    : db.prepare('UPDATE fallback_config SET priority = ?, enabled = ? WHERE model_db_id = ?');
+
+  const updateAll = db.transaction(() => {
+    for (const entry of parsed.data) {
+      if (useProfile) update.run(entry.priority, entry.enabled ? 1 : 0, activeProfileId, entry.modelDbId);
+      else update.run(entry.priority, entry.enabled ? 1 : 0, entry.modelDbId);
+    }
+  });
+  updateAll();
+
+  res.json({ success: true });
+});
+
+// `intelligence_rank` is scoped to each provider's own catalog — a provider's
+// #1 model is not globally #1 (see issue #135: MiniMax's top model outranking
+// Gemini Pro because both read "Intel #1"). `size_label` IS a cross-provider
+// capability tier, so normalize on it first and use intelligence_rank only as
+// an in-tier tiebreaker. Unknown labels sort last.
+const INTELLIGENCE_TIER =
+  "CASE m.size_label WHEN 'Frontier' THEN 1 WHEN 'Large' THEN 2 WHEN 'Medium' THEN 3 WHEN 'Small' THEN 4 ELSE 5 END";
+
+// Sort presets — `orderBy` is selected from a fixed whitelist, never from
+// user input directly, so the interpolation below is safe.
+const SORT_PRESETS: Record<string, string> = {
+  intelligence: `${INTELLIGENCE_TIER} ASC, m.intelligence_rank ASC`,
+  speed: 'm.speed_rank ASC',
+};
+
+function getBudgetScore(m: { monthly_token_budget: string; tpd_limit: number | null }): number {
+  if (m.tpd_limit != null) return m.tpd_limit * 30;
+  
+  const str = m.monthly_token_budget;
+  if (!str) return 0;
+  if (str.toLowerCase().includes('unlimited') || str.includes('∞')) return Infinity;
+  
+  const cleanStr = str.split('(')[0];
+  const matches = cleanStr.match(/[\d.]+/g);
+  let maxNum = 0;
+  if (matches) {
+    maxNum = Math.max(...matches.map(mStr => parseFloat(mStr)));
+  }
+  
+  let mult = 1;
+  const upper = cleanStr.toUpperCase();
+  if (upper.includes('B')) mult = 1_000_000_000;
+  else if (upper.includes('M')) mult = 1_000_000;
+  else if (upper.includes('K')) mult = 1_000;
+
+  return maxNum * mult;
+}
+
+fallbackRouter.post('/sort/:preset', (req: Request, res: Response) => {
+  const preset = String(req.params.preset);
+  const db = getDb();
+  let models: { id: number }[] = [];
+  const activeProfileId = getActiveProfileId(db);
+  const useProfile = activeProfileId != null && Boolean(
+    db.prepare('SELECT 1 FROM profile_models WHERE profile_id = ? LIMIT 1').get(activeProfileId),
+  );
+
+  if (preset === 'budget') {
+    const allModels = db.prepare(`SELECT id, monthly_token_budget, tpd_limit FROM models`).all() as any[];
+    allModels.sort((a, b) => getBudgetScore(b) - getBudgetScore(a));
+    models = allModels.map(m => ({ id: m.id }));
+  } else {
+    const orderBy = SORT_PRESETS[preset];
+    if (!orderBy) {
+      res.status(400).json({ error: { message: `Unknown preset: ${preset}. Use: intelligence, speed, budget` } });
+      return;
+    }
+    models = db.prepare(`SELECT m.id FROM models m ORDER BY ${orderBy}`).all() as { id: number }[];
+  }
+
+  const update = useProfile
+    ? db.prepare('UPDATE profile_models SET priority = ? WHERE profile_id = ? AND model_db_id = ?')
+    : db.prepare('UPDATE fallback_config SET priority = ? WHERE model_db_id = ?');
+  const reorder = db.transaction(() => {
+    for (let i = 0; i < models.length; i++) {
+      if (useProfile) update.run(i + 1, activeProfileId, models[i].id);
+      else update.run(i + 1, models[i].id);
+    }
+  });
+  reorder();
+
+  res.json({ success: true, preset });
+});
+
+// Token usage per model for the stacked bar
+fallbackRouter.get('/token-usage', (_req: Request, res: Response) => {
+  const db = getDb();
+
+  // Get platforms that have enabled keys
+  const platforms = db.prepare(`
+    SELECT DISTINCT ak.platform
+    FROM api_keys ak
+    WHERE ak.enabled = 1
+  `).all() as { platform: string }[];
+  const platformSet = new Set(platforms.map(p => p.platform));
+
+  // Check if there is an active profile
+  const settingRow = db.prepare(`SELECT value FROM settings WHERE key = 'active_profile_id'`).get() as { value: string } | undefined;
+  const activeProfileId = settingRow ? (parseInt(settingRow.value) || null) : null;
+
+  // Verify active profile still exists
+  const activeProfile = activeProfileId
+    ? db.prepare('SELECT id FROM profiles WHERE id = ?').get(activeProfileId) as any
+    : null;
+
+  let rawModels: { model_db_id: number; platform: string; model_id: string; display_name: string; monthly_token_budget: string; priority: number; enabled: number; rpm_limit: number | null; rpd_limit: number | null; tpm_limit: number | null; tpd_limit: number | null }[];
+
+  if (activeProfile) {
+    // Profile mode: use profile_models chain (all models in profile, checked against enabled)
+    rawModels = db.prepare(`
+      SELECT m.id as model_db_id, m.platform, m.model_id, m.display_name, m.monthly_token_budget,
+             pm.priority, pm.enabled,
+             m.rpm_limit, m.rpd_limit, m.tpm_limit, m.tpd_limit
+      FROM profile_models pm
+      JOIN models m ON m.id = pm.model_db_id
+      WHERE pm.profile_id = ? AND m.enabled = 1
+      ORDER BY pm.priority ASC
+    `).all(activeProfileId) as any[];
+  } else {
+    // Default mode: use fallback_config (only include enabled models)
+    rawModels = db.prepare(`
+      SELECT m.id as model_db_id, m.platform, m.model_id, m.display_name, m.monthly_token_budget,
+             fc.priority, fc.enabled,
+             m.rpm_limit, m.rpd_limit, m.tpm_limit, m.tpd_limit
+      FROM fallback_config fc
+      JOIN models m ON m.id = fc.model_db_id
+      WHERE m.enabled = 1
+      ORDER BY fc.priority ASC
+    `).all() as any[];
+  }
+
+  // Build per-model breakdown (only platforms with keys), preserving enabled state
+  const usageRows = db.prepare(`
+    SELECT platform, model_id, COALESCE(SUM(input_tokens + output_tokens), 0) AS used
+    FROM requests
+    WHERE created_at >= datetime('now', 'start of month')
+      AND request_type = 'chat'
+    GROUP BY platform, model_id
+  `).all() as { platform: string; model_id: string; used: number }[];
+  const usageByModel = new Map(usageRows.map(r => [`${r.platform}:${r.model_id}`, r.used]));
+
+  const keyCountMap = new Map(
+    (db.prepare("SELECT platform, COUNT(*) as count FROM api_keys WHERE enabled = 1 AND status IN ('healthy', 'unknown') GROUP BY platform").all() as { platform: string; count: number }[])
+      .map(k => [k.platform, k.count])
+  );
+
+  const modelBudgets = rawModels
+    .filter(m => platformSet.has(m.platform))
+    .map(m => {
+      const keys = Math.max(1, keyCountMap.get(m.platform) ?? 1);
+      return {
+        modelDbId: m.model_db_id,
+        displayName: m.display_name,
+        platform: m.platform,
+        modelId: m.model_id,
+        budget: parseBudget(m.monthly_token_budget) * keys,
+        used: usageByModel.get(`${m.platform}:${m.model_id}`) ?? 0,
+        enabled: m.enabled === 1,
+        rpmLimit: m.rpm_limit,
+        rpdLimit: m.rpd_limit,
+        tpmLimit: m.tpm_limit,
+        tpdLimit: m.tpd_limit,
+      };
+    });
+
+  // Total budget counts all models (both enabled and disabled — they contribute to the pool)
+  const totalBudget = modelBudgets.reduce((s, m) => s + m.budget, 0);
+  const totalUsed = modelBudgets.reduce((s, m) => s + m.used, 0);
+
+  res.json({
+    totalBudget,
+    totalUsed,
+    models: modelBudgets,
+  });
+});

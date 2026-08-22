@@ -1,0 +1,70 @@
+appId: com.freellmapi.desktop
+productName: FreeLLMAPI
+directories:
+  output: dist-electron
+files:
+  - build/**/*
+  - renderer/**/*
+  - assets/**/*
+  - "!**/*.map"
+# Update metadata. With a publish provider configured, electron-builder emits
+# latest.yml / latest-mac.yml next to the installers — the manifest ANY updater
+# (electron-updater or otherwise) reads to learn what the newest version is and
+# where to fetch it. Releases up to v0.6.6 shipped installers only, so nothing
+# could tell an installed app that a newer one exists. Uploading stays OFF
+# (--publish never in the scripts and the workflow); the release workflow
+# attaches the files itself. See #703.
+publish:
+  provider: github
+  owner: tashfeenahmed
+  repo: freellmapi
+asar: true
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**/*.node"
+  - "**/node_modules/better-sqlite3/build/Release/**"
+# client-dist is staged into desktop/ by `npm run stage:client` (scripts/stage-client.mjs).
+# It MUST stay a path inside desktop/: a `../` source makes electron-builder treat the
+# repo root as a copy base and reject every root file ("must be under .../desktop/").
+extraResources:
+  - from: client-dist
+    to: client-dist
+mac:
+  category: public.app-category.developer-tools
+  icon: assets/icon.icns
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: assets/entitlements.mac.plist
+  entitlementsInherit: assets/entitlements.mac.inherit.plist
+  notarize: true
+  target:
+    - target: dmg
+      arch:
+        - arm64
+  extendInfo:
+    LSUIElement: 1
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
+  # electron-builder converts a >=256px PNG to .ico at build time.
+  icon: assets/appicon_1024.png
+linux:
+  category: Development;Utility;
+  icon: assets/appicon_1024.png # electron-builder can automatically scale PNGs
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: tar.xz
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+nsis:
+  oneClick: true
+  deleteAppDataOnUninstall: false
