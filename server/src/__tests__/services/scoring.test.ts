@@ -124,6 +124,24 @@ describe('scoring: guardrails', () => {
     expect(headroomFactor(900_000, 1_000_000)).toBeLessThan(1); // 10% left → protecting
   });
 
+  it('honors tunable rampStart/floor thresholds (#899)', () => {
+    // Aggressive operator: start protecting at 50% remaining, floor at 0.3.
+    const opts = { rampStart: 0.5, floor: 0.3 };
+    expect(headroomFactor(400_000, 1_000_000, opts)).toBe(1); // 60% left ≥ rampStart → no opinion
+    expect(headroomFactor(500_000, 1_000_000, opts)).toBe(1); // exactly at rampStart → not yet demoting
+    // 40% left → demoting: floor + (1-floor)·(remaining/rampStart)
+    //            = 0.3 + 0.7·(0.4/0.5) = 0.86
+    expect(headroomFactor(600_000, 1_000_000, opts)).toBeCloseTo(0.86, 5);
+    expect(headroomFactor(1_000_000, 1_000_000, opts)).toBeCloseTo(0.3, 5); // fully used → floor
+  });
+
+  it('clamps out-of-range thresholds to defaults (#899)', () => {
+    expect(headroomFactor(500_000, 1_000_000, { rampStart: 2, floor: -1 }))
+      .toBe(headroomFactor(500_000, 1_000_000)); // same as default behavior
+    expect(headroomFactor(500_000, 1_000_000, { rampStart: NaN }))
+      .toBe(headroomFactor(500_000, 1_000_000));
+  });
+
   it('unknown budget yields no opinion (factor 1)', () => {
     expect(headroomFactor(123, 0)).toBe(1);
   });

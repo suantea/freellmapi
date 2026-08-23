@@ -206,15 +206,35 @@ export function intelligenceScore(composite: number, min: number, max: number): 
 // Multiplier that stays at 1 while a model has comfortable monthly headroom and
 // ramps down to a floor as it approaches its free-tier cap, so we stop steering
 // traffic at a model we're about to burn out. Unknown budget (0) → no opinion.
+// Thresholds are tunable per-instance (#899): callers may pass explicit
+// rampStart/floor, and the defaults below are the historical behavior (start
+// protecting at 20% remaining, floor at 10% of the score). Router wires these
+// to persisted settings so operators can tune without a code change.
 export const HEADROOM_FLOOR = 0.1;
 export const HEADROOM_RAMP_START = 0.2; // start protecting at 20% remaining
 
-export function headroomFactor(usedTokens: number, budgetTokens: number): number {
+export interface HeadroomThresholds {
+  /** Remaining-budget fraction at which demotion begins (0..1). */
+  rampStart?: number;
+  /** Score floor while a model is at 0 remaining budget (0..1). */
+  floor?: number;
+}
+
+export function headroomFactor(usedTokens: number, budgetTokens: number, opts?: HeadroomThresholds): number {
   if (!budgetTokens || budgetTokens <= 0) return 1; // unknown budget → no opinion
+  const rampStart = clampUnit(opts?.rampStart, HEADROOM_RAMP_START);
+  const floor = clampUnit(opts?.floor, HEADROOM_FLOOR);
   const remaining = Math.max(0, 1 - usedTokens / budgetTokens);
-  if (remaining >= HEADROOM_RAMP_START) return 1;
-  // Linear from (0 remaining → floor) to (RAMP_START remaining → 1).
-  return HEADROOM_FLOOR + (1 - HEADROOM_FLOOR) * (remaining / HEADROOM_RAMP_START);
+  if (remaining >= rampStart) return 1;
+  // Linear from (0 remaining → floor) to (rampStart remaining → 1).
+  return floor + (1 - floor) * (remaining / rampStart);
+}
+
+// Out-of-range / non-finite operator input falls back to the default rather
+// than silently clamping to a legal-but-unintended value (#899).
+function clampUnit(n: number | undefined, fallback: number): number {
+  if (n === undefined || !Number.isFinite(n) || n < 0 || n > 1) return fallback;
+  return n;
 }
 
 // ── Guardrail: live rate-limit penalty ──────────────────────────────────────

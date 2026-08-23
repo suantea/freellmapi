@@ -330,6 +330,40 @@ const CUSTOM_WEIGHTS_KEY = 'routing_custom_weights';
 const EXPLORE_KEY = 'routing_explore_enabled';
 const COMMUNITY_PRIOR_KEY = 'routing_community_prior';
 const COMMUNITY_PRIOR_ENABLED_KEY = 'routing_community_prior_enabled';
+// Headroom guardrail thresholds (#899): the remaining-budget fraction at which
+// demotion begins and the score floor at 0 remaining. Stored as decimals
+// (0.2 = 20%). Absent/invalid values fall back to the scoring.ts constants so
+// existing installs are untouched.
+export const HEADROOM_RAMP_START_KEY = 'routing_headroom_ramp_start';
+export const HEADROOM_FLOOR_KEY = 'routing_headroom_floor';
+
+export function getHeadroomThresholds(): { rampStart: number | undefined; floor: number | undefined } {
+  const read = (key: string): number | undefined => {
+    const raw = getSetting(key);
+    if (raw === undefined || raw.trim() === '') return undefined;
+    const n = Number(raw);
+    return Number.isFinite(n) && n >= 0 && n <= 1 ? n : undefined;
+  };
+  return { rampStart: read(HEADROOM_RAMP_START_KEY), floor: read(HEADROOM_FLOOR_KEY) };
+}
+
+// null clears a threshold back to the default; undefined leaves it untouched.
+export function setHeadroomThresholds(rampStart?: number | null, floor?: number | null): void {
+  const db = getDb();
+  const apply = (key: string, value: number | null | undefined): void => {
+    if (value === undefined) return;
+    if (value === null) {
+      db.prepare('DELETE FROM settings WHERE key = ?').run(key); // back to default
+      return;
+    }
+    if (!Number.isFinite(value) || value < 0 || value > 1) {
+      throw new Error(`Invalid value ${value} for ${key} (must be 0..1)`);
+    }
+    setSetting(key, String(value));
+  };
+  apply(HEADROOM_RAMP_START_KEY, rampStart);
+  apply(HEADROOM_FLOOR_KEY, floor);
+}
 
 /** Chance per request that an unmeasured model gets tried first when the
  *  exploration toggle is on. The bandit's Thompson sampling already explores
@@ -838,7 +872,10 @@ function scoreChainEntry(
   // matching the pooled `monthlyUsedTokens` aggregate (#456). Math.max(1, …) so a
   // model whose platform currently has no usable key isn't handed a 0 budget.
   const budget = parseBudget(entry.monthly_token_budget) * Math.max(1, keyCounts.get(entry.platform) ?? 1);
-  const headroom = headroomFactor(stats?.monthlyUsedTokens ?? 0, budget);
+  // Tunable headroom thresholds (#899): persisted overrides for when demotion
+  // starts and its floor; absent settings keep the scoring.ts defaults.
+  const headroomCfg = getHeadroomThresholds();
+  const headroom = headroomFactor(stats?.monthlyUsedTokens ?? 0, budget, headroomCfg);
   const rl = rateLimitFactor(getPenalty(entry.model_db_id));
 
   // Per-model env overrides (#738) scale the final score so a slow or

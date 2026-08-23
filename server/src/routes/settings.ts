@@ -22,6 +22,7 @@ import {
   getCompressionConfig,
   setCompressionConfig,
 } from '../services/compression/config.js';
+import { getHeadroomThresholds, setHeadroomThresholds } from '../services/router.js';
 import { z } from 'zod';
 import { getAppVersion } from '../lib/app-version.js';
 import {
@@ -278,6 +279,40 @@ settingsRouter.get('/guardrails', (_req: Request, res: Response) => {
 const guardrailsPutSchema = z.object({
   requestMaxTokensBudget: z.number().int().min(0).optional(),
   maxConsecutiveUpstreamFails: z.number().int().min(0).optional(),
+});
+
+// Get the headroom guardrail thresholds (#899): the remaining-budget fraction
+// at which proactive demotion begins and the score floor at 0 remaining. Both
+// are decimals (0.2 = 20%). null = the scoring.ts default is in effect.
+settingsRouter.get('/headroom', (_req: Request, res: Response) => {
+  const { rampStart, floor } = getHeadroomThresholds();
+  res.json({ rampStart: rampStart ?? null, floor: floor ?? null });
+});
+
+const headroomPutSchema = z.object({
+  rampStart: z.number().min(0).max(1).nullable().optional(),
+  floor: z.number().min(0).max(1).nullable().optional(),
+});
+
+// Update the headroom guardrail thresholds. null clears a threshold back to the
+// scoring.ts default. Takes effect on the next request — no restart needed.
+settingsRouter.put('/headroom', (req: Request, res: Response) => {
+  const parsed = headroomPutSchema.safeParse(req.body);
+  if (!parsed.success) {
+    const detail = parsed.error.errors
+      .map(e => (e.path.length ? `${e.path.join('.')}: ${e.message}` : e.message))
+      .slice(0, 5)
+      .join(', ');
+    res.status(400).json({ error: { message: `Invalid headroom thresholds: ${detail}`, type: 'invalid_request_error' } });
+    return;
+  }
+  try {
+    setHeadroomThresholds(parsed.data.rampStart, parsed.data.floor);
+    const { rampStart, floor } = getHeadroomThresholds();
+    res.json({ rampStart: rampStart ?? null, floor: floor ?? null });
+  } catch (err: any) {
+    res.status(400).json({ error: { message: `Invalid headroom thresholds: ${err.message}`, type: 'invalid_request_error' } });
+  }
 });
 
 // Update the guardrails. Partial: send just the knob you want to change.
