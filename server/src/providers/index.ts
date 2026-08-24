@@ -8,6 +8,7 @@ import { AIHordeProvider } from './aihorde.js';
 import { ModelScopeProvider } from './modelscope.js';
 import { PollinationsProvider } from './pollinations.js';
 import { ZhipuProvider } from './zhipu.js';
+import { DotsAIProvider } from './dotsai.js';
 
 const providers = new Map<Platform, BaseProvider>();
 
@@ -444,6 +445,10 @@ register(new OpenAICompatProvider({
 // auto-configures and works anonymously (key 0000000000, lowest queue
 // priority); a registered aihorde.net key raises priority. See issue #345.
 register(new AIHordeProvider());
+
+// Dots AI — OpenAI-compatible gateway (dots.ai). Free tier available.
+// Docs: https://dots.ai/platform/docs
+register(new DotsAIProvider({}));
 
 // Placeholder so getProvider('custom')/hasProvider('custom')/getAllProviders()
 // behave — but the real instance is built per-key by resolveProvider(), since
