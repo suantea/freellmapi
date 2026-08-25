@@ -25,6 +25,8 @@ import {
   groupMaxContext,
   type FallbackEntry,
   type ModelGroupRow,
+  type QuotaSummaryData,
+  type QuotaSummaryRow,
   type RateLimitUsageData,
   type RoutingData,
   type RoutingStrategy,
@@ -162,6 +164,21 @@ export default function FallbackPage() {
     () => new Map((rateLimitUsage?.rows ?? []).map(r => [r.modelDbId, r])),
     [rateLimitUsage],
   )
+
+  // Provider-quota headroom per (platform, modelId) for the current window.
+  const { data: quotaSummary } = useQuery<QuotaSummaryData>({
+    queryKey: ['fallback', 'quota-summary'],
+    queryFn: () => apiFetch('/api/fallback/quota-summary'),
+    refetchInterval: 15_000,
+  })
+  const quotaByModel = useMemo(() => {
+    const m = new Map<string, QuotaSummaryRow>()
+    if (!quotaSummary?.rows) return m
+    for (const row of Object.values(quotaSummary.rows)) {
+      m.set(`${row.platform}::${row.modelId ?? '*'}`, row)
+    }
+    return m
+  }, [quotaSummary])
 
   const saveMutation = useMutation({
     mutationFn: (data: { modelDbId: number; priority: number; enabled: boolean }[]) =>
