@@ -299,14 +299,6 @@ export function GroupHeaderCells({ group, rank, dragHandle, onToggleGroup, allRo
   const rateRows = rateUsage
     ? group.members.flatMap(m => rateUsage.get(m.modelDbId) ?? [])
     : []
-  // Provider-quota exhaustion check: a group is quota-exhausted only when
-  // EVERY member reports remaining === 0. Drives the greying + sort in #1015.
-  const quotaExhausted = quotaUsage
-    ? group.members.every(m => {
-        const q = quotaUsage.get(`${m.platform}::${m.modelId}`) ?? quotaUsage.get(`${m.platform}::${null}`)
-        return q != null && q.remaining === 0
-      })
-    : false
   // Honest group display (#580): reliability/speed ranges come only from
   // members that were actually measured; when none were, show "no data" rather
   // than the shared exploration priors. Intelligence is catalog metadata, so
@@ -422,6 +414,12 @@ export function SortableGroupRow({ group, rank, onToggleGroup, allRows, rateUsag
   const anyEnabled = group.members.some(m => m.enabled)
   const navigate = useNavigate()
   const detailId = encodeURIComponent(group.members[0].canonicalId ?? group.members[0].modelId)
+  const quotaExhausted = quotaUsage
+    ? group.members.every(m => {
+        const q = quotaUsage.get(`${m.platform}::${m.modelId}`) ?? quotaUsage.get(`${m.platform}::${null}`)
+        return q != null && q.remaining === 0
+      })
+    : false
   const handle = (
     <button
       {...attributes}

@@ -174,7 +174,7 @@ export default function FallbackPage() {
   const quotaByModel = useMemo(() => {
     const m = new Map<string, QuotaSummaryRow>()
     if (!quotaSummary?.rows) return m
-    for (const row of Object.values(quotaSummary.rows)) {
+    for (const row of quotaSummary.rows) {
       m.set(`${row.platform}::${row.modelId ?? '*'}`, row)
     }
     return m
@@ -268,7 +268,7 @@ export default function FallbackPage() {
       return q != null && q.remaining === 0
     })
     const bExhausted = quotaByModel && b.members.every(m => {
-      const q = quotaByModel.get(`${m.platform}::${b.modelId}`) ?? quotaByModel.get(`${m.platform}::${null}`)
+      const q = quotaByModel.get(`${m.platform}::${m.modelId}`) ?? quotaByModel.get(`${m.platform}::${null}`)
       return q != null && q.remaining === 0
     })
     if (aExhausted !== bExhausted) return aExhausted ? 1 : -1

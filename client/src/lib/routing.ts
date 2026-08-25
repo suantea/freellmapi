@@ -331,6 +331,24 @@ export interface RateLimitUsageData {
 
 export type RateLimitKind = 'RPM' | 'RPD' | 'TPM'
 
+// Provider-quota headroom for a single (platform, modelId) pair within the
+// current billing window. Drives the remaining-quota badge and the
+// exhausted-model greying/sort in #1015.
+export interface QuotaSummaryRow {
+  platform: string
+  modelId: string | null
+  metric: 'tokens' | 'requests' | 'credits'
+  remaining: number
+  limit: number | null
+}
+
+// Aggregated quota headroom across all providers. Fetched ONCE at the page
+// level and passed down, same pattern as RateLimitUsageData.
+export interface QuotaSummaryData {
+  generatedAtMs: number
+  rows: QuotaSummaryRow[]
+}
+
 // The badge answers one question: how close is this logical model to being
 // unusable? A group is unusable only when EVERY provider serving it is out of
 // headroom, so the group-level number is the BEST member, not the worst — a
