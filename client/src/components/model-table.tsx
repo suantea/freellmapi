@@ -16,6 +16,7 @@ import {
   providerLabel,
   tightestRateLimit,
   type ModelGroupRow,
+  type QuotaSummaryRow,
   type RateLimitUsageRow,
   type Row,
 } from '@/lib/routing'
@@ -270,7 +271,7 @@ export const dragDots = (
 // The collapsed header row for a logical-model group: name, provider count,
 // union vision/tools badges, the best member's axis bars + score, and a single
 // switch that enables/disables every provider in the group.
-export function GroupHeaderCells({ group, rank, dragHandle, onToggleGroup, allRows, rateUsage }: {
+export function GroupHeaderCells({ group, rank, dragHandle, onToggleGroup, allRows, rateUsage, quotaUsage }: {
   group: ModelGroupRow
   rank: number
   dragHandle?: ReactNode
@@ -283,6 +284,9 @@ export function GroupHeaderCells({ group, rank, dragHandle, onToggleGroup, allRo
   // level and passed down: a query hook here would open one observer and one
   // 15s poll timer per row, i.e. hundreds of them on a real catalog.
   rateUsage?: ReadonlyMap<number, RateLimitUsageRow>
+  // Provider-quota headroom per (platform, modelId). Drives the remaining-quota
+  // badge and the exhausted-model greying/sort.
+  quotaUsage?: ReadonlyMap<string, QuotaSummaryRow>
 }) {
   const { t } = useI18n()
   const anyEnabled = group.members.some(m => m.enabled)
@@ -295,6 +299,14 @@ export function GroupHeaderCells({ group, rank, dragHandle, onToggleGroup, allRo
   const rateRows = rateUsage
     ? group.members.flatMap(m => rateUsage.get(m.modelDbId) ?? [])
     : []
+  // Provider-quota exhaustion check: a group is quota-exhausted only when
+  // EVERY member reports remaining === 0. Drives the greying + sort in #1015.
+  const quotaExhausted = quotaUsage
+    ? group.members.every(m => {
+        const q = quotaUsage.get(`${m.platform}::${m.modelId}`) ?? quotaUsage.get(`${m.platform}::${null}`)
+        return q != null && q.remaining === 0
+      })
+    : false
   // Honest group display (#580): reliability/speed ranges come only from
   // members that were actually measured; when none were, show "no data" rather
   // than the shared exploration priors. Intelligence is catalog metadata, so
@@ -334,6 +346,23 @@ export function GroupHeaderCells({ group, rank, dragHandle, onToggleGroup, allRo
               </span>
             )}
             <RateLimitBadge rows={rateRows} />
+            {(() => {
+              if (!quotaUsage) return null
+              const q = quotaUsage.get(`${group.members[0].platform}::${group.members[0].modelId}`)
+                ?? quotaUsage.get(`${group.members[0].platform}::${null}`)
+              if (!q || q.remaining == null) return null
+              const ratio = q.limit != null && q.limit > 0 ? 1 - (q.remaining / q.limit) : 0
+              const tone = q.remaining === 0
+                ? 'bg-red-600/15 text-red-700 dark:text-red-400'
+                : ratio >= 0.7
+                  ? 'bg-amber-600/15 text-amber-700 dark:text-amber-400'
+                  : 'bg-muted text-muted-foreground'
+              return (
+                <span className={`text-[10px] rounded-full px-1.5 py-0.5 tabular-nums ${tone}`}>
+                  {q.metric === 'tokens' ? `${Math.round(q.remaining / 1000)}k left` : `${q.remaining} left`}
+                </span>
+              )
+            })()}
             {maxCtx > 0 && (
               <span title={t('models.ctxTitle')} className="text-[10px] rounded-full px-1.5 py-0.5 bg-muted text-muted-foreground tabular-nums">
                 {t('models.ctxBadge', { size: formatContext(maxCtx) })}
@@ -380,12 +409,13 @@ export function GroupHeaderCells({ group, rank, dragHandle, onToggleGroup, allRo
   )
 }
 
-export function SortableGroupRow({ group, rank, onToggleGroup, allRows, rateUsage }: {
+export function SortableGroupRow({ group, rank, onToggleGroup, allRows, rateUsage, quotaUsage }: {
   group: ModelGroupRow
   rank: number
   onToggleGroup: (memberIds: number[], enabled: boolean) => void
   allRows?: readonly Row[]
   rateUsage?: ReadonlyMap<number, RateLimitUsageRow>
+  quotaUsage?: ReadonlyMap<string, QuotaSummaryRow>
 }) {
   const { t } = useI18n()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: `grp:${group.key}` })
@@ -408,9 +438,9 @@ export function SortableGroupRow({ group, rank, onToggleGroup, allRows, rateUsag
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       onClick={() => navigate(`/models/chat/${detailId}`)}
-      className={`group/row border-b last:border-0 bg-card cursor-pointer transition-colors hover:[&>td]:bg-muted/50 [&>td:first-child]:rounded-l-lg [&>td:last-child]:rounded-r-lg ${isDragging ? 'opacity-50' : ''} ${anyEnabled ? '' : 'opacity-50'}`}
+      className={`group/row border-b last:border-0 bg-card cursor-pointer transition-colors hover:[&>td]:bg-muted/50 [&>td:first-child]:rounded-l-lg [&>td:last-child]:rounded-r-lg ${isDragging ? 'opacity-50' : ''} ${anyEnabled ? '' : 'opacity-50'} ${quotaExhausted ? 'opacity-40 saturate-50' : ''}`}
     >
-      <GroupHeaderCells group={group} rank={rank} dragHandle={handle} onToggleGroup={onToggleGroup} allRows={allRows} rateUsage={rateUsage} />
+      <GroupHeaderCells group={group} rank={rank} dragHandle={handle} onToggleGroup={onToggleGroup} allRows={allRows} rateUsage={rateUsage} quotaUsage={quotaUsage} />
     </tr>
   )
 }

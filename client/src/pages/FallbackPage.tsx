@@ -244,6 +244,18 @@ export default function FallbackPage() {
     if (minContext > 0 && groupMaxContext(g.members) < minContext) return false
     if (query && !groupMatchesQuery(g, query)) return false
     return true
+  }).sort((a, b) => {
+    // Exhausted models sink to the bottom (#1015).
+    const aExhausted = quotaByModel && a.members.every(m => {
+      const q = quotaByModel.get(`${m.platform}::${m.modelId}`) ?? quotaByModel.get(`${m.platform}::${null}`)
+      return q != null && q.remaining === 0
+    })
+    const bExhausted = quotaByModel && b.members.every(m => {
+      const q = quotaByModel.get(`${m.platform}::${b.modelId}`) ?? quotaByModel.get(`${m.platform}::${null}`)
+      return q != null && q.remaining === 0
+    })
+    if (aExhausted !== bExhausted) return aExhausted ? 1 : -1
+    return 0
   }), [orderedGroups, filterVision, filterTools, minContext, query])
   const draggable = isManual && !filtersActive
 
@@ -576,7 +588,7 @@ export default function FallbackPage() {
                     <SortableContext items={renderedGroups.map(g => `grp:${g.key}`)} strategy={verticalListSortingStrategy}>
                       <tbody>
                         {renderedGroups.map(g => (
-                          <SortableGroupRow key={g.key} group={g} rank={rankByKey.get(g.key) ?? 0} onToggleGroup={handleGroupToggle} allRows={rows} rateUsage={rateUsageByModel} />
+                          <SortableGroupRow key={g.key} group={g} rank={rankByKey.get(g.key) ?? 0} onToggleGroup={handleGroupToggle} allRows={rows} rateUsage={rateUsageByModel} quotaUsage={quotaByModel} />
                         ))}
                       </tbody>
                     </SortableContext>
