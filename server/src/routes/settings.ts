@@ -24,6 +24,7 @@ import {
   setCompressionConfig,
 } from '../services/compression/config.js';
 import { getHeadroomThresholds, setHeadroomThresholds } from '../services/router.js';
+import { MCP_ENABLED_SETTING, MCP_KEY_PREFIX_SETTING, isMcpServerEnabled, getMcpKeyPrefix } from './mcp.js';
 import { z } from 'zod';
 import { getAppVersion } from '../lib/app-version.js';
 import {
@@ -129,6 +130,44 @@ settingsRouter.put('/fusion', (req: Request, res: Response) => {
   }
   const saved = setSavedFusionConfig(parsed.data);
   res.json({ config: saved, maxK: getFusionMaxK() });
+});
+
+// ── MCP server lifecycle (#925, MVP-1) ──────────────────────────────────────
+// The /mcp introspection server starts disabled; this is its config surface.
+// The key prefix is stored here ahead of the MVP-2 cross-key prefix auth,
+// which will give it its /mcp-side meaning.
+
+settingsRouter.get('/mcp-key-prefix', (_req: Request, res: Response) => {
+  res.json({ prefix: getMcpKeyPrefix() });
+});
+
+const mcpKeyPrefixSchema = z.object({ prefix: z.string() });
+
+settingsRouter.put('/mcp-key-prefix', (req: Request, res: Response) => {
+  const parsed = mcpKeyPrefixSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: 'Invalid MCP key prefix: prefix must be a string.', type: 'invalid_request_error' } });
+    return;
+  }
+  // The empty string is meaningful: it disables the (MVP-2) prefix check.
+  setSetting(MCP_KEY_PREFIX_SETTING, parsed.data.prefix);
+  res.json({ prefix: parsed.data.prefix });
+});
+
+settingsRouter.get('/enable-mcp', (_req: Request, res: Response) => {
+  res.json({ enabled: isMcpServerEnabled() });
+});
+
+const enableMcpSchema = z.object({ enabled: z.boolean() });
+
+settingsRouter.put('/enable-mcp', (req: Request, res: Response) => {
+  const parsed = enableMcpSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: 'Invalid MCP setting: enabled must be a boolean.', type: 'invalid_request_error' } });
+    return;
+  }
+  setSetting(MCP_ENABLED_SETTING, parsed.data.enabled ? '1' : '0');
+  res.json({ enabled: parsed.data.enabled });
 });
 
 // Get the Claude Code model map (opus/sonnet/haiku/default → 'auto' | model_id).

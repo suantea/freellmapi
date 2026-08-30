@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { Request, Response } from 'express';
-import { getDb, getUnifiedApiKey } from '../db/index.js';
+import { getDb, getUnifiedApiKey, getSetting } from '../db/index.js';
 import { extractApiToken, timingSafeStringEqual } from './proxy.js';
 import { buildModelListing } from '../services/model-listing.js';
 import { supportedParametersForPlatforms } from '../lib/sampling-params.js';
@@ -317,7 +317,35 @@ function authenticate(req: Request, res: Response): boolean {
   return true;
 }
 
+// ── Lifecycle configuration (#925, MVP-1) ───────────────────────────────────
+// The MCP surface is opt-in: it exposes provider health, usage stats and
+// routing controls to anything holding the unified key, so an install that
+// never asked for it should not serve it at all. Toggled via
+// /api/settings/enable-mcp; the key-prefix setting is stored here for the
+// MVP-1 config surface and gets its /mcp-side enforcement with the MVP-2
+// cross-key prefix auth.
+export const MCP_ENABLED_SETTING = 'enable_mcp';
+export const MCP_KEY_PREFIX_SETTING = 'mcp_key_prefix';
+
+export function isMcpServerEnabled(): boolean {
+  return getSetting(MCP_ENABLED_SETTING) === '1';
+}
+
+export function getMcpKeyPrefix(): string {
+  return getSetting(MCP_KEY_PREFIX_SETTING) ?? '';
+}
+
 mcpRouter.post('/', (req: Request, res: Response) => {
+  // Gate before auth: a disabled server says so plainly, without hinting
+  // whether the presented key would have been valid. Read per request so the
+  // toggle takes effect without a restart.
+  if (!isMcpServerEnabled()) {
+    const body = req.body;
+    const id = body && typeof body === 'object' && !Array.isArray(body) && body.id !== undefined ? body.id : null;
+    res.status(403).json(rpcError(id, -32000, 'MCP server is disabled. Enable it with PUT /api/settings/enable-mcp {"enabled":true}.'));
+    return;
+  }
+
   if (!authenticate(req, res)) return;
 
   const body = req.body;

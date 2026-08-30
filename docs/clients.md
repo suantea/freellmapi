@@ -168,7 +168,16 @@ telemetry.
 
 On top of inference, the router is an **MCP server**: agents can introspect it mid-session
 (usable models and the params each one honors, provider health, usage and cache stats,
-routing strategy). For Claude Code:
+routing strategy). The MCP surface is **off by default** (#925) — enable it once from the
+dashboard API:
+
+```bash
+curl -X PUT http://localhost:3001/api/settings/enable-mcp \
+  -H "Authorization: Bearer <dashboard-token>" -H "Content-Type: application/json" \
+  -d '{"enabled": true}'
+```
+
+For Claude Code:
 
 ```bash
 claude mcp add --transport http freellmapi http://localhost:3001/mcp \
