@@ -36,6 +36,7 @@ export const MODEL_PRICING: PricingRow[] = [
   ['cloudflare', '@cf/nvidia/nemotron-3-120b-a12b', 0.09, 0.45],
   ['cloudflare', '@cf/openai/gpt-oss-120b', 0.039, 0.18],
   ['cloudflare', '@cf/qwen/qwen3-30b-a3b-fp8', 0.09, 0.45],
+  ['cloudflare', '@cf/qwen/qwen3.8-27b', 0.45, 3.20],
   ['cloudflare', '@cf/zai-org/glm-4.7-flash', 0.06, 0.40],
   ['cloudflare', '@cf/meta/llama-3.1-70b-instruct', 0.40, 0.40], // legacy
 
@@ -145,6 +146,8 @@ export const MODEL_PRICING: PricingRow[] = [
   ['opencode', 'minimax-m3-free', 0.30, 1.20],
   ['opencode', 'nemotron-3-super-free', 0.09, 0.45],
   ['opencode', 'nemotron-3-ultra-free', 0.50, 2.50],
+  // Priced at the paid sibling muse-spark-1.2 (Zen, 2026-08-30).
+  ['opencode', 'muse-spark-1.2-contributor-free', 1.25, 4.25],
 
   // OpenRouter :free pools (priced at the same model's paid variant)
   // V23 additions snapshot the OpenRouter pricing API on 2026-06-07.
