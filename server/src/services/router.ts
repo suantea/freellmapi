@@ -1108,10 +1108,20 @@ const GLOBAL_SORT_ALIASES: Record<string, string> = {
   balanced: 'balanced',
 };
 
+/**
+ * The chain auto-routing walks.
+ *
+ * When a profile is active it IS the chain, empty or not (#1021). Falling
+ * through to `fallback_config` on an empty one meant a chain the operator had
+ * deliberately built by hand — or had not filled in yet — silently routed over
+ * the entire catalog instead, while the same chain addressed by name
+ * (`auto:<name>`) correctly refused. `fallback_config` is the chain only for an
+ * install with no profile at all.
+ */
 function getActiveChain(db: Db): ChainRow[] {
   const profileId = getActiveProfileId(db);
   if (profileId != null) {
-    const chain = db.prepare(`
+    return db.prepare(`
       SELECT pm.model_db_id, pm.priority, pm.enabled,
              m.platform, m.model_id, m.display_name, m.intelligence_rank,
              m.size_label, m.monthly_token_budget,
@@ -1122,8 +1132,6 @@ function getActiveChain(db: Db): ChainRow[] {
       WHERE pm.profile_id = ?
       ORDER BY pm.priority ASC
     `).all(profileId) as ChainRow[];
-    
-    if (chain.length > 0) return chain;
   }
 
   return db.prepare(`
@@ -1188,21 +1196,45 @@ function getChainByGlobalSort(db: Db, globalAxis: string): ChainRow[] {
   return orderChain(allEnabled, strat);
 }
 
+/**
+ * The active chain, or a client-facing refusal when it has nothing enabled.
+ *
+ * Mirrors what `auto:<name>` already does for a named chain: say the chain is
+ * empty rather than routing the request over models the operator never put in
+ * it. Only when a profile is active — a legacy install with none keeps the
+ * ordinary "all models exhausted" exhaustion path.
+ */
+function activeChainOrThrow(db: Db): ChainRow[] {
+  const chain = getActiveChain(db);
+  if (chain.some(entry => entry.enabled)) return chain;
+
+  const profileId = getActiveProfileId(db);
+  if (profileId == null) return chain;
+
+  const profile = db.prepare('SELECT name FROM profiles WHERE id = ?').get(profileId) as { name: string } | undefined;
+  const err = new Error(
+    `The active fallback chain${profile ? ` '${profile.name}'` : ''} has no enabled models. `
+    + 'Enable models for it on the Models page, switch the active chain, or name another one with "auto:<chain>".',
+  ) as any;
+  err.status = 400;
+  throw err;
+}
+
 export function resolveRoutingChain(modelString: string | undefined): ResolvedChain {
   const db = getDb();
 
   if (!modelString || modelString.toLowerCase() === 'auto') {
-    return { chain: getActiveChain(db), strategyKey: 'auto' };
+    return { chain: activeChainOrThrow(db), strategyKey: 'auto' };
   }
 
   const lower = modelString.toLowerCase();
   if (!lower.startsWith('auto:')) {
-    return { chain: getActiveChain(db), strategyKey: 'auto' };
+    return { chain: activeChainOrThrow(db), strategyKey: 'auto' };
   }
 
   const suffix = lower.slice('auto:'.length).trim();
   if (!suffix) {
-    return { chain: getActiveChain(db), strategyKey: 'auto' };
+    return { chain: activeChainOrThrow(db), strategyKey: 'auto' };
   }
 
   const globalAxis = GLOBAL_SORT_ALIASES[suffix];
@@ -2049,7 +2081,28 @@ export function getRoutingScores(): { strategy: RoutingStrategy; keySelectionStr
   const strategy = getRoutingStrategy();
   refreshStatsCache(db);
 
-  const chain = getActiveChain(db);
+  // Score the whole enabled catalog, not just the active chain (#1047). Since
+  // #1023 the dashboard table lists every catalog row through the chain, and
+  // merging it against chain-only scores left every not-yet-opted-in row with
+  // blank reliability/speed — which read as "each new chain starts from
+  // scratch" even though the underlying per-model stats are global. Rows the
+  // chain names keep its enabled flag; the rest score as disabled. Display
+  // only: routeRequest still walks getActiveChain.
+  const profileId = getActiveProfileId(db);
+  const chain = db.prepare(`
+    SELECT m.id AS model_db_id, COALESCE(c.priority, 0) AS priority, COALESCE(c.enabled, 0) AS enabled,
+           m.platform, m.model_id, m.display_name, m.intelligence_rank,
+           m.size_label, m.monthly_token_budget,
+           m.rpm_limit, m.rpd_limit, m.tpm_limit, m.tpd_limit, m.supports_vision,
+           m.supports_tools, m.context_window, m.key_id, m.endpoint_scope
+    FROM models m
+    LEFT JOIN ${profileId != null
+      ? '(SELECT model_db_id, priority, enabled FROM profile_models WHERE profile_id = ?) c'
+      : '(SELECT model_db_id, priority, enabled FROM fallback_config) c'}
+      ON c.model_db_id = m.id
+    WHERE m.enabled = 1
+    ORDER BY c.priority ASC
+  `).all(...(profileId != null ? [profileId] : [])) as ChainRow[];
 
   // For display we score under 'balanced' weights when in priority mode, so the
   // table still shows a meaningful ranking even with the bandit turned off.

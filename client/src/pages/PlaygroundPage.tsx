@@ -4,6 +4,7 @@ import { ArrowUp, ChevronRight, CircleAlert, FileText, Paperclip, X } from 'luci
 import { apiFetch } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { buildModelOptions } from '@/lib/model-groups'
+import type { Chain } from '@/components/chain-manager'
 import { Markdown } from '@/components/markdown'
 import { CopyButton } from '@/components/copy-button'
 import { toast } from '@/lib/toast'
@@ -260,6 +261,25 @@ export default function PlaygroundPage() {
     queryFn: () => apiFetch('/api/fallback'),
   })
 
+  // Named fallback chains (#1021). Every custom chain is served as an
+  // `auto:<name>` model — /v1/models lists them and the send path already
+  // routes them — but the picker only ever offered 'auto', so the one place
+  // you could try a chain you had just built was a curl command. The id is
+  // derived exactly as the server derives it (routes/proxy.ts).
+  const { data: chains = [] } = useQuery<Chain[]>({
+    queryKey: ['profiles'],
+    queryFn: () => apiFetch('/api/profiles'),
+  })
+  const chainOptions = chains
+    .filter(c => c.type === 'custom')
+    .map(c => ({
+      value: `auto:${c.name.toLowerCase()}`,
+      label: c.emoji ? `${c.emoji} ${c.name}` : c.name,
+      sub: `auto:${c.name.toLowerCase()}`,
+      isNew: false,
+      platforms: [] as string[],
+    }))
+
   // Unification is always on now (the on/off toggle was removed), so the picker
   // always collapses a model's providers into one option.
   const unifyOn = true
@@ -277,8 +297,12 @@ export default function PlaygroundPage() {
     availableModels.filter(e => e.supportsVision).map(e => e.canonicalId ?? e.modelId),
   )
   const pendingImages = attachmentImages(attachments)
+  // A chain (`auto:<name>`) is as server-picked as plain auto: the router
+  // chooses a vision-capable member for an image request, so the hint would be
+  // guesswork about a model that has not been picked yet.
   const modelBlindToImages = pendingImages.length > 0
     && selectedModel !== 'auto' && selectedModel !== 'fusion'
+    && !selectedModel.startsWith('auto:')
     && !visionValues.has(selectedModel)
 
   // Follow the stream only while the reader is parked at the bottom. Judging
@@ -795,6 +819,7 @@ export default function PlaygroundPage() {
   const pickerOptions = [
     { value: 'auto', label: t('playground.autoModel'), sub: '', isNew: false, platforms: [] as string[] },
     { value: 'fusion', label: t('playground.fusionModel'), sub: '', isNew: false, platforms: [] as string[] },
+    ...chainOptions,
     ...modelOptions
       .slice()
       .sort((a, b) =>
@@ -824,6 +849,10 @@ export default function PlaygroundPage() {
     ? t('playground.autoModel')
     : selectedModel === 'fusion'
     ? t('playground.fusionModel')
+    : selectedModel.startsWith('auto:')
+    // A remembered chain whose name has since changed (or been deleted) has no
+    // option left to read a label from; the raw id is still the truth.
+    ? chainOptions.find(o => o.value === selectedModel)?.label ?? selectedModel
     : modelOptions.find(o => o.value === selectedModel)?.label ?? selectedModel
 
   return (

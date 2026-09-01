@@ -183,6 +183,33 @@ describe('routing semantics', () => {
     expect(routed.modelDbId).not.toBe(disabledId);
   });
 
+  it('refuses model:"auto" on an empty active chain instead of routing the catalog (#1021)', () => {
+    const db = getDb();
+    addKey('groq');
+    // The chain the operator is on holds nothing — a chain created with
+    // "start empty", or one pruned by hand. fallback_config still lists the
+    // whole seeded catalog, which is exactly what must NOT be routed over.
+    db.prepare('DELETE FROM profile_models WHERE profile_id = ?').run(activeProfileId());
+    expect((db.prepare('SELECT COUNT(*) AS n FROM fallback_config').get() as { n: number }).n)
+      .toBeGreaterThan(0);
+
+    let thrown: any;
+    try { resolveRoutingChain('auto'); } catch (err) { thrown = err; }
+    expect(thrown).toBeDefined();
+    expect(thrown.status).toBe(400);
+    expect(thrown.message).toMatch(/no enabled models/i);
+    // The named form of the same chain already behaved this way; both agree now.
+    expect(() => resolveRoutingChain('auto:default')).toThrow(/no enabled models/i);
+  });
+
+  it('routes an active chain whose models are all switched off nowhere either', () => {
+    const db = getDb();
+    addKey('groq');
+    db.prepare('UPDATE profile_models SET enabled = 0 WHERE profile_id = ?').run(activeProfileId());
+
+    expect(() => resolveRoutingChain('auto')).toThrow(/no enabled models/i);
+  });
+
   it('explicit named routing can still use a model disabled only for auto routing', () => {
     const db = getDb();
     db.prepare('DELETE FROM fallback_config').run();

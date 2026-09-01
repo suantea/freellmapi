@@ -13,6 +13,7 @@ const localeDir = path.join(here, '../i18n/locales')
 const source = readFileSync(path.join(here, 'chain-manager.tsx'), 'utf8')
 const fallbackPage = readFileSync(path.join(here, '../pages/FallbackPage.tsx'), 'utf8')
 const app = readFileSync(path.join(here, '../App.tsx'), 'utf8')
+const playground = readFileSync(path.join(here, '../pages/PlaygroundPage.tsx'), 'utf8')
 
 function locale(name: string): Record<string, unknown> {
   return JSON.parse(readFileSync(path.join(localeDir, `${name}.json`), 'utf8'))
@@ -72,5 +73,31 @@ describe('chain manager', () => {
     // uniqueness. Swallowing that 400/409 leaves a button that does nothing.
     expect(source).toContain('onError')
     expect(source).toContain('setCreateError')
+  })
+})
+
+// Switching the active chain has to change what the rest of the dashboard is
+// looking at (#1021). Both of these were silently wrong: the routing table read
+// one unscoped cache entry, so a switch re-rendered the previous chain's rows
+// and a save wrote them into the new chain; and the Playground could only ever
+// send 'auto', so a chain you had just built was untestable from the dashboard.
+describe('chains reach the rest of the dashboard (#1021)', () => {
+  it('scopes the fallback table and its staged edits to the active chain', () => {
+    expect(fallbackPage).toContain("queryKey: ['profiles', 'active']")
+    expect(fallbackPage).toContain("queryKey: ['fallback', 'chain', activeProfileId]")
+    // Staged edits remember which chain they were made against instead of
+    // following whichever one happens to be active at save time.
+    expect(fallbackPage).toMatch(/staged\.profileId === activeProfileId/)
+  })
+
+  it('offers every custom chain in the playground picker as auto:<name>', () => {
+    expect(playground).toContain("queryKey: ['profiles']")
+    // The id has to be derived exactly as the server derives it in
+    // routes/proxy.ts, or the picker offers models /v1/models never listed.
+    expect(playground).toContain('`auto:${c.name.toLowerCase()}`')
+    expect(playground).toContain('...chainOptions,')
+    // A chain is server-picked like plain auto, so the "can't see images" hint
+    // must not fire on one.
+    expect(playground).toContain("!selectedModel.startsWith('auto:')")
   })
 })

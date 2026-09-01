@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vite
 import type { Express } from 'express';
 import { createApp } from '../../app.js';
 import { initDb, getDb, getUnifiedApiKey } from '../../db/index.js';
+import { addToActiveChain } from '../helpers/chain.js';
 import { encrypt } from '../../lib/crypto.js';
 import { setUnifyEnabled, setUnifyOverrides } from '../../services/model-groups.js';
 import { getRoutingStrategy, setRoutingStrategy, type RoutingStrategy } from '../../services/router.js';
@@ -535,6 +536,7 @@ describe('Anthropic-compatible /v1/messages', () => {
       `).run(platform, modelId, displayName);
       const id = Number(info.lastInsertRowid);
       db.prepare('INSERT INTO fallback_config (model_db_id, priority, enabled) VALUES (?, ?, 1)').run(id, priority);
+      addToActiveChain(id, priority);
       return id;
     }
 

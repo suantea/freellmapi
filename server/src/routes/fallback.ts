@@ -118,12 +118,10 @@ fallbackRouter.put('/routing', (req: Request, res: Response) => {
   });
 });
 
-// Get fallback chain (with dynamic penalties)
-fallbackRouter.get('/', (_req: Request, res: Response) => {
-  const db = getDb();
-  const activeProfileId = getActiveProfileId(db);
-  let rows = activeProfileId == null ? [] : db.prepare(`
-    SELECT pm.model_db_id, pm.priority, pm.enabled,
+// The catalog columns every fallback row carries, whichever table supplies the
+// priority/enabled pair. Kept in one place so the profile and the no-profile
+// query can never drift apart.
+const MODEL_COLUMNS = `
            m.platform, m.model_id, m.display_name, m.intelligence_rank,
            m.speed_rank, m.size_label, m.rpm_limit, m.rpd_limit,
            m.tpm_limit, m.tpd_limit, m.context_window,
@@ -131,38 +129,91 @@ fallbackRouter.get('/', (_req: Request, res: Response) => {
            m.key_id, m.endpoint_scope, ak.label AS key_label,
            mo.overrides_json IS NOT NULL AS has_overrides,
            mo.overrides_json,
-           ts.source AS tombstone_source, ts.reason AS tombstone_reason
-    FROM profile_models pm
-    JOIN models m ON m.id = pm.model_db_id
+           ts.source AS tombstone_source, ts.reason AS tombstone_reason`;
+
+const MODEL_JOINS = `
     LEFT JOIN api_keys ak ON ak.id = m.key_id
     LEFT JOIN model_overrides mo ON mo.platform = m.platform AND mo.model_id = m.model_id
     LEFT JOIN catalog_model_tombstones ts
-      ON ts.kind = 'chat' AND ts.platform = m.platform AND ts.model_id = m.model_id
-    WHERE pm.profile_id = ? AND m.enabled = 1
-    ORDER BY pm.priority ASC
-  `).all(activeProfileId) as any[];
+      ON ts.kind = 'chat' AND ts.platform = m.platform AND ts.model_id = m.model_id`;
 
-  if (rows.length === 0) {
-    rows = db.prepare(`
+// The whole catalog seen THROUGH one chain (#1021). A chain is a set of opt-ins,
+// not a copy of the catalog: a model the chain names keeps the priority and the
+// on/off flag stored against it, and a model it does not name is still listed —
+// switched OFF, ranked after everything the chain does name. That is what makes
+// a hand-built ("start empty") chain usable at all: it renders as "the catalog,
+// nothing turned on yet" instead of an empty page, and turning a row on is the
+// PUT below, which writes the row into the chain. Nothing is persisted by GET.
+const PROFILE_CHAIN_SQL = `
+    SELECT m.id AS model_db_id, pm.priority AS chain_priority, pm.enabled AS chain_enabled,
+           fc.priority AS catalog_priority,
+${MODEL_COLUMNS}
+    FROM models m
+    LEFT JOIN profile_models pm ON pm.profile_id = ? AND pm.model_db_id = m.id
+    LEFT JOIN fallback_config fc ON fc.model_db_id = m.id
+${MODEL_JOINS}
+    WHERE m.enabled = 1
+`;
+
+const GLOBAL_CHAIN_SQL = `
     SELECT fc.model_db_id, fc.priority, fc.enabled,
-           m.platform, m.model_id, m.display_name, m.intelligence_rank,
-           m.speed_rank, m.size_label, m.rpm_limit, m.rpd_limit,
-           m.tpm_limit, m.tpd_limit, m.context_window,
-           m.monthly_token_budget, m.supports_vision, m.supports_tools,
-           m.key_id, m.endpoint_scope, ak.label AS key_label,
-           mo.overrides_json IS NOT NULL AS has_overrides,
-           mo.overrides_json,
-           ts.source AS tombstone_source, ts.reason AS tombstone_reason
+${MODEL_COLUMNS}
     FROM fallback_config fc
     JOIN models m ON m.id = fc.model_db_id
-    LEFT JOIN api_keys ak ON ak.id = m.key_id
-    LEFT JOIN model_overrides mo ON mo.platform = m.platform AND mo.model_id = m.model_id
-    LEFT JOIN catalog_model_tombstones ts
-      ON ts.kind = 'chat' AND ts.platform = m.platform AND ts.model_id = m.model_id
+${MODEL_JOINS}
     WHERE m.enabled = 1
     ORDER BY fc.priority ASC
-    `).all() as any[];
+`;
+
+/**
+ * Order a chain-scoped catalog read and give every row a priority.
+ *
+ * Rows the chain names come first, in their stored order and keeping their
+ * stored numbers. Rows it does not name follow in catalog order, numbered after
+ * the last stored one, so the list stays monotonic and stable between reads
+ * without writing anything back.
+ */
+function orderProfileRows(rows: any[]): any[] {
+  const inChain = rows.filter(r => r.chain_priority != null);
+  const rest = rows.filter(r => r.chain_priority == null);
+  inChain.sort((a, b) => a.chain_priority - b.chain_priority || a.model_db_id - b.model_db_id);
+  rest.sort((a, b) =>
+    (a.catalog_priority ?? Number.MAX_SAFE_INTEGER) - (b.catalog_priority ?? Number.MAX_SAFE_INTEGER)
+    || a.model_db_id - b.model_db_id);
+
+  const maxStored = inChain.length ? inChain[inChain.length - 1].chain_priority : 0;
+  return [
+    ...inChain.map(r => ({ ...r, priority: r.chain_priority, enabled: r.chain_enabled })),
+    ...rest.map((r, i) => ({ ...r, priority: maxStored + 1 + i, enabled: 0 })),
+  ];
+}
+
+// Get fallback chain (with dynamic penalties)
+fallbackRouter.get('/', (req: Request, res: Response) => {
+  const db = getDb();
+  // #1047: an explicit ?profile= pins the read to that chain, so a client
+  // caching per-chain can never have "the active chain, whichever that is right
+  // now" written into a specific chain's cache entry. During an activation the
+  // active id changes between the client's two fetches; that race is how chain
+  // B's rows ended up rendered (and nearly saved) under chain A's name.
+  let activeProfileId = getActiveProfileId(db);
+  const requestedRaw = req.query.profile;
+  if (requestedRaw !== undefined) {
+    const requested = Number.parseInt(String(requestedRaw), 10);
+    if (!Number.isInteger(requested) || requested <= 0
+      || !db.prepare('SELECT 1 FROM profiles WHERE id = ?').get(requested)) {
+      res.status(404).json({ error: { message: `no such profile: ${String(requestedRaw)}` } });
+      return;
+    }
+    activeProfileId = requested;
   }
+  // `fallback_config` is the chain only for an install that has no profiles at
+  // all. Once one is active it is authoritative even when it is empty — falling
+  // through to the global table there is what made two different empty chains
+  // show (and save) the same configuration (#1021).
+  const rows = activeProfileId != null
+    ? orderProfileRows(db.prepare(PROFILE_CHAIN_SQL).all(activeProfileId) as any[])
+    : db.prepare(GLOBAL_CHAIN_SQL).all() as any[];
 
   // Count usable keys per platform — enabled AND healthy/unknown status. Unified
   // with /token-usage and the routing scorer (#456) so budget pooling is computed
@@ -253,6 +304,15 @@ const updateSchema = z.array(z.object({
   enabled: z.boolean(),
 }));
 
+/**
+ * Model ids that actually exist, so a stale row in a client's snapshot cannot
+ * turn an INSERT into a foreign-key failure (the old UPDATE simply matched
+ * nothing).
+ */
+function knownModelIds(db: ReturnType<typeof getDb>): Set<number> {
+  return new Set((db.prepare('SELECT id FROM models').all() as { id: number }[]).map(m => m.id));
+}
+
 // Update fallback chain (full replace)
 fallbackRouter.put('/', (req: Request, res: Response) => {
   const parsed = updateSchema.safeParse(req.body);
@@ -263,20 +323,35 @@ fallbackRouter.put('/', (req: Request, res: Response) => {
 
   const db = getDb();
   const activeProfileId = getActiveProfileId(db);
-  const useProfile = activeProfileId != null && Boolean(
-    db.prepare('SELECT 1 FROM profile_models WHERE profile_id = ? LIMIT 1').get(activeProfileId),
-  );
-  const update = useProfile
-    ? db.prepare('UPDATE profile_models SET priority = ?, enabled = ? WHERE profile_id = ? AND model_db_id = ?')
-    : db.prepare('UPDATE fallback_config SET priority = ?, enabled = ? WHERE model_db_id = ?');
 
-  const updateAll = db.transaction(() => {
-    for (const entry of parsed.data) {
-      if (useProfile) update.run(entry.priority, entry.enabled ? 1 : 0, activeProfileId, entry.modelDbId);
-      else update.run(entry.priority, entry.enabled ? 1 : 0, entry.modelDbId);
-    }
-  });
-  updateAll();
+  // Writing to the active chain UPSERTS: the row may not be in the chain yet,
+  // which is the normal state of every model in a hand-built one. The old
+  // UPDATE-only write is why an empty chain could never gain its first model —
+  // and why, having matched nothing, the edit was quietly redirected into the
+  // single global table shared by every chain (#1021).
+  const writeAll = activeProfileId != null
+    ? (() => {
+        const known = knownModelIds(db);
+        const upsert = db.prepare(`
+          INSERT INTO profile_models (profile_id, model_db_id, priority, enabled)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(profile_id, model_db_id)
+          DO UPDATE SET priority = excluded.priority, enabled = excluded.enabled
+        `);
+        return db.transaction(() => {
+          for (const entry of parsed.data) {
+            if (!known.has(entry.modelDbId)) continue;
+            upsert.run(activeProfileId, entry.modelDbId, entry.priority, entry.enabled ? 1 : 0);
+          }
+        });
+      })()
+    : (() => {
+        const update = db.prepare('UPDATE fallback_config SET priority = ?, enabled = ? WHERE model_db_id = ?');
+        return db.transaction(() => {
+          for (const entry of parsed.data) update.run(entry.priority, entry.enabled ? 1 : 0, entry.modelDbId);
+        });
+      })();
+  writeAll();
 
   res.json({ success: true });
 });
@@ -324,9 +399,6 @@ fallbackRouter.post('/sort/:preset', (req: Request, res: Response) => {
   const db = getDb();
   let models: { id: number }[] = [];
   const activeProfileId = getActiveProfileId(db);
-  const useProfile = activeProfileId != null && Boolean(
-    db.prepare('SELECT 1 FROM profile_models WHERE profile_id = ? LIMIT 1').get(activeProfileId),
-  );
 
   if (preset === 'budget') {
     const allModels = db.prepare(`SELECT id, monthly_token_budget, tpd_limit FROM models`).all() as any[];
@@ -341,15 +413,28 @@ fallbackRouter.post('/sort/:preset', (req: Request, res: Response) => {
     models = db.prepare(`SELECT m.id FROM models m ORDER BY ${orderBy}`).all() as { id: number }[];
   }
 
-  const update = useProfile
-    ? db.prepare('UPDATE profile_models SET priority = ? WHERE profile_id = ? AND model_db_id = ?')
-    : db.prepare('UPDATE fallback_config SET priority = ? WHERE model_db_id = ?');
-  const reorder = db.transaction(() => {
-    for (let i = 0; i < models.length; i++) {
-      if (useProfile) update.run(i + 1, activeProfileId, models[i].id);
-      else update.run(i + 1, models[i].id);
-    }
-  });
+  // Same upsert story as the PUT above: a preset sorts the list the dashboard
+  // shows, which is the whole catalog seen through the chain, so a model the
+  // chain has not named yet gets its row written here too — switched OFF, the
+  // state it was displayed in. Sorting must never enable anything; a row
+  // already in the chain keeps whatever flag it had.
+  const reorder = activeProfileId != null
+    ? (() => {
+        const upsert = db.prepare(`
+          INSERT INTO profile_models (profile_id, model_db_id, priority, enabled)
+          VALUES (?, ?, ?, 0)
+          ON CONFLICT(profile_id, model_db_id) DO UPDATE SET priority = excluded.priority
+        `);
+        return db.transaction(() => {
+          for (let i = 0; i < models.length; i++) upsert.run(activeProfileId, models[i].id, i + 1);
+        });
+      })()
+    : (() => {
+        const update = db.prepare('UPDATE fallback_config SET priority = ? WHERE model_db_id = ?');
+        return db.transaction(() => {
+          for (let i = 0; i < models.length; i++) update.run(i + 1, models[i].id);
+        });
+      })();
   reorder();
 
   res.json({ success: true, preset });
