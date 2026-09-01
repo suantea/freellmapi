@@ -20,6 +20,11 @@ export interface NormalizedModel {
   // `supported_parameters` so agents can pick knobs per model.
   platforms: string[];
   supportsTools: boolean;
+  // Dynamic execution status for agents: `ready` (a healthy key can serve
+  // right now), `needsKey` (no enabled key — available=0's breakdown), or
+  // `exhausted` (keys exist but are all rate-limited/invalid/error — a
+  // request would 429 immediately). Derived from api_keys.status.
+  executionStatus: 'ready' | 'needsKey' | 'exhausted';
 }
 
 export interface ModelListing {
@@ -29,6 +34,39 @@ export interface ModelListing {
   // among models that can serve a request right now (null when nothing is
   // connected). Computed over available models regardless of any caller filter.
   autoContextWindow: number | null;
+}
+
+// Aggregate the live health of every candidate key per model row. One query for
+// the whole catalog; per-model status is derived from the statuses of its
+// enabled keys (same matching rule as the `available` expression).
+type KeyStatusRow = { model_db_id: number; status: string };
+
+function keyStatusMap(): Map<number, string[]> {
+  const rows = getDb().prepare(`
+    SELECT m.id AS model_db_id, k.status AS status
+      FROM models m
+      JOIN api_keys k
+        ON k.platform = m.platform
+       AND k.enabled = 1
+       AND (m.key_id IS NULL OR k.id = m.key_id)
+  `).all() as KeyStatusRow[];
+  const byModel = new Map<number, string[]>();
+  for (const row of rows) {
+    const list = byModel.get(row.model_db_id) ?? [];
+    list.push(row.status);
+    byModel.set(row.model_db_id, list);
+  }
+  return byModel;
+}
+
+// `ready` — at least one candidate key is healthy (or still unknown, i.e.
+// never probed yet: probing is lazy, so an unprobed fresh key is treated as
+// usable). `exhausted` — keys exist but every one is rate-limited/invalid/
+// error. Anything else (no keys at all) is `needsKey`.
+function executionStatusFor(statuses: string[] | undefined, available: number): 'ready' | 'needsKey' | 'exhausted' {
+  if (available !== 1 || !statuses || statuses.length === 0) return 'needsKey';
+  if (statuses.some(s => s === 'healthy' || s === 'unknown')) return 'ready';
+  return 'exhausted';
 }
 
 export function buildModelListing(): ModelListing {
@@ -53,19 +91,23 @@ export function buildModelListing(): ModelListing {
       FROM models m
     `).all() as AvailRow[];
     const byId = new Map(rows.map(r => [r.id, r]));
+    const keyStatuses = keyStatusMap();
     allListed = getModelGroups().map(g => {
       const infos = g.members.map(m => byId.get(m.model_db_id)).filter(Boolean) as AvailRow[];
       const ctxs = infos.map(i => i.context_window).filter((c): c is number => c != null);
+      const statuses = g.members.flatMap(m => keyStatuses.get(m.model_db_id) ?? []);
+      const available = infos.some(i => i.available === 1) ? 1 : 0;
       return {
         id: g.canonicalId,
         name: g.groupLabel,
         ownedBy: 'freellmapi',
-        available: infos.some(i => i.available === 1) ? 1 : 0,
+        available,
         enabled: infos.some(i => i.enabled === 1) ? 1 : 0,
         contextWindow: ctxs.length ? Math.max(...ctxs) : null,
         intel: infos.length ? Math.min(...infos.map(i => i.intelligence_rank)) : Number.MAX_SAFE_INTEGER,
         platforms: [...new Set(infos.map(i => i.platform))],
         supportsTools: infos.some(i => i.supports_tools === 1),
+        executionStatus: executionStatusFor(statuses, available),
       };
     });
   } else {
@@ -85,12 +127,14 @@ export function buildModelListing(): ModelListing {
       )
       WHERE rn = 1
     `).all() as (ModelListRow & { intelligence_rank: number; id: number; supports_tools: number })[];
+    const keyStatuses = keyStatusMap();
     allListed = models.map(m => ({
       id: m.model_id, name: m.display_name, ownedBy: m.platform,
       available: m.available, enabled: m.enabled, contextWindow: m.context_window,
       intel: m.intelligence_rank,
       platforms: [m.platform],
       supportsTools: m.supports_tools === 1,
+      executionStatus: executionStatusFor(keyStatuses.get(m.id), m.available),
     }));
   }
 

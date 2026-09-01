@@ -364,6 +364,14 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
       }))
     : [];
 
+  // Machine-readable execution filter: `?execution_status=ready` narrows to
+  // models a request can actually serve RIGHT NOW (healthy, non-exhausted
+  // keys). `ready` implies available; `needsKey`/`exhausted` select the rest.
+  const es = String(req.query.execution_status ?? '').toLowerCase();
+  const esFiltered = es === 'ready' || es === 'needskey' || es === 'exhausted'
+    ? listed.filter(m => m.executionStatus === es)
+    : listed;
+
   res.json({
     object: 'list',
     data: [
@@ -416,6 +424,10 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
         // Non-standard but additive: OpenAI clients ignore unknown fields.
         available: m.available === 1,
         unavailable_reason: m.available === 1 ? null : (m.enabled === 1 ? 'no_key' : 'disabled'),
+        // Machine-readable dynamic status: 'ready' | 'needsKey' | 'exhausted'
+        // (see services/model-listing.ts). Agents can filter with
+        // ?execution_status=ready and route around exhausted models.
+        execution_status: m.executionStatus,
         // OpenRouter's field name; agents use it to pick knobs per model. For
         // a unify group this is the intersection over member platforms — a
         // param is only advertised when every platform the router might pick
