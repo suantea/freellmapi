@@ -16,7 +16,7 @@ import { isOnCooldown, setCooldown } from './ratelimit.js';
 
 /** Platforms with a media adapter below. catalog-sync gates media rows on this
  *  (decoupled from the chat provider registry — e.g. SiliconFlow is media-only). */
-export const MEDIA_PLATFORMS = new Set(['nvidia', 'pollinations', 'cloudflare', 'siliconflow', 'google']);
+export const MEDIA_PLATFORMS = new Set(['nvidia', 'pollinations', 'cloudflare', 'siliconflow', 'google', 'mistral']);
 
 /** Video uses a dedicated optional catalog registry so binaries that predate
  *  this modality ignore the rows instead of accidentally ingesting them as
@@ -29,7 +29,7 @@ const KEYLESS_CAPABLE = new Set(['pollinations']);
 /** Platforms with a speech-to-text adapter below. catalog-sync gates the
  *  catalog's `transcriptionModels` entries on this, the way MEDIA_PLATFORMS
  *  gates the generative-media rows. */
-export const TRANSCRIPTION_PLATFORMS = new Set(['groq', 'cloudflare']);
+export const TRANSCRIPTION_PLATFORMS = new Set(['groq', 'cloudflare', 'mistral']);
 
 // 'transcription' rows live in media_models like the other modalities; they
 // arrive via the catalog's dedicated `transcriptionModels` array (see
@@ -701,6 +701,25 @@ async function callSpeechProvider(
       const rate = parseRate(part?.inlineData?.mimeType) ?? 24000;
       return { audio: wrapPcmAsWav(Buffer.from(b64, 'base64'), rate), contentType: 'audio/wav' };
     }
+    case 'mistral': {
+      // Mistral Voxtral TTS (zero-shot voice cloning): OpenAI-shaped
+      // /v1/audio/speech JSON body, raw audio bytes back. `voice_id` is a
+      // saved voice; `voice` (the OpenAI-client default) is not a Mistral
+      // concept and is dropped unless the operator configured a real id.
+      const fmt = p.format ?? 'mp3';
+      const body: Record<string, unknown> = { model: row.model_id, input: p.input };
+      if (p.voice) body.voice_id = p.voice;
+      if (p.format) body.response_format = p.format;
+      const r = await mediaFetch('https://api.mistral.ai/v1/audio/speech', 'mistral', 'audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+        body: JSON.stringify(body),
+      });
+      return {
+        audio: Buffer.from(await r.arrayBuffer()),
+        contentType: r.headers.get('content-type') ?? contentTypeFor(fmt),
+      };
+    }
     default:
       throw new MediaError(`no speech adapter for platform '${row.platform}'`, 500);
   }
@@ -1037,6 +1056,25 @@ async function callTranscriptionProvider(
         segments: result.segments,
         vtt: typeof result.vtt === 'string' ? result.vtt : undefined,
       };
+    }
+    case 'mistral': {
+      // Mistral Voxtral STT: OpenAI-shaped /v1/audio/transcriptions
+      // multipart form, JSON with `text` back (same shape as groq/custom).
+      const form = new FormData();
+      form.append('file', new Blob([p.file], { type: p.mimeType || 'application/octet-stream' }), p.filename);
+      form.append('model', m.modelId);
+      if (p.language) form.append('language', p.language);
+      if (p.prompt) form.append('prompt', p.prompt);
+      if (p.temperature !== undefined) form.append('temperature', String(p.temperature));
+      form.append('response_format', p.responseFormat === 'verbose_json' ? 'verbose_json' : 'json');
+      const r = await mediaFetch('https://api.mistral.ai/v1/audio/transcriptions', 'mistral', 'transcription', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${key}` },
+        body: form,
+      });
+      const j = (await r.json()) as { text?: string; language?: string; duration?: number; segments?: unknown[] };
+      if (typeof j.text !== 'string') throw new MediaError('mistral returned no transcription text', 502);
+      return { text: j.text, language: j.language, duration: j.duration, segments: j.segments };
     }
     default:
       throw new MediaError(`no transcription adapter for platform '${m.platform}'`, 500);

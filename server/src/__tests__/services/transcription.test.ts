@@ -35,6 +35,10 @@ function seedTranscriptionModels(): void {
     JSON.stringify({ subtitleFormats: ['vtt'], requestStyle: 'json' }));
   insert.run('cloudflare', '@cf/openai/whisper', 'Whisper (Cloudflare Workers AI)', 3,
     JSON.stringify({ subtitleFormats: ['vtt'], requestStyle: 'binary' }));
+  // Mistral Voxtral — OpenAI-compatible /v1/audio/transcriptions; no native
+  // subtitles declared, so vtt is not advertised.
+  insert.run('mistral', 'voxtral-mini-latest', 'Voxtral Mini (Mistral)', 4,
+    JSON.stringify({ maxBytes: 25 * 1024 * 1024 }));
 }
 
 const AUDIO = Buffer.from('RIFFfakewavbytes');
@@ -64,11 +68,12 @@ describe('transcription service', () => {
     vi.restoreAllMocks();
   });
 
-  it('registry: enabled DB rows ordered by priority, groq ahead of cloudflare', () => {
+  it('registry: enabled DB rows ordered by priority, groq ahead of cloudflare and mistral', () => {
     const rows = listMediaModels('transcription');
-    expect(rows.map(m => m.platform)).toEqual(['groq', 'groq', 'cloudflare', 'cloudflare']);
+    expect(rows.map(m => m.platform)).toEqual(['groq', 'groq', 'cloudflare', 'cloudflare', 'mistral']);
     expect(rows.map(m => m.model_id)).toContain('whisper-large-v3-turbo');
     expect(rows.map(m => m.model_id)).toContain('@cf/openai/whisper');
+    expect(rows.map(m => m.model_id)).toContain('voxtral-mini-latest');
   });
 
   it('empty registry (never-synced install) → 503 no_transcription_models, no fetch', async () => {
@@ -245,6 +250,26 @@ describe('transcription service', () => {
     await expect(runTranscription('auto', params({ file: big })))
       .rejects.toMatchObject({ status: 413 });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('mistral Voxtral: multipart form to OpenAI-compatible audio/transcriptions endpoint', async () => {
+    addKey('mistral');
+    const fetchMock = vi.fn(async () => jsonResponse({ text: 'transcribed' }));
+    globalThis.fetch = fetchMock as any;
+
+    const r = await runTranscription('voxtral-mini-latest', params({ language: 'en' }));
+
+    expect(r.platform).toBe('mistral');
+    expect(r.modelId).toBe('voxtral-mini-latest');
+    expect(r.text).toBe('transcribed');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
+    expect(url).toBe('https://api.mistral.ai/v1/audio/transcriptions');
+    expect((init.headers as Record<string, string>).Authorization).toBe('Bearer mistral-test-key');
+    expect((init.headers as Record<string, string>)['Content-Type']).toBeUndefined();
+    const form = init.body as FormData;
+    expect(form.get('model')).toBe('voxtral-mini-latest');
+    expect(form.get('language')).toBe('en');
   });
 
   it('no usable keys → 503-family MediaError, no fetch', async () => {

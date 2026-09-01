@@ -452,6 +452,19 @@ describe('media service', () => {
       expect(voices).toEqual(['shimmer', 'alloy']);
     });
 
+    it('Mistral Voxtral TTS: sends OpenAI-shaped audio/speech body, returns raw bytes', async () => {
+      addMedia('mistral', 'voxtral-mini-tts-2603', 'audio');
+      addKey('mistral');
+      const fetchMock = vi.fn(async () =>
+        new Response(Buffer.from('VOX'), { status: 200, headers: { 'content-type': 'audio/mpeg' } }));
+      globalThis.fetch = fetchMock as any;
+      const r = await runSpeech('voxtral-mini-tts-2603', { input: 'hi', voice: 'my-voice' });
+      expect(r.contentType).toBe('audio/mpeg');
+      expect(r.audio.toString()).toBe('VOX');
+      const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
+      expect(body).toMatchObject({ model: 'voxtral-mini-tts-2603', input: 'hi', voice_id: 'my-voice' });
+    });
+
     it('Gemini TTS: maps OpenAI voices and wraps base64 PCM as WAV', async () => {
       addMedia('google', 'gemini-2.5-flash-preview-tts', 'audio');
       addKey('google');
