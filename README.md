@@ -128,6 +128,9 @@ The full, always-current list lives at **[freellmapi.co/models](https://freellma
 <td align="center"><img src="repo-assets/agents/jetbrains.png" width="44" alt="JetBrains AI"><br/><b>JetBrains AI</b></td>
 <td align="center"><img src="repo-assets/agents/deepseek-harness.png" width="44" alt="DeepSeek Harness"><br/><b>DeepSeek Harness</b></td>
 </tr>
+<tr>
+<td align="center"><img src="repo-assets/agents/atomcode.png" width="44" alt="AtomCode"><br/><b>AtomCode</b></td>
+</tr>
 </table>
 
 <i>… plus any OpenAI-compatible client, Anthropic SDK, Gemini SDK, or Ollama-capable app</i>
@@ -217,6 +220,7 @@ Every generator supports `--dry-run`, creates a timestamped backup before changi
 | Roo / Kilo / Crush | `setup-roo` / `setup-kilo` / `setup-crush` | `/v1` |
 | DeepSeek Harness | `setup-dsh` | `/v1` |
 | MiMo Code | `setup-mimo` | `/v1` |
+| AtomCode | `setup-atomcode` | `/v1` |
 | Cursor | `setup-cursor` guide | public `/v1` URL |
 
 FreeLLMAPI is local-first and single-user by design. Your provider keys stay in your SQLite database, encrypted at rest, and requests go from your machine to the upstream providers you enabled.

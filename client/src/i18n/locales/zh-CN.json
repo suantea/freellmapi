@@ -1027,7 +1027,7 @@
       "mimo": "小米的终端智能体，OpenCode 分支，可接任意 OpenAI 兼容供应商。",
       "cursor": "以 AI 为核心的编辑器，请求走 Cursor 云端，因此需要公网 URL。",
       "generic": "其他任何说 OpenAI 接口的工具，用基础 URL 和密钥手动配置。",
-      "atomcode": "AtomCode is an open-source, terminal-based AI coding agent built in Rust. It connects to any OpenAI-compatible API, reads your codebase, edits files, runs commands, and verifies its work — autonomously."
+      "atomcode": "AtomGit 的终端智能体，用 Rust 编写，可接任意 OpenAI 兼容端点。"
     }
   },
   "update": {

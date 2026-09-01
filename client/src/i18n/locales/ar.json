@@ -1027,7 +1027,7 @@
       "mimo": "وكيل الطرفية من Xiaomi، اشتقاق من OpenCode يقبل أي مزوّد متوافق مع OpenAI.",
       "cursor": "المحرّر القائم على الذكاء الاصطناعي؛ يمرّ عبر سحابة Cursor، لذا يحتاج عنوان URL عامًا.",
       "generic": "أي أداة أخرى تتحدث واجهة OpenAI، تُضبط يدويًا بعنوان أساسي ومفتاح.",
-      "atomcode": "AtomCode is an open-source, terminal-based AI coding agent built in Rust. It connects to any OpenAI-compatible API, reads your codebase, edits files, runs commands, and verifies its work — autonomously."
+      "atomcode": "وكيل الطرفية من AtomGit، مكتوب بلغة Rust، يقبل أي نقطة نهاية متوافقة مع OpenAI."
     }
   },
   "update": {

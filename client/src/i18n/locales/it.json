@@ -1027,7 +1027,7 @@
       "mimo": "L'agente da terminale di Xiaomi, un fork di OpenCode che accetta qualsiasi fornitore compatibile OpenAI.",
       "cursor": "L'editor pensato per l'IA; passa dal cloud di Cursor, quindi serve un URL pubblico.",
       "generic": "Qualsiasi altro strumento che parli l'API di OpenAI, configurato a mano con URL base e chiave.",
-      "atomcode": "AtomCode is an open-source, terminal-based AI coding agent built in Rust. It connects to any OpenAI-compatible API, reads your codebase, edits files, runs commands, and verifies its work — autonomously."
+      "atomcode": "L'agente da terminale di AtomGit, scritto in Rust, che accetta qualsiasi endpoint compatibile OpenAI."
     }
   },
   "update": {
