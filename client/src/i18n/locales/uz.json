@@ -417,6 +417,13 @@
     "saveProxy": "Saqlash",
     "savingProxy": "Saqlanmoqda…",
     "proxyLoadFailed": "Proksi-server sozlamalarini yuklab bo‘lmadi.",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "Maxsus OpenAI-mos modelni qo'shing",
     "addCustomDescription": "Har qanday OpenAI-mos keladigan so'nggi nuqtada suhbat, o'rnatish, tasvir yoki audio modellarni ko'rsating. API kaliti mahalliy serverlar uchun ixtiyoriy.",
     "customType": "Turi",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "So'rov boshlanishidan boshlab ofsetni boshlash · urinish davomiyligi",
     "requestedModel": "So'ralgan model",
     "ttft": "TTFT",
-    "requestsByAgent": "Agent bo'yicha so'rovlar"
+    "requestsByAgent": "Agent bo'yicha so'rovlar",
+    "sortBy": "{column} bo‘yicha saralash",
+    "sortHint": "Saralash faqat yuklangan {count} ta qatorga qo‘llanadi"
   },
   "logs": {
     "title": "Jurnal",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

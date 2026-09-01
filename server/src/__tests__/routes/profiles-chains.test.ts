@@ -33,6 +33,19 @@ function chainSize(profileId: number): number {
     .get(profileId) as { n: number }).n;
 }
 
+/** Enabled catalog models — what GET /api/fallback lists for any chain. */
+function catalogSize(): number {
+  return (getDb().prepare('SELECT COUNT(*) AS n FROM models WHERE enabled = 1')
+    .get() as { n: number }).n;
+}
+
+/** The single global table every chain used to be aliased onto (#1021). */
+function globalConfig(): { model_db_id: number; priority: number; enabled: number }[] {
+  return getDb().prepare(
+    'SELECT model_db_id, priority, enabled FROM fallback_config ORDER BY model_db_id',
+  ).all() as { model_db_id: number; priority: number; enabled: number }[];
+}
+
 function autoInclude(profileId: number): number {
   return (getDb().prepare('SELECT auto_include_new_models AS flag FROM profiles WHERE id = ?')
     .get(profileId) as { flag: number }).flag;
@@ -130,6 +143,89 @@ describe('named fallback chains', () => {
     addCatalogModel('after-opt-out');
     ensureAllModelsInProfiles(getDb());
     expect(chainSize(chain.id)).toBe(0);
+  });
+
+  it('shows an empty active chain as the catalog with nothing turned on (#1021)', async () => {
+    const empty = (await request('POST', '/api/profiles', { name: 'blank', empty: true })).body;
+    expect((await request('POST', '/api/profiles/active', { profileId: empty.id })).status).toBe(200);
+
+    const { status, body } = await request('GET', '/api/fallback');
+    expect(status).toBe(200);
+    // Every catalog model is listed — an empty chain is an empty set of
+    // opt-ins, not an empty page — and not one of them is enabled. Before the
+    // fix the zero-row chain fell through to the global table and displayed the
+    // whole catalog switched ON.
+    expect(body.length).toBe(catalogSize());
+    expect(body.every((row: { enabled: boolean }) => row.enabled === false)).toBe(true);
+    // Priorities stay monotonic so the table renders in a stable order.
+    for (let i = 1; i < body.length; i++) {
+      expect(body[i].priority).toBeGreaterThanOrEqual(body[i - 1].priority);
+    }
+    // Reading the chain never writes to it.
+    expect(chainSize(empty.id)).toBe(0);
+  });
+
+  it('fills an empty chain on save without touching the global table (#1021)', async () => {
+    const chain = (await request('POST', '/api/profiles', { name: 'built', empty: true })).body;
+    await request('POST', '/api/profiles/active', { profileId: chain.id });
+
+    const before = globalConfig();
+    const listed = (await request('GET', '/api/fallback')).body as { modelDbId: number }[];
+    const picked = [listed[0].modelDbId, listed[1].modelDbId];
+    const saved = await request('PUT', '/api/fallback', listed.map((row, index) => ({
+      modelDbId: row.modelDbId,
+      priority: index + 1,
+      enabled: picked.includes(row.modelDbId),
+    })));
+    expect(saved.status).toBe(200);
+
+    // The two picks landed in THIS chain, enabled...
+    const enabled = getDb().prepare(
+      'SELECT model_db_id FROM profile_models WHERE profile_id = ? AND enabled = 1 ORDER BY priority',
+    ).all(chain.id) as { model_db_id: number }[];
+    expect(enabled.map(r => r.model_db_id)).toEqual(picked);
+    // ...and the global fallback_config every chain used to share is untouched.
+    expect(globalConfig()).toEqual(before);
+  });
+
+  it('keeps two empty chains from sharing one configuration (#1021)', async () => {
+    const a = (await request('POST', '/api/profiles', { name: 'chain-a', empty: true })).body;
+    const b = (await request('POST', '/api/profiles', { name: 'chain-b', empty: true })).body;
+
+    await request('POST', '/api/profiles/active', { profileId: a.id });
+    const listed = (await request('GET', '/api/fallback')).body as { modelDbId: number }[];
+    await request('PUT', '/api/fallback', listed.map((row, index) => ({
+      modelDbId: row.modelDbId,
+      priority: index + 1,
+      enabled: index < 2,
+    })));
+
+    await request('POST', '/api/profiles/active', { profileId: b.id });
+    const seenFromB = (await request('GET', '/api/fallback')).body as { enabled: boolean }[];
+    expect(seenFromB.every(row => row.enabled === false)).toBe(true);
+
+    // And switching back still shows A's own picks.
+    await request('POST', '/api/profiles/active', { profileId: a.id });
+    const seenFromA = (await request('GET', '/api/fallback')).body as { enabled: boolean }[];
+    expect(seenFromA.filter(row => row.enabled).length).toBe(2);
+  });
+
+  it('sorts an empty chain into the chain, not the global table (#1021)', async () => {
+    const chain = (await request('POST', '/api/profiles', { name: 'sorted', empty: true })).body;
+    await request('POST', '/api/profiles/active', { profileId: chain.id });
+
+    const before = globalConfig();
+    const sorted = await request('POST', '/api/fallback/sort/speed');
+    expect(sorted.status).toBe(200);
+
+    const rows = getDb().prepare(
+      'SELECT model_db_id, priority, enabled FROM profile_models WHERE profile_id = ? ORDER BY priority',
+    ).all(chain.id) as { model_db_id: number; priority: number; enabled: number }[];
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.map(r => r.priority)).toEqual(rows.map((_, i) => i + 1));
+    // A sort orders the list; it must never switch models on behind the operator.
+    expect(rows.every(r => r.enabled === 0)).toBe(true);
+    expect(globalConfig()).toEqual(before);
   });
 
   it('reports the flag on the chain listing so the dashboard can show it', async () => {

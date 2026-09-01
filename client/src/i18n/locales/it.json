@@ -417,6 +417,13 @@
     "saveProxy": "Salva",
     "savingProxy": "Salvataggio…",
     "proxyLoadFailed": "Impossibile caricare le impostazioni del proxy.",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "Aggiungi un modello personalizzato compatibile con OpenAI",
     "addCustomDescription": "Punta a qualsiasi endpoint compatibile con OpenAI: llama.cpp, LM Studio, vLLM, un Ollama locale o un gateway remoto. Elenca un modello per riga (o separato da virgole) per aggiungerne diversi in una volta; condividono tutti lo stesso endpoint. La chiave API è opzionale (la maggior parte dei server locali non ne necessita).",
     "customType": "Tipo",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "Offset dall'inizio della richiesta · durata del tentativo",
     "requestedModel": "Modello richiesto",
     "ttft": "TTFT",
-    "requestsByAgent": "Richieste per agente"
+    "requestsByAgent": "Richieste per agente",
+    "sortBy": "Ordina per {column}",
+    "sortHint": "L'ordinamento si applica alle {count} righe caricate"
   },
   "logs": {
     "title": "Log",
@@ -1019,7 +1028,8 @@
       "dsh": "L'imbracatura di DeepSeek, che tiene ogni fornitore come una rotta commutabile.",
       "mimo": "L'agente da terminale di Xiaomi, un fork di OpenCode che accetta qualsiasi fornitore compatibile OpenAI.",
       "cursor": "L'editor pensato per l'IA; passa dal cloud di Cursor, quindi serve un URL pubblico.",
-      "generic": "Qualsiasi altro strumento che parli l'API di OpenAI, configurato a mano con URL base e chiave."
+      "generic": "Qualsiasi altro strumento che parli l'API di OpenAI, configurato a mano con URL base e chiave.",
+      "atomcode": "L'agente da terminale di AtomGit, scritto in Rust, che accetta qualsiasi endpoint compatibile OpenAI."
     }
   },
   "update": {

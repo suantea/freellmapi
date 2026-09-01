@@ -417,6 +417,13 @@
     "saveProxy": "שמור",
     "savingProxy": "מצילה...",
     "proxyLoadFailed": "לא הצלחתי לטעון את הגדרות הפרוקסי.",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "הוסף מודל מותאם אישית לתואם OpenAI",
     "addCustomDescription": "צ'אט נקודתי, הטמעה, מודלים של תמונה או אודיו בכל נקודת קצה תואמת OpenAI. מפתח API הוא אופציונלי לשרתים מקומיים.",
     "customType": "סוג",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "התחל הזזה מהבקשה · משך הניסיון",
     "requestedModel": "מודל מבוקש",
     "ttft": "TTFT",
-    "requestsByAgent": "בקשות לפי סוכן"
+    "requestsByAgent": "בקשות לפי סוכן",
+    "sortBy": "מיון לפי {column}",
+    "sortHint": "המיון חל על {count} השורות שנטענו בלבד"
   },
   "logs": {
     "title": "יומן",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

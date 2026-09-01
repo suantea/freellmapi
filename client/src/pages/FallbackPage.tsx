@@ -21,6 +21,7 @@ import { useI18n } from '@/i18n'
 import { apiFetch } from '@/lib/api'
 import {
   buildGroups,
+  groupMatchesQuery,
   groupMaxContext,
   type FallbackEntry,
   type ModelGroupRow,
@@ -93,7 +94,10 @@ export default function FallbackPage() {
   const { t } = useI18n()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [localEntries, setLocalEntries] = useState<FallbackEntry[] | null>(null)
+  // Staged edits carry the chain they were made against, so switching chains
+  // in the manager below discards them instead of letting one chain's unsaved
+  // rows be saved into another (#1021).
+  const [staged, setStaged] = useState<{ profileId: number | null; entries: FallbackEntry[] } | null>(null)
   const [optionsCollapsed, setOptionsCollapsed] = useState(readOptionsCollapsed)
 
   // Catalog search + filter state (#343).
@@ -102,10 +106,38 @@ export default function FallbackPage() {
   const [filterTools, setFilterTools] = useState(false)
   const [minContext, setMinContext] = useState(0)
 
-  const { data: entries = [], isLoading } = useQuery<FallbackEntry[]>({
-    queryKey: ['fallback'],
-    queryFn: () => apiFetch('/api/fallback'),
+  // The table edits the ACTIVE chain, so it is part of this query's identity
+  // (#1021): keyed on 'fallback' alone, switching chains in the manager below
+  // re-rendered the previous chain's rows from cache, and a save then wrote
+  // them into the newly activated one. Held back until the active chain is
+  // known so the first paint is already the right chain's.
+  const { data: active, isPending: activePending } = useQuery<{ activeProfileId: number | null }>({
+    queryKey: ['profiles', 'active'],
+    queryFn: () => apiFetch('/api/profiles/active'),
   })
+  const activeProfileId = active?.activeProfileId ?? null
+
+  const { data: entries = [], isLoading: entriesLoading } = useQuery<FallbackEntry[]>({
+    queryKey: ['fallback', 'chain', activeProfileId],
+    // The chain id rides in the request itself (#1047): keyed-but-unpinned, a
+    // refetch racing an activation fetched "whichever chain is active by now"
+    // into the OLD chain's cache entry, and switching A→B→A then rendered (and
+    // could save) B's rows under A's name until a hard refresh.
+    queryFn: () => apiFetch(activeProfileId != null ? `/api/fallback?profile=${activeProfileId}` : '/api/fallback'),
+    enabled: !activePending,
+  })
+  const isLoading = activePending || entriesLoading
+
+  // Staged edits are DISCARDED when the active chain changes, not just hidden
+  // (#1047): merely masking them meant switching A→B→A resurrected A's stale
+  // unsaved rows over freshly fetched data, with only a refresh clearing them.
+  useEffect(() => {
+    setStaged(prev => (prev && prev.profileId !== activeProfileId ? null : prev))
+  }, [activeProfileId])
+
+  const localEntries = staged && staged.profileId === activeProfileId ? staged.entries : null
+  const setLocalEntries = (entries: FallbackEntry[] | null) =>
+    setStaged(entries === null ? null : { profileId: activeProfileId, entries })
 
   const { data: tokenUsage } = useQuery<TokenUsageData>({
     queryKey: ['fallback', 'token-usage'],
@@ -154,15 +186,27 @@ export default function FallbackPage() {
   const keySelection: KeySelectionStrategy = routing?.keySelectionStrategy ?? 'auto'
   const isManual = strategy === 'priority'
 
-  // Merge fallback metadata with live scores, keyed by model.
-  const scoreById = new Map((routing?.scores ?? []).map(s => [s.modelDbId, s]))
-  const allEntries = localEntries ?? entries
-  const configured = allEntries.filter(e => e.keyCount > 0)
-  const unconfiguredPlatforms = [...new Set(allEntries.filter(e => e.keyCount === 0).map(e => e.platform))]
+  // Merge fallback metadata with live scores, keyed by model. Memoized (#1047):
+  // recomputing these over the whole catalog on every render — and the page
+  // renders once per landing query plus once per 15s poll — was a large part of
+  // the "absurdly slow" feel on big catalogs.
+  const scoreById = useMemo(
+    () => new Map((routing?.scores ?? []).map(s => [s.modelDbId, s])),
+    [routing?.scores],
+  )
+  const allEntries = useMemo(() => localEntries ?? entries, [localEntries, entries])
+  const configured = useMemo(() => allEntries.filter(e => e.keyCount > 0), [allEntries])
+  const unconfiguredPlatforms = useMemo(
+    () => [...new Set(allEntries.filter(e => e.keyCount === 0).map(e => e.platform))],
+    [allEntries],
+  )
 
   // Entry fields win on overlap: the routing snapshot also carries `enabled`
   // (and identity fields), which would otherwise clobber unsaved local toggles.
-  const rows: Row[] = configured.map(e => ({ ...(scoreById.get(e.modelDbId) ?? {}), ...e }))
+  const rows: Row[] = useMemo(
+    () => configured.map(e => ({ ...(scoreById.get(e.modelDbId) ?? {}), ...e })),
+    [configured, scoreById],
+  )
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -185,31 +229,22 @@ export default function FallbackPage() {
 
   // ── Model unification: a model served by several providers is always shown as
   // one logical row that links to its own page (the on/off toggle was removed). ─
-  const orderedGroups = buildGroups(rows, isManual)
+  const orderedGroups = useMemo(() => buildGroups(rows, isManual), [rows, isManual])
 
   // Catalog search + filters (#343). Filtering operates on whole logical-model
   // groups; rank stays the model's position in the full chain so the numbers
   // don't renumber as you filter. Drag-to-reorder is only offered over the full,
   // unfiltered manual chain (reordering a filtered subset would be ambiguous).
-  const rankByKey = new Map(orderedGroups.map((g, i) => [g.key, i + 1]))
+  const rankByKey = useMemo(() => new Map(orderedGroups.map((g, i) => [g.key, i + 1])), [orderedGroups])
   const query = search.trim().toLowerCase()
   const filtersActive = query !== '' || filterVision || filterTools || minContext > 0
-  const visibleGroups = orderedGroups.filter(g => {
+  const visibleGroups = useMemo(() => orderedGroups.filter(g => {
     if (filterVision && !g.members.some(m => m.supportsVision)) return false
     if (filterTools && !g.members.some(m => m.supportsTools)) return false
     if (minContext > 0 && groupMaxContext(g.members) < minContext) return false
-    if (query) {
-      const hay = [
-        g.label,
-        g.members[0].canonicalId ?? '',
-        ...g.members.map(m => m.platform),
-        ...g.members.map(m => m.displayName),
-        ...g.members.map(m => m.modelId),
-      ].join(' ').toLowerCase()
-      if (!hay.includes(query)) return false
-    }
+    if (query && !groupMatchesQuery(g, query)) return false
     return true
-  })
+  }), [orderedGroups, filterVision, filterTools, minContext, query])
   const draggable = isManual && !filtersActive
 
   // Progressive rendering: grow the row budget whenever the sentinel below the
