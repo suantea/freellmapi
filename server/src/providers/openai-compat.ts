@@ -138,12 +138,18 @@ export class OpenAICompatProvider extends BaseProvider {
     return { temperature: options?.temperature, topP: options?.top_p };
   }
 
-  /** Mistral's OpenAI-compatible endpoint is strict about unknown nested fields
-   * and returns 422 for provider-private replay fields that other gateways
-   * ignore. Keep the OpenAI wire shape, but strip our internal reasoning /
-   * thought-signature extensions before sending to Mistral. */
+  /**
+   * OpenAI-compatible endpoints that are strict about unknown nested fields:
+   * Mistral returns 422 for provider-private replay fields, Groq rejects
+   * assistant `reasoning_content` with 400 (verified in production, #1070).
+   * Cerebras is likely equally strict but not yet confirmed — add it here
+   * once verified. Other gateways ignore the fields, so keep the OpenAI wire
+   * shape but strip our internal reasoning / thought-signature extensions
+   * before sending to these platforms.
+   */
+  private static readonly STRICT_PLATFORMS = new Set(['mistral', 'groq']);
   private messagesForPlatform(messages: ChatMessage[]): ChatMessage[] {
-    if (this.platform !== 'mistral') return messages;
+    if (!OpenAICompatProvider.STRICT_PLATFORMS.has(this.platform)) return messages;
 
     return messages.map((m) => {
       if (m.role === 'assistant') {
