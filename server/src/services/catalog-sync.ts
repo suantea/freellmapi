@@ -846,11 +846,18 @@ export function startCatalogSync(scheduler: Scheduler): void {
     return;
   }
   reapplyCachedCatalog();
+  // If this is a fresh install (no transcription rows in the DB) we skip the
+  // BOOT_DELAY entirely so the STT / TTS / image / video tabs don't show
+  // "no models yet" for the first 10 seconds after boot. Subsequent boots
+  // (cached catalog applied) are unaffected because the DB already has rows.
+  const hasTranscription = getDb().prepare(
+    "SELECT 1 FROM media_models WHERE modality = 'transcription' LIMIT 1",
+  ).get();
   const run = () => {
     void refreshLicenseStatus();
     void syncCatalog();
   };
-  cancelBootTimer = scheduler.after(BOOT_DELAY_MS, run);
+  cancelBootTimer = scheduler.after(hasTranscription ? BOOT_DELAY_MS : 500, run);
   cancelInterval = scheduler.every(SYNC_INTERVAL_MS, run);
   console.log(`[catalog-sync] polling ${catalogBaseUrl()} every ${SYNC_INTERVAL_MS / 3600000}h`);
 }
