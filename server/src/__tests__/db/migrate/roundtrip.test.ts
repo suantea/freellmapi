@@ -32,6 +32,7 @@ const SERVER_LOGS_FILENAME = '20260823_000001_server_logs.ts';
 const BACKUPS_TABLE_FILENAME = '20260823_000002_backups_table.ts';
 const ATTEMPT_KEY_LABEL_FILENAME = '20260823_000003_attempt_key_label.ts';
 const PROFILE_AUTO_INCLUDE_FILENAME = '20260823_000004_profile_auto_include.ts';
+const RESPONSE_CACHE_FILENAME = '20260901_000002_response_cache.ts';
 
 interface SchemaRow {
   type: string;
@@ -110,6 +111,7 @@ describe('migration round trip', () => {
         BACKUPS_TABLE_FILENAME,
         ATTEMPT_KEY_LABEL_FILENAME,
         PROFILE_AUTO_INCLUDE_FILENAME,
+        RESPONSE_CACHE_FILENAME,
       ]);
     } finally {
       db.close();

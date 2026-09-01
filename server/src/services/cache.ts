@@ -29,7 +29,7 @@
 //     throwing in the proxy hot path (mirrors services/ratelimit.ts).
 
 import crypto from 'crypto';
-import { getSetting } from '../db/index.js';
+import { getSetting, getDb } from '../db/index.js';
 import type { ChatMessage } from '@freellmapi/shared/types.js';
 
 // ── Config (read on each call so tests and the dashboard can toggle live) ──
@@ -299,11 +299,17 @@ export function getCachedResponse(cacheKey: string, now = Date.now()): CachedRes
  * Enforces the entry cap by evicting the least-recently-used entries. Best-
  * effort: an unserializable body is skipped so caching can never break a
  * request that already succeeded.
+ *
+ * SQLite persistence: the entry is also written through to the response_cache
+ * table so it survives a restart (the daily quota-reset re-run pattern). The
+ * write is best-effort and never throws on the proxy hot path — a DB failure
+ * degrades to in-memory-only, exactly as before.
  */
 export function storeCachedResponse(cacheKey: string, input: StoreInput, now = Date.now()): void {
   // Reject bodies that can't be JSON-serialized; a hit must be replayable.
+  let bodyJson: string;
   try {
-    JSON.stringify(input.body);
+    bodyJson = JSON.stringify(input.body);
   } catch {
     return;
   }
@@ -329,6 +335,96 @@ export function storeCachedResponse(cacheKey: string, input: StoreInput, now = D
     const oldest = store.keys().next().value as string | undefined;
     if (oldest === undefined) break;
     store.delete(oldest);
+  }
+
+  // Write-through to SQLite (best-effort). hit_count is stored at its current
+  // in-memory value so a restart restores the rolling stat from the last write;
+  // reads bump only the in-memory entry to keep the hot path write-free.
+  try {
+    getDb().prepare(
+      `INSERT INTO response_cache
+         (cache_key, body_json, platform, model_id, key_id, prompt_tokens, completion_tokens, hit_count, created_at_ms, last_hit_at_ms, expires_at_ms)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(cache_key) DO UPDATE SET
+         body_json = excluded.body_json,
+         platform = excluded.platform,
+         model_id = excluded.model_id,
+         key_id = excluded.key_id,
+         prompt_tokens = excluded.prompt_tokens,
+         completion_tokens = excluded.completion_tokens,
+         hit_count = excluded.hit_count,
+         created_at_ms = excluded.created_at_ms,
+         last_hit_at_ms = excluded.last_hit_at_ms,
+         expires_at_ms = excluded.expires_at_ms`,
+    ).run(
+      cacheKey,
+      bodyJson,
+      input.platform,
+      input.modelId,
+      input.keyId,
+      input.promptTokens,
+      input.completionTokens,
+      0,
+      now,
+      null,
+      now + cacheTtlMs(),
+    );
+  } catch {
+    // best-effort: memory-only on DB failure
+  }
+}
+
+/**
+ * Reload unexpired entries from SQLite into the in-memory LRU, bounded by
+ * RESPONSE_CACHE_MAX_ENTRIES. Called once at startup (after initDb); expired
+ * rows are purged opportunistically. Best-effort: any DB error leaves the
+ * cache empty (memory-only), matching the pre-persistence behavior.
+ */
+export function loadCacheFromDb(now = Date.now()): void {
+  try {
+    const db = getDb();
+    // Purge expired rows lazily on startup so the table doesn't accumulate
+    // dead entries between restarts.
+    db.prepare('DELETE FROM response_cache WHERE expires_at_ms <= ?').run(now);
+    const rows = db.prepare(
+      `SELECT cache_key, body_json, platform, model_id, key_id, prompt_tokens, completion_tokens, hit_count, created_at_ms, last_hit_at_ms
+         FROM response_cache
+        ORDER BY created_at_ms ASC`,
+    ).all() as Array<{
+      cache_key: string;
+      body_json: string;
+      platform: string;
+      model_id: string;
+      key_id: number | null;
+      prompt_tokens: number;
+      completion_tokens: number;
+      hit_count: number;
+      created_at_ms: number;
+      last_hit_at_ms: number | null;
+    }>;
+    const cap = cacheMaxEntries();
+    // Newest wins: drop rows past the cap from the FRONT (oldest first).
+    const keep = rows.length > cap ? rows.slice(rows.length - cap) : rows;
+    for (const row of keep) {
+      if (now - row.created_at_ms > cacheTtlMs()) continue; // aged between purge and read
+      try {
+        store.set(row.cache_key, {
+          body: JSON.parse(row.body_json),
+          platform: row.platform,
+          modelId: row.model_id,
+          keyId: row.key_id,
+          promptTokens: row.prompt_tokens,
+          completionTokens: row.completion_tokens,
+          hitCount: row.hit_count,
+          createdAtMs: row.created_at_ms,
+          lastHitAtMs: row.last_hit_at_ms,
+        });
+      } catch {
+        // corrupt body — skip; it will be overwritten on the next store
+      }
+    }
+  } catch {
+    // best-effort: DB unavailable at startup → memory-only cache
   }
 }
 

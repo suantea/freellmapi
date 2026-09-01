@@ -6,6 +6,7 @@ import {
   storeCachedResponse,
   getCacheStats,
   clearCache,
+  loadCacheFromDb,
   isCacheableTemperature,
   parseCacheDirective,
   cacheActive,
@@ -368,6 +369,67 @@ describe('response cache', () => {
       expect(isCacheEnabled()).toBe(false); // explicit off beats env on
       setSetting(CACHE_ENABLED_SETTING, ''); // cleared → fall back to env
       expect(isCacheEnabled()).toBe(true);
+    });
+  });
+
+  describe('SQLite persistence', () => {
+    it('survives a restart: store → reload from DB → hit', () => {
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'persisted')] });
+      store(key, 'persisted answer');
+      expect(getCacheStats().entries).toBe(1);
+
+      // Simulate a restart: drop the in-memory LRU, then reload from SQLite.
+      clearCache();
+      expect(getCacheStats().entries).toBe(0);
+      loadCacheFromDb();
+
+      const hit = getCachedResponse(key);
+      expect(hit).not.toBeNull();
+      expect((hit!.body as any).choices[0].message.content).toBe('persisted answer');
+      expect(hit!.platform).toBe('groq');
+      expect(hit!.promptTokens).toBe(10);
+    });
+
+    it('restores the rolling hit count from the last store', () => {
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'counted')] });
+      store(key, 'answer');
+      getCachedResponse(key);
+      getCachedResponse(key);
+      expect(getCacheStats().totalHits).toBe(2);
+
+      clearCache();
+      loadCacheFromDb();
+      // hit_count persisted at the last store (0); a fresh read bumps to 1.
+      getCachedResponse(key);
+      expect(getCacheStats().totalHits).toBe(1);
+    });
+
+    it('does not reload entries expired before startup', () => {
+      process.env.RESPONSE_CACHE_TTL_SECONDS = '60';
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'stale-persisted')] });
+      const t0 = 1_000_000;
+      store(key, 'stale', t0);
+
+      clearCache();
+      // 10 minutes later (past the 60s TTL): startup purge drops the row.
+      loadCacheFromDb(t0 + 600_000);
+      expect(getCachedResponse(key, t0 + 600_000)).toBeNull();
+      expect(getCacheStats().entries).toBe(0);
+    });
+
+    it('respects RESPONSE_CACHE_MAX_ENTRIES when reloading', () => {
+      process.env.RESPONSE_CACHE_MAX_ENTRIES = '2';
+      const base = 1_700_000_000_000;
+      const keys = ['p1', 'p2', 'p3'].map(t =>
+        computeCacheKey({ model: 'auto', messages: [msg('user', t)] }));
+      keys.forEach((k, i) => store(k, `v${i}`, base + i)); // 3 rows in DB
+
+      clearCache();
+      loadCacheFromDb(base + 10);
+      // Newest two win; the oldest row is dropped past the cap.
+      expect(getCacheStats().entries).toBe(2);
+      expect(getCachedResponse(keys[0]!, base + 10)).toBeNull();
+      expect(getCachedResponse(keys[2]!, base + 10)).not.toBeNull();
     });
   });
 });
