@@ -192,6 +192,11 @@ function rememberReasoning(sessionKey: string | undefined, modelKey: string, rea
 // The remembered trace for this session, or undefined when there is none, it
 // expired, or it came from a different model than the one about to be called.
 // An expired entry is dropped on read rather than left for the size sweep.
+export function clearReasoningMemory() {
+  reasoningMemory.clear();
+  stickySessionMap.clear();
+}
+
 function rememberedReasoningFor(sessionKey: string, modelKey: string): string | undefined {
   if (!sessionKey) return undefined;
   const entry = reasoningMemory.get(sessionKey);
