@@ -2352,19 +2352,20 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
           const estimatedPromptTokens = estimatedInputTokens + injectedHandoffTokens + imageCount * IMAGE_TOKEN_ESTIMATE;
           if (usageChunk) {
             writeChunk(usageChunk);
-          } else if (parsed.data.stream_options?.include_usage) {
-            // Some OpenAI-compatible upstreams (e.g. OpenCode Zen) never echo
-            // a final usage frame even when stream_options.include_usage is
-            // requested. Strict clients (Hermes, Cline, Continue) treat a
+          } else {
+            // Some OpenAI-compatible upstreams never echo a final usage
+            // frame — neither when stream_options.include_usage is requested
+            // nor otherwise. Strict clients (Hermes, Cline, Continue) treat a
             // missing usage block as "no accounting happened" and skip
-            // per-call token/cost/billing_provider writes entirely.
+            // per-call token/cost/billing_provider writes entirely; agents
+            // that read usage for context-window display (e.g. #1084) show 0.
             //
-            // Injected ONLY when the client asked for usage via
-            // stream_options.include_usage AND the upstream never sent one;
-            // the numbers are this gateway's own chars/4 estimate (the same
-            // total the accounting below records), never the upstream's
-            // accounting, so the block is flagged `estimated: true` rather
-            // than passed off as real counts.
+            // So inject the estimate whenever the upstream never sent one —
+            // regardless of whether the client asked for include_usage. The
+            // numbers are this gateway's own chars/4 estimate (the same total
+            // the accounting below records), never the upstream's accounting,
+            // so the block is flagged `estimated: true` rather than passed
+            // off as real counts.
             const completionTokens = totalOutputTokens;
             writeChunk({
               id: lastMeta.id ?? `chatcmpl-${Date.now()}`,
@@ -2596,6 +2597,20 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
         // Normalize array-shaped message.content to a string on the way out (#166).
         const outboundBody = sanitizeResponse(normalizeOutboundContent(result));
         res.setHeader('X-FreeLLM-Cache', cacheKey ? 'MISS' : 'OFF');
+
+        // #1084: agents show zero context usage when the upstream omits
+        // `usage` (many free-tier providers do). Fall back to the same
+        // chars/4 estimate used for accounting above, flagged `estimated:
+        // true` so a cost-accounting client can tell it apart from the
+        // upstream's real counts.
+        if (!outboundBody.usage) {
+          outboundBody.usage = {
+            prompt_tokens: promptTokens,
+            completion_tokens: completionTokens,
+            total_tokens: totalTokens,
+            estimated: true,
+          };
+        }
 
         // Persist the completed response for Idempotency-Key replays. Only
         // non-streaming requests with a valid key reach here; a truncated turn
