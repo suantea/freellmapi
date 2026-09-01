@@ -712,7 +712,11 @@
     "attemptTimingHint": "Início deslocado a partir do início do pedido · Duração da tentativa",
     "requestedModel": "Modelo solicitado",
     "ttft": "TTFT",
-    "requestsByAgent": "Pedidos por agente"
+    "requestsByAgent": "Pedidos por agente",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "Registos",

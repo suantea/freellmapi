@@ -712,7 +712,11 @@
     "attemptTimingHint": "自请求开始的偏移 · 尝试耗时",
     "requestedModel": "请求的模型",
     "ttft": "首个词元用时",
-    "requestsByAgent": "按智能体统计的请求"
+    "requestsByAgent": "按智能体统计的请求",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "日志",

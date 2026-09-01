@@ -712,7 +712,11 @@
     "attemptTimingHint": "Bẹrẹ aiṣedeede lati ibere ibere · Iye akoko igbiyanju",
     "requestedModel": "Awoṣe ti a beere",
     "ttft": "TTFT",
-    "requestsByAgent": "Awọn ibeere nipasẹ aṣoju"
+    "requestsByAgent": "Awọn ibeere nipasẹ aṣoju",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "Àkọọlẹ",

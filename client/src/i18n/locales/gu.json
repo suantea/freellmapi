@@ -712,7 +712,11 @@
     "attemptTimingHint": "વિનંતીથી ઓફસેટ શરૂ કરો પ્રારંભ · પ્રયાસ અવધિ",
     "requestedModel": "વિનંતી કરેલ મોડેલ",
     "ttft": "TTFT",
-    "requestsByAgent": "એજન્ટ પ્રમાણે વિનંતીઓ"
+    "requestsByAgent": "એજન્ટ પ્રમાણે વિનંતીઓ",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "લોગ",

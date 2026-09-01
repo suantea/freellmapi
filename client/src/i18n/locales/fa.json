@@ -712,7 +712,11 @@
     "attemptTimingHint": "شروع افست از شروع درخواست · مدت زمان تلاش",
     "requestedModel": "مدل درخواستی",
     "ttft": "TTFT",
-    "requestsByAgent": "درخواستها بر اساس عامل"
+    "requestsByAgent": "درخواستها بر اساس عامل",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "لاگ‌ها",

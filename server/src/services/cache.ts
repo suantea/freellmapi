@@ -263,6 +263,14 @@ interface CacheEntry {
 // at the end (delete + set), so eviction from the front drops the coldest entry.
 const store = new Map<string, CacheEntry>();
 
+// Process-lifetime miss counter. The dashboard's hit-rate needs a denominator,
+// and entries alone can't provide it: a cache that is 99% empty is 0% useful,
+// and a restarted (flushed) store would otherwise read as a 100% hit rate.
+// Incremented on every getCachedResponse() null return — i.e. only when a
+// request actually looked up the cache (cacheKey was computed), never for
+// requests that bypassed it.
+let totalMisses = 0;
+
 /**
  * Look up a cached completion. Returns null on a miss or when the entry has aged
  * past the TTL (expired entries are deleted lazily on read). A hit bumps the
@@ -270,10 +278,14 @@ const store = new Map<string, CacheEntry>();
  */
 export function getCachedResponse(cacheKey: string, now = Date.now()): CachedResponse | null {
   const entry = store.get(cacheKey);
-  if (!entry) return null;
+  if (!entry) {
+    totalMisses += 1;
+    return null;
+  }
 
   if (now - entry.createdAtMs > cacheTtlMs()) {
     store.delete(cacheKey);
+    totalMisses += 1;
     return null;
   }
 
@@ -337,6 +349,11 @@ export function storeCachedResponse(cacheKey: string, input: StoreInput, now = D
 export interface CacheStats {
   entries: number;
   totalHits: number;
+  totalMisses: number;
+  /** 0..1 share of cache lookups that hit (empty store → 0). */
+  hitRate: number;
+  /** Hits ARE the savings: each one avoided a full provider round-trip. */
+  estimatedRequestsSaved: number;
   savedPromptTokens: number;
   savedCompletionTokens: number;
 }
@@ -355,7 +372,16 @@ export function getCacheStats(): CacheStats {
     savedPromptTokens += entry.hitCount * entry.promptTokens;
     savedCompletionTokens += entry.hitCount * entry.completionTokens;
   }
-  return { entries: store.size, totalHits, savedPromptTokens, savedCompletionTokens };
+  const lookups = totalHits + totalMisses;
+  return {
+    entries: store.size,
+    totalHits,
+    totalMisses,
+    hitRate: lookups > 0 ? totalHits / lookups : 0,
+    estimatedRequestsSaved: totalHits,
+    savedPromptTokens,
+    savedCompletionTokens,
+  };
 }
 
 /** Drop every cached entry. Returns the number removed. */

@@ -15,6 +15,7 @@ import {
   CircleDollarSign,
   Clock,
   Coins,
+  Database,
   Gauge,
   GitBranch,
   KeyRound,
@@ -74,6 +75,16 @@ interface SummaryResponse {
   pinHonoredRequests: number
   firstRequestAt: string | null
   lifetimeTotalRequests: number
+}
+
+interface CacheStatsResponse {
+  enabled: boolean
+  entries: number
+  totalHits: number
+  totalMisses: number
+  hitRate: number
+  estimatedRequestsSaved: number
+  savedTokens: number
 }
 
 interface ByPlatformRow {
@@ -475,6 +486,14 @@ export default function AnalyticsPage() {
     queryFn: () => apiFetch<SummaryResponse>(`/api/analytics/summary?range=${range}`),
   })
 
+  // Response-cache health: how often identical requests were served from memory
+  // (zero quota cost) vs. spending a free-tier slot. The cache is process-local,
+  // so these are lifetime-this-boot numbers, not range-filtered.
+  const { data: cacheStats } = useQuery({
+    queryKey: ['cache', 'stats'],
+    queryFn: () => apiFetch<CacheStatsResponse>('/api/cache/stats'),
+  })
+
   const { data: byPlatform = [] } = useQuery({
     queryKey: ['analytics', 'by-platform', range],
     queryFn: () => apiFetch<ByPlatformRow[]>(`/api/analytics/by-platform?range=${range}`),
@@ -634,6 +653,15 @@ export default function AnalyticsPage() {
                   The value is a 30-day projection; the hover hint tells the whole
                   story (actual period amount + whether it was extrapolated). */}
               <Stat icon={CircleDollarSign} label={t('analytics.estSavings')} value={`$${savings30d.toFixed(2)}`} hint={savingsHint} />
+              {/* Response-cache impact: hit rate + provider round-trips avoided.
+                  Hidden when the cache is disabled, so the row doesn't show a
+                  misleading 0% on installs that opted out. */}
+              {cacheStats?.enabled && (
+                <>
+                  <Stat icon={Database} label={t('analytics.cacheHitRate')} value={`${Math.round(cacheStats.hitRate * 100)}%`} hint={t('analytics.cacheHitRateHint', { hits: cacheStats.totalHits, misses: cacheStats.totalMisses })} />
+                  <Stat icon={Zap} label={t('analytics.cacheRequestsSaved')} value={cacheStats.estimatedRequestsSaved} hint={t('analytics.cacheRequestsSavedHint', { tokens: formatTokens(cacheStats.savedTokens) })} />
+                </>
+              )}
             </>
           )}
         </div>

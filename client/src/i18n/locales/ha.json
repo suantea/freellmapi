@@ -712,7 +712,11 @@
     "attemptTimingHint": "Fara biya daga farkon buƙatun · lokacin ƙoƙarin",
     "requestedModel": "Samfurin da ake nema",
     "ttft": "Saukewa: TTFT",
-    "requestsByAgent": "Bukatu ta kowane wakili"
+    "requestsByAgent": "Bukatu ta kowane wakili",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "Logs",

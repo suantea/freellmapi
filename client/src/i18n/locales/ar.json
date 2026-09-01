@@ -712,7 +712,11 @@
     "attemptTimingHint": "بداية الإزاحة من بداية الطلب · مدة المحاولة",
     "requestedModel": "النموذج المطلوب",
     "ttft": "TTFT",
-    "requestsByAgent": "الطلبات حسب الوكيل"
+    "requestsByAgent": "الطلبات حسب الوكيل",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "السجلات",

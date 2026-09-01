@@ -712,7 +712,11 @@
     "attemptTimingHint": "İstek başlangıcından itibaren başlangıç dengelemesi · deneme süresi",
     "requestedModel": "İstenilen model",
     "ttft": "TTFT",
-    "requestsByAgent": "Ajan başına istekler"
+    "requestsByAgent": "Ajan başına istekler",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "Günlükler",

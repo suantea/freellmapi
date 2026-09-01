@@ -712,7 +712,11 @@
     "attemptTimingHint": "リクエスト開始からの開始オフセット · 試行期間",
     "requestedModel": "要求されたモデル",
     "ttft": "TTFT",
-    "requestsByAgent": "エージェント別リクエスト"
+    "requestsByAgent": "エージェント別リクエスト",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "ログ",

@@ -712,7 +712,11 @@
     "attemptTimingHint": "Przesunięcie początku od początku żądania · czas trwania próby",
     "requestedModel": "Żądany model",
     "ttft": "TTFT",
-    "requestsByAgent": "Żądania według agenta"
+    "requestsByAgent": "Żądania według agenta",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "Logi",

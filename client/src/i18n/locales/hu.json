@@ -712,7 +712,11 @@
     "attemptTimingHint": "A kérelmű elejétől kezdj el · Próbálkozás időtartama",
     "requestedModel": "Kért modell",
     "ttft": "TTFT",
-    "requestsByAgent": "Kérések ügynökönként"
+    "requestsByAgent": "Kérések ügynökönként",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "Napló",

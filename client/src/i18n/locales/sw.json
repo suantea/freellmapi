@@ -712,7 +712,11 @@
     "attemptTimingHint": "Anza kukabiliana na ombi kuanza · muda wa jaribio",
     "requestedModel": "Umeomba muundo",
     "ttft": "TTFT",
-    "requestsByAgent": "Maombi kwa kila wakala"
+    "requestsByAgent": "Maombi kwa kila wakala",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "Kumbukumbu",

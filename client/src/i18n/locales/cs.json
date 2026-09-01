@@ -712,7 +712,11 @@
     "attemptTimingHint": "Začít offset od začátku požadavku · Doba trvání pokusu",
     "requestedModel": "Požadovaný model",
     "ttft": "TTFT",
-    "requestsByAgent": "Požadavky podle agenta"
+    "requestsByAgent": "Požadavky podle agenta",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "Logy",

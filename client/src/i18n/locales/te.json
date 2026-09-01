@@ -712,7 +712,11 @@
     "attemptTimingHint": "అభ్యర్థన ప్రారంభం నుండి ఆఫ్‌సెట్ ప్రారంభించండి · ప్రయత్న వ్యవధి",
     "requestedModel": "అభ్యర్థించిన మోడల్",
     "ttft": "TTFT",
-    "requestsByAgent": "ఏజెంట్ వారీగా అభ్యర్థనలు"
+    "requestsByAgent": "ఏజెంట్ వారీగా అభ్యర్థనలు",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "లాగ్‌లు",

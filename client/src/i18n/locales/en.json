@@ -745,7 +745,11 @@
     "keyBadge": "Key #{n}",
     "attemptTimingHint": "Start offset from request start · attempt duration",
     "requestedModel": "Requested model",
-    "ttft": "TTFT"
+    "ttft": "TTFT",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "Logs",

@@ -712,7 +712,11 @@
     "attemptTimingHint": "Начальное смещение от начала запроса · продолжительность попытки",
     "requestedModel": "Запрошенная модель",
     "ttft": "TTFT",
-    "requestsByAgent": "Запросы по агентам"
+    "requestsByAgent": "Запросы по агентам",
+    "cacheHitRate": "Cache hit rate",
+    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
+    "cacheRequestsSaved": "Requests saved",
+    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
   },
   "logs": {
     "title": "Журнал",
