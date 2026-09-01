@@ -52,9 +52,11 @@ export interface Config {
    * - false:        do not trust forwarded headers (default; direct callers
    *                 cannot spoof X-Forwarded-For).
    * - true:         trust all proxies (with a security warning).
+   * - number:       trust that many hops counted from the socket peer
+   *                 (Express's `trust proxy: 1` idiom for one proxy in front).
    * - string[]:     trust only these proxy addresses/CIDRs.
    */
-  trustProxy: boolean | string[];
+  trustProxy: boolean | number | string[];
   /**
    * Tri-state override for the CSP `upgrade-insecure-requests` directive (#682).
    * - undefined: auto — emit the directive only when the request arrived over
@@ -91,14 +93,20 @@ export function loadConfig(): Config {
 }
 
 // Parse TRUST_PROXY (#1024). unset/empty/false → false (do not trust forwarded
-// headers); true → trust all proxies; otherwise a comma-separated list of proxy
-// addresses/CIDRs → trust only those hops.
-function parseTrustProxy(): boolean | string[] {
+// headers); true → trust all proxies; a non-negative integer → that many hops
+// from the socket peer (so `TRUST_PROXY=1` means "one proxy in front", the
+// Express idiom, not "trust everything"); otherwise a comma-separated list of
+// proxy addresses/CIDRs → trust only those hops.
+function parseTrustProxy(): boolean | number | string[] {
   const raw = process.env.TRUST_PROXY;
   if (raw === undefined || raw.trim() === '') return false;
   const lower = raw.trim().toLowerCase();
-  if (lower === 'true' || lower === '1' || lower === 'yes') return true;
-  if (lower === 'false' || lower === '0' || lower === 'no') return false;
+  if (lower === 'true' || lower === 'yes') return true;
+  if (lower === 'false' || lower === 'no') return false;
+  if (/^\d+$/.test(lower)) {
+    const hops = Number(lower);
+    return hops > 0 ? hops : false;
+  }
   const addrs = raw.split(',').map(s => s.trim()).filter(Boolean);
   return addrs.length > 0 ? addrs : false;
 }

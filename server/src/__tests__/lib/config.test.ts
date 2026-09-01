@@ -80,6 +80,15 @@ describe('loadConfig', () => {
     expect(loadConfig().trustProxy).toBe(false);
   });
 
+  it('parses an integer TRUST_PROXY as a hop count, not trust-all', () => {
+    process.env.TRUST_PROXY = '1';
+    expect(loadConfig().trustProxy).toBe(1);
+    process.env.TRUST_PROXY = '2';
+    expect(loadConfig().trustProxy).toBe(2);
+    process.env.TRUST_PROXY = '0';
+    expect(loadConfig().trustProxy).toBe(false);
+  });
+
   it('parses TRUST_PROXY as a comma-separated proxy list', () => {
     process.env.TRUST_PROXY = '100.64.0.0/10, 192.168.1.10 , ';
     expect(loadConfig().trustProxy).toEqual(['100.64.0.0/10', '192.168.1.10']);
