@@ -22,6 +22,7 @@ import { isRetryableError, isPaymentRequiredError, isModelNotFoundError, isModel
 import { logRequest } from '../lib/request-log.js';
 import { observeServedModel } from '../lib/served-model.js';
 import { parseCacheDirective, cacheActive, isCacheableTemperature, computeCacheKey, getCachedResponse, storeCachedResponse } from '../services/cache.js';
+import { normalizeIdempotencyKey, hashIdempotencyKey, computeIdempotencyFingerprint, lookupIdempotencyReplay, storeIdempotencyResult } from '../services/idempotency.js';
 import { runFallbackLoop, newFallbackState, recordUpstreamSuccess, exhaustedRetryError, setFallbackHeaders, exhaustionErrorPayload, setExhaustionHeaders, type AttemptRecord } from '../lib/fallback-loop.js';
 import { routedViaValue, safeHeaderValue } from '../lib/header-value.js';
 import { applyTokenBudget, tokenBudgetMessage } from '../lib/guardrails.js';
@@ -1779,6 +1780,50 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
     }
   }
 
+  // ── Idempotency-Key (services/idempotency.ts) ──
+  // Optional caller-scoped dedup for NON-streaming requests: a client that
+  // times out and retries with the same Idempotency-Key gets the ORIGINAL
+  // response replayed (zero provider cost) instead of burning a second
+  // free-tier slot. Only a SHA-256 hash of the key is stored. Reusing a key
+  // with different request content is a 409 conflict. Streaming always
+  // bypasses (like the response cache) — a stream cannot be replayed as a
+  // unit, and the open connection is itself the retry signal.
+  const idemKeyRaw = req.headers['idempotency-key'] ?? req.headers['Idempotency-Key'];
+  const idemKey = !stream ? normalizeIdempotencyKey(idemKeyRaw) : null;
+  const idemFingerprint = idemKey
+    ? computeIdempotencyFingerprint({
+        model: requestedModel,
+        messages,
+        temperature,
+        top_p,
+        max_tokens,
+        tools,
+        tool_choice,
+      })
+    : null;
+  if (idemKey && idemFingerprint) {
+    const keyHash = hashIdempotencyKey(idemKey);
+    const claim = lookupIdempotencyReplay(keyHash, idemFingerprint);
+    if (claim.kind === 'replay') {
+      // Replay consumes NO provider quota — same zero-cost rationale as a
+      // cache hit, so request/usage bookkeeping is skipped here too.
+      res.setHeader('X-Routed-Via', 'idempotency');
+      res.status(claim.status).json(claim.body);
+      return;
+    }
+    if (claim.kind === 'conflict') {
+      res.status(409).json({
+        error: {
+          message: 'idempotency_key_conflict',
+          type: 'invalid_request_error',
+        },
+      });
+      return;
+    }
+    // kind === 'miss': no prior claim (or it expired) — proceed normally
+    // and persist the result on success below.
+  }
+
   // Optional client-managed session affinity (see getSessionKey). Express
   // lower-cases header names; a repeated header arrives as an array — take
   // the first value.
@@ -2546,6 +2591,25 @@ proxyRouter.post('/chat/completions', async (req: Request, res: Response) => {
         // Normalize array-shaped message.content to a string on the way out (#166).
         const outboundBody = sanitizeResponse(normalizeOutboundContent(result));
         res.setHeader('X-FreeLLM-Cache', cacheKey ? 'MISS' : 'OFF');
+
+        // Persist the completed response for Idempotency-Key replays. Only
+        // non-streaming requests with a valid key reach here; a truncated turn
+        // (finish_reason 'length') is NOT stored — replaying a cut-off answer
+        // would be worse than regenerating, matching the cache policy below.
+        if (
+          idemKey
+          && idemFingerprint
+          && result.choices?.[0]?.finish_reason !== 'length'
+        ) {
+          storeIdempotencyResult(
+            hashIdempotencyKey(idemKey),
+            idemFingerprint,
+            200,
+            outboundBody,
+            requestGroupId,
+          );
+        }
+
         res.json(outboundBody);
 
         // Cache the freshly-generated answer so an identical later request is
