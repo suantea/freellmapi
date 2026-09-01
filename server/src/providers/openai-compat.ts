@@ -141,13 +141,15 @@ export class OpenAICompatProvider extends BaseProvider {
   /**
    * OpenAI-compatible endpoints that are strict about unknown nested fields:
    * Mistral returns 422 for provider-private replay fields, Groq rejects
-   * assistant `reasoning_content` with 400 (verified in production, #1070).
-   * Cerebras is likely equally strict but not yet confirmed — add it here
-   * once verified. Other gateways ignore the fields, so keep the OpenAI wire
+   * assistant `reasoning_content` with 400 (verified in production, #1070),
+   * and Cerebras rejects it too — `property 'messages.N.assistant.
+   * reasoning_content' is unsupported` (confirmed via vercel/ai#15042 and
+   * opencode#26762, and by Cerebras' own docs, which use a `reasoning` field
+   * instead). Other gateways ignore the fields, so keep the OpenAI wire
    * shape but strip our internal reasoning / thought-signature extensions
    * before sending to these platforms.
    */
-  private static readonly STRICT_PLATFORMS = new Set(['mistral', 'groq']);
+  private static readonly STRICT_PLATFORMS = new Set(['mistral', 'groq', 'cerebras']);
   private messagesForPlatform(messages: ChatMessage[]): ChatMessage[] {
     if (!OpenAICompatProvider.STRICT_PLATFORMS.has(this.platform)) return messages;
 
