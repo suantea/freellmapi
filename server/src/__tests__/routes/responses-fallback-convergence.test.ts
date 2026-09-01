@@ -34,6 +34,7 @@ function fakeRoute(provider: any) {
 function throwingProvider(err: any) {
   return {
     async chatCompletion() { throw err; },
+    // eslint-disable-next-line require-yield -- mock stream that errors immediately.
     async *streamChatCompletion(): AsyncGenerator<any> { throw err; },
   };
 }

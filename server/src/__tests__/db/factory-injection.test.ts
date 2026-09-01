@@ -4,7 +4,6 @@ import type { Db, DbFactory } from '../../db/types.js';
 
 // A minimal in-memory stub that satisfies the Db interface.
 function makeStubDb(): Db {
-  const store = new Map<string, unknown>();
   return {
     prepare: vi.fn().mockReturnValue({
       get: vi.fn(),

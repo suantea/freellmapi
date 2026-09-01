@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { initDb, getDb } from '../../db/index.js';
 import { encrypt } from '../../lib/crypto.js';
-import { runImageGeneration, runVideoGeneration, runSpeech, MediaError } from '../../services/media.js';
+import { runImageGeneration, runVideoGeneration, runSpeech } from '../../services/media.js';
 
 const realFetch = globalThis.fetch;
 

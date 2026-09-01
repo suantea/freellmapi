@@ -166,13 +166,6 @@ export function qualifiedMemberId(row: GroupableRow): string | null {
   return qualifiedModelMemberId(row.platform, row.model_id, row.endpoint_scope);
 }
 
-// The grouping token for a row, after applying overrides. Split wins first
-// (forces a singleton/explicit key); then a merge redirects to its target;
-// otherwise the normalized display name.
-function tokenForRow(row: GroupableRow, ov: UnifyOverrides): string {
-  return tokenSourceForRow(row, ov).token;
-}
-
 /** The grouping token plus whether an operator override chose it. */
 function tokenSourceForRow(row: GroupableRow, ov: UnifyOverrides): { token: string; userDefined: boolean } {
   const mid = memberId(row);

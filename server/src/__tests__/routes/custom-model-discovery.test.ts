@@ -311,7 +311,7 @@ describe('median seeding for custom models (#488)', () => {
     // A registered model means the probe already knows what to hit: one POST
     // /chat/completions, no discovery GET. Were discovery consulted, it would
     // put 'aaa-first' ahead of the registered 'relay-a'.
-    const mock = vi.fn(async (url: string, init?: RequestInit) => {
+    const mock = vi.fn(async (url: string, _init?: RequestInit) => {
       if (String(url).endsWith('/models')) {
         return jsonResponse({ object: 'list', data: [{ id: 'aaa-first' }, { id: 'relay-a' }] });
       }

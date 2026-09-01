@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { initDb, getDb } from '../../db/index.js';
 import { runFallbackLoop, newFallbackState, type FallbackState } from '../../lib/fallback-loop.js';
 import { isHedgeAbortError, newHedgeAbortError, isClientAbortError, isRetryableError } from '../../lib/error-classify.js';
-import { acquireLease, releaseLease, resetLeases, inFlightForKey } from '../../services/ratelimit.js';
+import { acquireLease, releaseLease, resetLeases } from '../../services/ratelimit.js';
 import type { RouteResult } from '../../services/router.js';
 
 /**

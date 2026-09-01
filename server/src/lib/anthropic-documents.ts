@@ -31,6 +31,7 @@ const TEXTUAL_SOURCE_TYPES = new Set(['text', 'content']);
 const MAX_TITLE_LENGTH = 120;
 
 /** C0 controls, DEL, and the C1 range — they can carry terminal escapes. */
+// eslint-disable-next-line no-control-regex -- matching control chars is the point.
 const CONTROL_CHARS = /[\u0000-\u001f\u007f-\u009f]/g;
 
 export interface DocumentBlockOk {

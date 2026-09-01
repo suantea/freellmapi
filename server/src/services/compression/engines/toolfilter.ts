@@ -6,6 +6,7 @@ import { BUILTIN_FILTERS, type ToolFilterRule } from './filter-definitions.js';
 import { loadCustomFilters } from './custom-filters.js';
 import type { CompressionEngine, ToolCallOrigin } from '../types.js';
 
+// eslint-disable-next-line no-control-regex -- matching ANSI escapes is the point.
 const ANSI_RE = /\u001b\[[0-?]*[ -/]*[@-~]/g;
 export const ERROR_GUARD_RE = /\b(?:error|exception|fatal|failed|failure|traceback|panic|assert(?:ion)?|not ok|✗|×)\b/i;
 

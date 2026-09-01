@@ -157,6 +157,7 @@ describe('Empty-completion failover', () => {
     // at stream open was misclassified as mid-stream → returned to the client
     // with no failover and no cooldown (observed as 17 consecutive 503s to
     // the same model). With lazy headers it must take the retry path.
+    // eslint-disable-next-line require-yield -- mock stream that errors at open, no frames.
     async function* failsAtOpen(): AsyncGenerator<any> {
       throw new Error('OpenRouter API error 503: Provider returned error');
     }

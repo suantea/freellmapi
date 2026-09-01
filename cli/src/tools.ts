@@ -575,7 +575,7 @@ function mimo(ctx: GenerateContext): Generation {
   };
 }
 
-function cursor(ctx: GenerateContext): Generation {
+function cursor(_ctx: GenerateContext): Generation {
   return {
     files: [],
     notes: [

@@ -10,9 +10,7 @@ import { parseKeysFromFile, stripJsoncComments, stripTrailingCommas } from '../l
 import { assessProviderUrl } from '../lib/url-guard.js';
 import { verifyCredentials } from '../services/auth.js';
 import { getActiveCooldownsForKeys, clearCooldownsForKey } from '../services/ratelimit.js';
-import { ensureModelInProfiles } from '../services/profile-models.js';
 import { resolveCustomEndpointKey, customEndpointKeyIds, siblingEndpointKeyId, endpointHasCredential } from '../services/custom-endpoint.js';
-import { customModelSeed } from '../services/custom-model-seed.js';
 import { registerCustomModels, registerCustomChatModels } from '../services/custom-model-register.js';
 import { registerCustomMediaModel } from '../services/custom-media-register.js';
 import { discoverEndpointModels, probeEndpointModel, classifyModelId, ModelDiscoveryError } from '../services/model-discovery.js';
@@ -1325,7 +1323,6 @@ keysRouter.post('/import-selected', async (req: Request, res: Response) => {
   }
 
   let imported = 0;
-  let duplicateSkipped = 0;
   let modelsRegistered = 0;
   const errors: Array<{ key: string; error: string }> = [];
 
@@ -1387,7 +1384,6 @@ keysRouter.post('/import-selected', async (req: Request, res: Response) => {
     }
 
     if (existingKeys.has(key.keyValue.trim())) {
-      duplicateSkipped++;
       errors.push({ key: keyName, error: 'Duplicate key — already exists' });
       continue;
     }

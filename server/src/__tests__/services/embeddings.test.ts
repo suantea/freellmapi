@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { MockedFunction } from 'vitest';
 import { initDb, getDb } from '../../db/index.js';
 import { encrypt } from '../../lib/crypto.js';
-import { resolveFamily, getDefaultFamily, runEmbeddings, EmbeddingsError } from '../../services/embeddings.js';
+import { resolveFamily, getDefaultFamily, runEmbeddings } from '../../services/embeddings.js';
 
 const realFetch = globalThis.fetch;
 

@@ -94,7 +94,7 @@ describe('Anthropic document blocks', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('refuses a base64 PDF with an actionable error instead of answering without it', async () => {
-    const captured = mockJson(OK_RESPONSE);
+    mockJson(OK_RESPONSE);
 
     const { status, body } = await request(app, '/v1/messages', {
       model: 'claude-sonnet-4-5',
