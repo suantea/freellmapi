@@ -204,9 +204,13 @@ export const TASK_WEIGHT_SHARE = 0.3;
 export function taskAdjustedWeights(
   base: RoutingWeights,
   task: 'code' | 'chat',
+  share = TASK_WEIGHT_SHARE,
 ): { weights: RoutingWeights; adjusted: boolean } {
+  // share 0 disables the bias entirely — an operator-set value of 0 means "keep
+  // the preset weights for this task type".
+  if (share <= 0) return { weights: base, adjusted: false };
   if (task === 'code') {
-    const shift = base.speed * TASK_WEIGHT_SHARE;
+    const shift = base.speed * share;
     if (shift <= 0) return { weights: base, adjusted: false };
     return {
       weights: {
@@ -217,7 +221,7 @@ export function taskAdjustedWeights(
       adjusted: true,
     };
   }
-  const shift = base.intelligence * TASK_WEIGHT_SHARE;
+  const shift = base.intelligence * share;
   if (shift <= 0) return { weights: base, adjusted: false };
   return {
     weights: {
