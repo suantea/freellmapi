@@ -426,3 +426,135 @@ Endpoints (all behind `requireAuth`):
 | `DELETE` | `/api/backups/:id` | Delete one backup |
 | `GET` | `/api/backups/tables` | Tables a dump may contain |
 | `GET` / `PUT` | `/api/backups/schedule` | Read / write the backup schedule (HH:mm, interval days, path) |
+## Rust
+
+FreeLLMAPI works with any HTTP client in Rust. Below are examples using
+[reqwest](https://docs.rs/reqwest) + [serde](https://docs.rs/serde) — the
+most common stack. The [async-openai](https://docs.rs/async-openai) crate
+works too; point its `api_base` at `http://localhost:3001/v1`.
+
+**Chat completions**
+
+```rust
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+
+#[derive(Deserialize)]
+struct ChatResponse {
+    choices: Vec<Choice>,
+}
+
+#[derive(Deserialize)]
+struct Choice {
+    message: Message,
+}
+
+#[derive(Deserialize, Serialize)]
+struct Message {
+    role: String,
+    content: Option<String>,
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::new();
+
+    let resp: ChatResponse = client
+        .post("http://localhost:3001/v1/chat/completions")
+        .header("Authorization", "Bearer freellmapi-your-unified-key")
+        .json(&json!({
+            "model": "auto",
+            "messages": [{"role": "user", "content": "Explain Rust lifetimes in one sentence."}]
+        }))
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    println!("{}", resp.choices[0].message.content.as_deref().unwrap_or(""));
+    Ok(())
+}
+```
+
+**Streaming**
+
+```rust
+use futures::StreamExt;
+use reqwest::Client;
+use serde::Deserialize;
+use serde_json::json;
+
+#[derive(Deserialize)]
+struct StreamChunk {
+    choices: Vec<StreamChoice>,
+}
+
+#[derive(Deserialize)]
+struct StreamChoice {
+    delta: Delta,
+}
+
+#[derive(Deserialize)]
+struct Delta {
+    content: Option<String>,
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::new();
+
+    let resp = client
+        .post("http://localhost:3001/v1/chat/completions")
+        .header("Authorization", "Bearer freellmapi-your-unified-key")
+        .json(&json!({
+            "model": "auto",
+            "messages": [{"role": "user", "content": "Write a haiku about Rust."}],
+            "stream": true
+        }))
+        .send()
+        .await?
+        .error_for_status()?;
+
+    let mut stream = resp.bytes_stream();
+    let mut buffer = String::new();
+
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk?;
+        buffer.push_str(&String::from_utf8_lossy(&chunk));
+
+        // SSE lines are separated by \n\n
+        while let Some(line_end) = buffer.find('\n') {
+            let line = buffer[..line_end].trim().to_string();
+            buffer = buffer[line_end + 1..].to_string();
+
+            if let Some(data) = line.strip_prefix("data: ") {
+                if data == "[DONE]" {
+                    println!();
+                    return Ok(());
+                }
+                if let Ok(chunk) = serde_json::from_str::<StreamChunk>(data) {
+                    if let Some(content) = chunk.choices.first().and_then(|c| c.delta.content.as_deref()) {
+                        print!("{}", content);
+                    }
+                }
+            }
+        }
+    }
+
+    println!();
+    Ok(())
+}
+```
+
+**Cargo.toml dependencies**
+
+```toml
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+futures = "0.3"  # only needed for streaming
+```
