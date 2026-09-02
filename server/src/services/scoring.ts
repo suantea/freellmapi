@@ -193,6 +193,42 @@ export function peakAdjustedWeights(
   };
 }
 
+// ── Task-type weight bias (#1127) ─────────────────────────────────────────
+// A coding turn is quality-sensitive, a chat turn is budget/speed-sensitive.
+// When a request declares (or derives) a task type, move part of one axis onto
+// the other — code: speed → intelligence, chat: intelligence → speed. The
+// deltas are deliberately conservative and the whole thing is opt-in: no
+// header (or `auto` with no code signal) leaves the preset weights untouched.
+export const TASK_WEIGHT_SHARE = 0.3;
+
+export function taskAdjustedWeights(
+  base: RoutingWeights,
+  task: 'code' | 'chat',
+): { weights: RoutingWeights; adjusted: boolean } {
+  if (task === 'code') {
+    const shift = base.speed * TASK_WEIGHT_SHARE;
+    if (shift <= 0) return { weights: base, adjusted: false };
+    return {
+      weights: {
+        reliability: base.reliability,
+        speed: base.speed - shift,
+        intelligence: base.intelligence + shift,
+      },
+      adjusted: true,
+    };
+  }
+  const shift = base.intelligence * TASK_WEIGHT_SHARE;
+  if (shift <= 0) return { weights: base, adjusted: false };
+  return {
+    weights: {
+      reliability: base.reliability,
+      speed: base.speed + shift,
+      intelligence: base.intelligence - shift,
+    },
+    adjusted: true,
+  };
+}
+
 // ── Reliability ───────────────────────────────────────────────────────────
 // Beta(1,1) prior = uniform: an unseen model is genuinely uncertain, not assumed
 // good or bad. With decay-weighted pseudo-counts the alpha/beta are continuous.
