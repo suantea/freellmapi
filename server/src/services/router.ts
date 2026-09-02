@@ -21,7 +21,7 @@ import {
   reliabilityPosterior, expectedReliability, sampleBeta,
   speedScore, intelligenceScore, intelligenceComposite, headroomFactor, rateWindowHeadroomFactor,
   rateLimitFactor, combineScore,
-  peakAdjustedWeights, isValidPeakHour, isValidTimezone,
+  peakAdjustedWeights, taskAdjustedWeights, isValidPeakHour, isValidTimezone,
   DEFAULT_PEAK_HOURS, type PeakHoursConfig,
   observedSpeedRank, TIMEOUT_LATENCY_CAP_MS,
   type HeadroomThresholds,
@@ -1022,12 +1022,12 @@ function scoreChainEntry(
  * faithful reflection of the user's picked strategy, not a re-sampled draw each
  * request. Priority mode is deterministic either way.
  */
-function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true): ChainRow[] {
+function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true, task?: 'code' | 'chat'): ChainRow[] {
   // Tier first, always: it is the one ordering input that score must not be able
   // to override (see ChainRow.match_tier). Zero for every chain built anywhere
   // else, so this is a no-op outside slug-fallback resolution.
   const tier = (e: ChainRow) => e.match_tier ?? 0;
-  const weights = weightsFor(strategy);
+  let weights = weightsFor(strategy);
   if (!weights) {
     // Legacy priority mode: manual chain order + the 429/failure penalty,
     // ascending.
@@ -1062,6 +1062,15 @@ function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true
       .map(({ e, i }, rank) => ({ e, i, eff: rank + 1 + getPenalty(e.model_db_id) }))
       .sort((a, b) => tier(a.e) - tier(b.e) || a.eff - b.eff || a.e.priority - b.e.priority || a.i - b.i)
       .map(x => x.e);
+  }
+
+  // Task-type bias (#1127): a client-declared/derived task type moves part of
+  // one axis onto the other (code: speed → intelligence; chat: the reverse).
+  // Applied AFTER the peak-hours adjustment, on the same weights the rest of
+  // the chain scores with; opt-in, so absent a signal the preset stands.
+  if (task) {
+    const adjusted = taskAdjustedWeights(weights, task);
+    weights = adjusted.adjusted ? adjusted.weights : weights;
   }
 
   const composites = chain.map(e => intelligenceComposite(e.size_label, e.intelligence_rank));
@@ -1878,7 +1887,7 @@ export function resolveFusionCandidate(modelId: string): FusionCandidate | null 
   return null;
 }
 
-export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, preferredModelDbId?: number, requireVision = false, requireTools = false, skipModels?: Set<number>, prefetchedChain?: ChainRow[], requireStructured = false, skipPlatforms?: Set<string>, exactOutputReserve = 0): RouteResult {
+export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, preferredModelDbId?: number, requireVision = false, requireTools = false, skipModels?: Set<number>, prefetchedChain?: ChainRow[], requireStructured = false, skipPlatforms?: Set<string>, exactOutputReserve = 0, task?: 'code' | 'chat'): RouteResult {
   const db = getDb();
 
   const strategy = getRoutingStrategy();
@@ -1886,7 +1895,7 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
 
   const chain = (prefetchedChain ?? getActiveChain(db)).filter(e => e.enabled);
 
-  const sortedChain = orderChain(chain, strategy);
+  const sortedChain = orderChain(chain, strategy, true, task);
 
   // Exploration toggle (#685/#707 follow-up): when enabled, give a model with
   // no reliability/speed samples a guaranteed chance to be tried, so it stops
