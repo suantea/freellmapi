@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Kunci API diperlukan",
     "claudeAliases": "Alias penemuan Claude Code",
     "claudeAliasesHint": "Dedahkan alias claude/<model> supaya pemilih model gateway dapat menyenaraikan katalog.",
+    "mcpServer": "Pelayan MCP",
+    "mcpServerHint": "Mendedahkan titik akhir /mcp kepada klien ejen. Pemasangan baharu bermula dalam keadaan dimatikan.",
     "urlTokensTitle": "Token URL boleh dibatalkan",
     "urlTokensDesc": "Untuk klien tanpa pengepala sahaja. Token URL boleh bocor ke dalam sejarah dan log, jadi batalkannya apabila tidak lagi diperlukan.",
     "urlTokenLabel": "Label token",

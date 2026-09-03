@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "נדרש מפתח API",
     "claudeAliases": "כינויי גילוי של Claude Code",
     "claudeAliasesHint": "חשוף כינויי claude/<model> כדי שבורר המודלים של השער יוכל להציג את הקטלוג.",
+    "mcpServer": "שרת MCP",
+    "mcpServerHint": "חושף את נקודת הקצה /mcp ללקוחות סוכנים. התקנות חדשות מתחילות כשהוא כבוי.",
     "urlTokensTitle": "טוקני URL ניתנים לביטול",
     "urlTokensDesc": "ללקוחות ללא כותרות בלבד. טוקני URL עלולים לדלוף להיסטוריה וליומנים, לכן בטל אותם כשאינם נחוצים עוד.",
     "urlTokenLabel": "תווית טוקן",

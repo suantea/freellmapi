@@ -35,6 +35,7 @@ const PROFILE_AUTO_INCLUDE_FILENAME = '20260823_000004_profile_auto_include.ts';
 const IDEMPOTENCY_CLAIMS_FILENAME = '20260901_000001_idempotency_claims.ts';
 const QUOTA_OBSERVATION_LOOKUP_FILENAME = '20260901_000002_quota_observation_lookup.ts';
 const ANALYTICS_LATENCY_PERCENTILE_INDEX_FILENAME = '20260902_000001_analytics_latency_percentile_index.ts';
+const MCP_ENABLED_DEFAULT_FILENAME = '20260903_000001_mcp_enabled_default.ts';
 
 interface SchemaRow {
   type: string;
@@ -116,6 +117,7 @@ describe('migration round trip', () => {
         IDEMPOTENCY_CLAIMS_FILENAME,
         QUOTA_OBSERVATION_LOOKUP_FILENAME,
         ANALYTICS_LATENCY_PERCENTILE_INDEX_FILENAME,
+        MCP_ENABLED_DEFAULT_FILENAME,
       ]);
     } finally {
       db.close();
@@ -144,6 +146,16 @@ describe('migration round trip', () => {
       db.prepare(`
         INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, base_url)
         VALUES ('custom', '127.0.0.1:11434', 'x', 'x', 'x', 'http://127.0.0.1:11434/v1')
+      `).run();
+
+      // Same again for the /mcp lifecycle seed (#925): it reads api_keys, and
+      // with the key above present its post-migration state is enabled ('1').
+      // The first up ran against an empty api_keys and wrote '0', so pin the
+      // post-seed value here for down (row removed) and up (row rewritten) to
+      // round trip.
+      db.prepare(`
+        INSERT INTO settings (key, value) VALUES ('enable_mcp', '1')
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
       `).run();
 
       const fullState = snapshotAppState(db);

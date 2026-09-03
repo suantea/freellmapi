@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type { Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { getDb, getUnifiedApiKey, getSetting } from '../db/index.js';
 import { extractApiToken, timingSafeStringEqual } from './proxy.js';
 import { buildModelListing } from '../services/model-listing.js';
@@ -318,34 +318,33 @@ function authenticate(req: Request, res: Response): boolean {
 }
 
 // ── Lifecycle configuration (#925, MVP-1) ───────────────────────────────────
-// The MCP surface is opt-in: it exposes provider health, usage stats and
-// routing controls to anything holding the unified key, so an install that
-// never asked for it should not serve it at all. Toggled via
-// /api/settings/enable-mcp; the key-prefix setting is stored here for the
-// MVP-1 config surface and gets its /mcp-side enforcement with the MVP-2
-// cross-key prefix auth.
+// The MCP surface exposes provider health, usage stats and routing controls to
+// anything holding the unified key, so it is a configured surface rather than
+// an always-on one: /api/settings/enable-mcp (and the toggle on the Keys page)
+// turns it on and off. The stored default is decided once, by migration:
+// installs that already had provider keys when they upgraded keep it on, fresh
+// installs start with it off.
 export const MCP_ENABLED_SETTING = 'enable_mcp';
-export const MCP_KEY_PREFIX_SETTING = 'mcp_key_prefix';
 
 export function isMcpServerEnabled(): boolean {
   return getSetting(MCP_ENABLED_SETTING) === '1';
 }
 
-export function getMcpKeyPrefix(): string {
-  return getSetting(MCP_KEY_PREFIX_SETTING) ?? '';
-}
-
-mcpRouter.post('/', (req: Request, res: Response) => {
-  // Gate before auth: a disabled server says so plainly, without hinting
-  // whether the presented key would have been valid. Read per request so the
-  // toggle takes effect without a restart.
-  if (!isMcpServerEnabled()) {
-    const body = req.body;
-    const id = body && typeof body === 'object' && !Array.isArray(body) && body.id !== undefined ? body.id : null;
-    res.status(403).json(rpcError(id, -32000, 'MCP server is disabled. Enable it with PUT /api/settings/enable-mcp {"enabled":true}.'));
+// Gate every verb, not just POST: a disabled server must not answer "405, POST
+// instead" on GET/DELETE either. Runs before auth so a disabled server says so
+// plainly, without hinting whether the presented key would have been valid, and
+// reads the setting per request so the toggle applies without a restart.
+mcpRouter.use((req: Request, res: Response, next: NextFunction) => {
+  if (isMcpServerEnabled()) {
+    next();
     return;
   }
+  const body = req.body;
+  const id = body && typeof body === 'object' && !Array.isArray(body) && body.id !== undefined ? body.id : null;
+  res.status(403).json(rpcError(id, -32000, 'MCP server is disabled. Turn it on from the dashboard (Keys -> Agent compatibility) or with PUT /api/settings/enable-mcp {"enabled":true}.'));
+});
 
+mcpRouter.post('/', (req: Request, res: Response) => {
   if (!authenticate(req, res)) return;
 
   const body = req.body;

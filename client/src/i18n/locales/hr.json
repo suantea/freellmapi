@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Potreban API ključ",
     "claudeAliases": "Aliasi za otkrivanje Claude Codea",
     "claudeAliasesHint": "Izložite claude/<model> aliase kako bi birač modela gatewaya mogao izlistati katalog.",
+    "mcpServer": "MCP poslužitelj",
+    "mcpServerHint": "Izlaže krajnju točku /mcp agentskim klijentima. Nove instalacije počinju isključene.",
     "urlTokensTitle": "Opozivi URL tokeni",
     "urlTokensDesc": "Samo za klijente bez zaglavlja. URL tokeni mogu procuriti u povijest i logove, pa ih opozovite kad više nisu potrebni.",
     "urlTokenLabel": "Oznaka tokena",

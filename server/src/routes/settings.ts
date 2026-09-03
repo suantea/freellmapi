@@ -24,7 +24,7 @@ import {
   setCompressionConfig,
 } from '../services/compression/config.js';
 import { getHeadroomThresholds, setHeadroomThresholds } from '../services/router.js';
-import { MCP_ENABLED_SETTING, MCP_KEY_PREFIX_SETTING, isMcpServerEnabled, getMcpKeyPrefix } from './mcp.js';
+import { MCP_ENABLED_SETTING, isMcpServerEnabled } from './mcp.js';
 import { z } from 'zod';
 import { getAppVersion } from '../lib/app-version.js';
 import {
@@ -133,26 +133,9 @@ settingsRouter.put('/fusion', (req: Request, res: Response) => {
 });
 
 // ── MCP server lifecycle (#925, MVP-1) ──────────────────────────────────────
-// The /mcp introspection server starts disabled; this is its config surface.
-// The key prefix is stored here ahead of the MVP-2 cross-key prefix auth,
-// which will give it its /mcp-side meaning.
-
-settingsRouter.get('/mcp-key-prefix', (_req: Request, res: Response) => {
-  res.json({ prefix: getMcpKeyPrefix() });
-});
-
-const mcpKeyPrefixSchema = z.object({ prefix: z.string() });
-
-settingsRouter.put('/mcp-key-prefix', (req: Request, res: Response) => {
-  const parsed = mcpKeyPrefixSchema.safeParse(req.body);
-  if (!parsed.success) {
-    res.status(400).json({ error: { message: 'Invalid MCP key prefix: prefix must be a string.', type: 'invalid_request_error' } });
-    return;
-  }
-  // The empty string is meaningful: it disables the (MVP-2) prefix check.
-  setSetting(MCP_KEY_PREFIX_SETTING, parsed.data.prefix);
-  res.json({ prefix: parsed.data.prefix });
-});
+// Config surface for the /mcp introspection server. The Keys page renders this
+// as a switch under Agent compatibility; the stored default is seeded once by
+// migration so upgrades keep serving the clients they already had.
 
 settingsRouter.get('/enable-mcp', (_req: Request, res: Response) => {
   res.json({ enabled: isMcpServerEnabled() });

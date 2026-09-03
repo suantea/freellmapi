@@ -554,6 +554,8 @@
     "ollamaKeyRequired": "需要 API 金鑰",
     "claudeAliases": "Claude Code 探索別名",
     "claudeAliasesHint": "公開 claude/<model> 別名，讓閘道的模型選擇器能列出目錄。",
+    "mcpServer": "MCP 伺服器",
+    "mcpServerHint": "向代理客戶端開放 /mcp 端點。新安裝預設關閉。",
     "urlTokensTitle": "可撤銷的 URL Token",
     "urlTokensDesc": "僅供無法傳送標頭的用戶端使用。URL Token 可能外洩到歷史記錄和日誌中，不再需要時請撤銷。",
     "urlTokenLabel": "Token 標籤",

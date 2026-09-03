@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API kulcs szükséges",
     "claudeAliases": "Claude Code felderítési aliasok",
     "claudeAliasesHint": "Tedd elérhetővé a claude/<model> aliasokat, hogy az átjáró modellválasztója listázhassa a katalógust.",
+    "mcpServer": "MCP-kiszolgáló",
+    "mcpServerHint": "Elérhetővé teszi a /mcp végpontot az ügynökklienseknek. Új telepítéseknél alapból ki van kapcsolva.",
     "urlTokensTitle": "Visszavonható URL tokenek",
     "urlTokensDesc": "Csak fejléc nélküli kliensekhez. Az URL tokenek kiszivároghatnak az előzményekbe és a naplókba, ezért vond vissza őket, ha már nincs rájuk szükség.",
     "urlTokenLabel": "Token címke",

@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Ana buƙatar maɓallin API",
     "claudeAliases": "Sunayen gano na Claude Code",
     "claudeAliasesHint": "Fitar da sunayen claude/<model> domin mazaɓin samfura na gateway ya iya lissafa kundin.",
+    "mcpServer": "Sabar MCP",
+    "mcpServerHint": "Yana buɗe ƙarshen /mcp ga abokan huldar wakilai. Sabbin shigarwa suna farawa a kashe.",
     "urlTokensTitle": "Alamomin URL masu sokewa",
     "urlTokensDesc": "Don abokan ciniki marasa header kawai. Alamomin URL na iya zuba cikin tarihi da rajistan ayyuka, don haka soke su idan ba a buƙatarsu.",
     "urlTokenLabel": "Lakabin alama",

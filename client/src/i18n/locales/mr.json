@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API की आवश्यक",
     "claudeAliases": "Claude Code शोध उपनावे",
     "claudeAliasesHint": "गेटवे मॉडेल निवडकर्ता कॅटलॉग सूचीबद्ध करू शकेल यासाठी claude/<model> उपनावे उघड करा.",
+    "mcpServer": "MCP सर्व्हर",
+    "mcpServerHint": "एजंट क्लायंटसाठी /mcp एंडपॉइंट उघडते. नवीन इंस्टॉलेशनमध्ये ते बंद असते.",
     "urlTokensTitle": "रद्द करण्यायोग्य URL टोकन",
     "urlTokensDesc": "फक्त हेडर-रहित क्लायंटसाठी. URL टोकन इतिहास आणि लॉगमध्ये गळती होऊ शकतात, म्हणून गरज नसताना ती रद्द करा.",
     "urlTokenLabel": "टोकन लेबल",
