@@ -417,6 +417,13 @@
     "saveProxy": "जतन करा",
     "savingProxy": "सेव्ह करत आहे...",
     "proxyLoadFailed": "प्रॉक्सी सेटिंग्ज लोड करू शकलो नाही.",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "सानुकूल OpenAI-सुसंगत मॉडेल जोडा",
     "addCustomDescription": "कोणत्याही OpenAI- सुसंगत एंडपॉइंटवर चॅट, एम्बेडिंग, इमेज किंवा ऑडिओ मॉडेल पॉइंट करा. API की स्थानिक सर्व्हरसाठी पर्यायी आहे.",
     "customType": "प्रकार",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "विनंती पासून ऑफसेट सुरू करा प्रारंभ · प्रयत्न कालावधी",
     "requestedModel": "मॉडेलची विनंती केली",
     "ttft": "TTFT",
-    "requestsByAgent": "एजंटनुसार विनंत्या"
+    "requestsByAgent": "एजंटनुसार विनंत्या",
+    "sortBy": "{column} नुसार क्रमवारी लावा",
+    "sortHint": "क्रमवारी फक्त लोड केलेल्या {count} ओळींना लागू होते"
   },
   "logs": {
     "title": "लॉग",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

@@ -417,6 +417,13 @@
     "saveProxy": "சேமிக்கவும்",
     "savingProxy": "சேமிக்கிறது…",
     "proxyLoadFailed": "ப்ராக்ஸி அமைப்புகளை ஏற்ற முடியவில்லை.",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "தனிப்பயன் OpenAI-இணக்கமான மாதிரியைச் சேர்க்கவும்",
     "addCustomDescription": "எந்த OpenAI-இணக்கமான இறுதிப்புள்ளியிலும் புள்ளி அரட்டை, உட்பொதித்தல், படம் அல்லது ஆடியோ மாதிரிகள். API விசை உள்ளூர் சேவையகங்களுக்கு விருப்பமானது.",
     "customType": "வகை",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "கோரிக்கை தொடக்கத்திலிருந்து ஆஃப்செட்டைத் தொடங்கு · முயற்சி காலம்",
     "requestedModel": "கோரப்பட்ட மாதிரி",
     "ttft": "TTFT",
-    "requestsByAgent": "முகவர் வாரியாக கோரிக்கைகள்"
+    "requestsByAgent": "முகவர் வாரியாக கோரிக்கைகள்",
+    "sortBy": "{column} அடிப்படையில் வரிசைப்படுத்து",
+    "sortHint": "வரிசைப்படுத்தல் ஏற்றப்பட்ட {count} வரிசைகளுக்கு மட்டுமே பொருந்தும்"
   },
   "logs": {
     "title": "பதிவுகள்",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

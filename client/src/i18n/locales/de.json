@@ -417,6 +417,13 @@
     "saveProxy": "Speichern",
     "savingProxy": "Sparen…",
     "proxyLoadFailed": "Die Proxy-Einstellungen konnten nicht geladen werden.",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "Fügen Sie ein benutzerdefiniertes OpenAI-kompatibles Modell hinzu",
     "addCustomDescription": "Zeigen Sie Chat-, Einbettungs-, Bild- oder Audiomodelle an jedem OpenAI-kompatiblen Endpunkt an. Der Schlüssel API ist für lokale Server optional.",
     "customType": "Typ",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "Startoffset vom Anforderungsstart · Versuchsdauer",
     "requestedModel": "Angefragtes Modell",
     "ttft": "TTFT",
-    "requestsByAgent": "Anfragen nach Agent"
+    "requestsByAgent": "Anfragen nach Agent",
+    "sortBy": "Nach {column} sortieren",
+    "sortHint": "Die Sortierung gilt für die {count} geladenen Zeilen"
   },
   "logs": {
     "title": "Protokoll",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeeks Harness, das jeden Anbieter als umschaltbare Route führt.",
       "mimo": "Xiaomis Terminal-Agent, ein OpenCode-Fork für jeden OpenAI-kompatiblen Anbieter.",
       "cursor": "Der KI-zentrierte Editor; er läuft über Cursors Cloud und braucht daher eine öffentliche URL.",
-      "generic": "Alles andere, was die OpenAI-API spricht — von Hand mit Basis-URL und Schlüssel eingerichtet."
+      "generic": "Alles andere, was die OpenAI-API spricht — von Hand mit Basis-URL und Schlüssel eingerichtet.",
+      "atomcode": "AtomGits Terminal-Agent, in Rust geschrieben, für jeden OpenAI-kompatiblen Endpunkt."
     }
   },
   "update": {

@@ -417,6 +417,13 @@
     "saveProxy": "Запази",
     "savingProxy": "Спасявам...",
     "proxyLoadFailed": "Не можех да заредя настройките на проксито.",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "Добавете персонализиран модел, съвместим с OpenAI",
     "addCustomDescription": "Точков чат, вграждане, изображения или аудио модели на всяка OpenAI-съвместима крайна точка. Ключът API е по избор за локални сървъри.",
     "customType": "Тип",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "Изместване на старта от заявката за старт · Продължителност на опита",
     "requestedModel": "Поискан модел",
     "ttft": "TTFT",
-    "requestsByAgent": "Заявки по агент"
+    "requestsByAgent": "Заявки по агент",
+    "sortBy": "Сортиране по {column}",
+    "sortHint": "Сортирането се прилага за {count} заредени реда"
   },
   "logs": {
     "title": "Логове",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

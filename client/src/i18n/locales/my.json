@@ -417,6 +417,13 @@
     "saveProxy": "သိမ်းဆည်းပါ",
     "savingProxy": "သိမ်းဆည်းနေသည်...",
     "proxyLoadFailed": "Proxy ဆက်တင်များ မတင်နိုင်ပါ။",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "စိတ်ကြိုက် OpenAI ကိုက်ညီသော မော်ဒယ်တစ်ခု ထည့်သွင်းပါ",
     "addCustomDescription": "စကားပြောခြင်း၊ ထည့်သွင်းခြင်း၊ ပုံရိပ် သို့မဟုတ် အသံ မော်ဒယ်များကို OpenAI ကိုက်ညီသော အဆုံးတွင် ဦးတည်ပါ။ API key သည် ဒေသခံဆာဗာများအတွက် ရွေးချယ်စရာဖြစ်သည်။",
     "customType": "အမျိုးအစား",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "တောင်းဆိုမှုစတင်ချိန်မှ စတင်အော့ဖ်ဆက် · ကြိုးစားမှုကြာချိန်",
     "requestedModel": "တောင်းဆိုထားသော မော်ဒယ်",
     "ttft": "TTFT",
-    "requestsByAgent": "အေးဂျင့်အလိုက် တောင်းဆိုမှုများ"
+    "requestsByAgent": "အေးဂျင့်အလိုက် တောင်းဆိုမှုများ",
+    "sortBy": "{column} အလိုက် စီရန်",
+    "sortHint": "စီစဉ်ခြင်းသည် ဖွင့်ပြီးသော အတန်း {count} ခုအတွက်သာ သက်ရောက်သည်"
   },
   "logs": {
     "title": "မှတ်တမ်းများ",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

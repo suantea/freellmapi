@@ -417,6 +417,13 @@
     "saveProxy": "រក្សាទុក",
     "savingProxy": "កំពុងសន្សំ...",
     "proxyLoadFailed": "មិនអាចផ្ទុកការកំណត់ប្រូកស៊ីបានទេ។",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "បន្ថែមម៉ូដែលផ្ទាល់ខ្លួនដែលគាំទ្រ OpenAI",
     "addCustomDescription": "បង្ហាញការជជែក ការបញ្ចូល រូបភាព ឬម៉ូដែលសំឡេងទៅកាន់ចំណុចចុងក្រោយណាមួយដែលគាំទ្រ OpenAI។ កូនសោ API គឺជាជម្រើសសម្រាប់ម៉ាស៊ីនបម្រើក្នុងស្រុក។",
     "customType": "ប្រភេទ",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "ចាប់ផ្តើមពីចំណុចចាប់ផ្តើម · រយៈពេលព្យាយាម",
     "requestedModel": "ម៉ូដែលដែលបានស្នើសុំ",
     "ttft": "TTFT",
-    "requestsByAgent": "សំណើតាមភ្នាក់ងារ"
+    "requestsByAgent": "សំណើតាមភ្នាក់ងារ",
+    "sortBy": "តម្រៀបតាម {column}",
+    "sortHint": "ការតម្រៀបអនុវត្តតែលើជួរ {count} ដែលបានផ្ទុកប៉ុណ្ណោះ"
   },
   "logs": {
     "title": "កំណត់ហេតុ",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

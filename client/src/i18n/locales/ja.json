@@ -417,6 +417,13 @@
     "saveProxy": "保存",
     "savingProxy": "保存中…",
     "proxyLoadFailed": "プロキシ設定を読み込めませんでした。",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "カスタム OpenAI 互換モデルを追加",
     "addCustomDescription": "OpenAI 互換エンドポイントでチャット、埋め込み、画像、または音声モデルをポイントします。 API キーは、ローカル サーバーの場合はオプションです。",
     "customType": "タイプ",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "リクエスト開始からの開始オフセット · 試行期間",
     "requestedModel": "要求されたモデル",
     "ttft": "TTFT",
-    "requestsByAgent": "エージェント別リクエスト"
+    "requestsByAgent": "エージェント別リクエスト",
+    "sortBy": "{column}で並べ替え",
+    "sortHint": "並べ替えは読み込み済みの {count} 行にのみ適用されます"
   },
   "logs": {
     "title": "ログ",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeek のハーネス。各プロバイダーを切り替え可能なルートとして保持します。",
       "mimo": "Xiaomi のターミナルエージェント。OpenCode のフォークで、OpenAI 互換なら何でも使えます。",
       "cursor": "AI 前提のエディター。Cursor のクラウド経由なので公開 URL が必要です。",
-      "generic": "OpenAI API を話すその他のツール。ベース URL とキーを手動で設定します。"
+      "generic": "OpenAI API を話すその他のツール。ベース URL とキーを手動で設定します。",
+      "atomcode": "AtomGit のターミナルエージェント。Rust 製で、OpenAI 互換のエンドポイントなら何でも使えます。"
     }
   },
   "update": {
