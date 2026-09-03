@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "A nilo bọtini API",
     "claudeAliases": "Awọn inagijẹ wiwa Claude Code",
     "claudeAliasesHint": "Fi awọn inagijẹ claude/<model> han ki oluyan awoṣe ẹnu-ọna le ṣe atokọ katalogu naa.",
+    "mcpServer": "Olupin MCP",
+    "mcpServerHint": "Ó ń ṣí ojú-òpin /mcp fún àwọn oníbàárà aṣojú. Àwọn fifi-sori tuntun máa ń bẹ̀rẹ̀ ní pípa.",
     "urlTokensTitle": "Awọn tokini URL ti a le fagile",
     "urlTokensDesc": "Fun awọn alabara ti ko ni akọsori nikan. Awọn tokini URL le jo sinu itan-akọọlẹ ati awọn akọsilẹ, nitorinaa fagile wọn nigbati wọn ko ba nilo mọ.",
     "urlTokenLabel": "Aami tokini",

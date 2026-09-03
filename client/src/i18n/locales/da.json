@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API-nøgle påkrævet",
     "claudeAliases": "Claude Code-opdagelsesaliasser",
     "claudeAliasesHint": "Eksponér claude/<model>-aliasser, så gatewayens modelvælger kan vise kataloget.",
+    "mcpServer": "MCP-server",
+    "mcpServerHint": "Eksponerer /mcp-endpointet for agentklienter. Nye installationer starter slået fra.",
     "urlTokensTitle": "Tilbagekaldelige URL-tokens",
     "urlTokensDesc": "Kun til klienter uden headers. URL-tokens kan lække til historik og logs, så tilbagekald dem, når de ikke længere er nødvendige.",
     "urlTokenLabel": "Token-etiket",

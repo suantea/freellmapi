@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Se requiere clave de API",
     "claudeAliases": "Alias de detección de Claude Code",
     "claudeAliasesHint": "Expón alias claude/<model> para que el selector de modelos del gateway pueda listar el catálogo.",
+    "mcpServer": "Servidor MCP",
+    "mcpServerHint": "Expone el endpoint /mcp a los clientes de agentes. Las instalaciones nuevas empiezan desactivado.",
     "urlTokensTitle": "Tokens de URL revocables",
     "urlTokensDesc": "Solo para clientes sin cabeceras. Los tokens de URL pueden filtrarse al historial y a los registros, así que revócalos cuando ya no los necesites.",
     "urlTokenLabel": "Etiqueta del token",

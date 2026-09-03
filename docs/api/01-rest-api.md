@@ -8,6 +8,7 @@ Any OpenAI-compatible client works (Anthropic / Claude clients too — see [Anth
 
 - [Chat completions](#chat-completions)
 - [Routing strategies (`auto:*`)](#routing-strategies-auto)
+- [Model listing](#model-listing)
 - [Streaming](#streaming)
 - [Tool calling](#tool-calling)
 - [Gemini Google Search grounding](#gemini-google-search-grounding)
@@ -91,6 +92,23 @@ curl http://localhost:3001/v1/chat/completions \
 ```
 
 An unknown profile name returns a clear `400` rather than silently falling back. Profiles are named fallback chains (see [Features](../README.md#features)) — create and switch them from the dashboard; whichever is active is what plain `auto` uses.
+
+## Model listing
+
+`GET /v1/models` lists the whole catalog, including models you cannot call yet, so a client can show what exists as well as what is connected. `?available=true` (aliases `?connected=true`, `?ready=true`) narrows to models that can serve a request now.
+
+Each catalog entry also carries `execution_status`, a live answer to "would a request work right now":
+
+- `ready` — at least one key can actually serve it: enabled, healthy or not yet probed, not scoped away from this model, not on a rate-limit cooldown, and inside its rate and token windows. A key whose `status` is still `unknown` counts as ready, because probing is lazy and a fresh key is usable until something says otherwise.
+- `needsKey` — the model is disabled, or no enabled key matches it at all.
+- `exhausted` — keys match the model but every one of them is blocked at this moment, so a request would fail immediately. This is the state a burst of 429s produces, and it clears on its own when the cooldowns expire.
+
+`?execution_status=ready` (also `needsKey`, `exhausted`; matched case-insensitively) narrows the catalog rows to one status, so an agent can ask for models it can call without reading the whole list. An unrecognised value filters nothing. Like `?available=`, the filter applies only to catalog rows: `auto`, `fusion` and the `auto:<profile>` chains are router entries rather than models with keys of their own, and are always listed.
+
+```bash
+curl "http://localhost:3001/v1/models?execution_status=ready" \
+  -H "Authorization: Bearer freellmapi-your-unified-key"
+```
 
 ## Streaming
 
@@ -287,6 +305,8 @@ HTTP headers only carry printable ASCII, so a model id with characters outside t
 The opt-in response cache can be toggled per request with `X-FreeLLM-Cache: on|off` — an exact-match in-memory LRU for identical non-streaming requests (canonical SHA-256 keys over the full request, TTL and temperature gates, saved-token stats on the dashboard). Off by default; cache hits consume zero provider quota.
 
 When [prompt compression](../compression/01-compression-pipeline.md) is enabled, `X-FreeLLM-Compress: off|on|lossless|standard|aggressive` can disable or lower the configured mode for one request. It cannot raise the operator's configured mode. The response reports the effective mode and estimated savings, for example `X-FreeLLM-Compress: standard; saved~=1840`.
+
+`X-FreeLLM-Task-Type: code|chat|auto` tells the router what kind of turn this is, so it can bias the routing weights: `code` trades some of the speed weight for intelligence (a wrong answer costs more than a slow one), `chat` does the reverse. It is a soft preference only — capability gates, the failover chain and the model catalog are untouched, and the shift is 30% of one axis. The default is `auto`: tool-bearing requests and messages carrying unambiguous code markers (a fenced block, a declaration, a stack frame, a `file.ts:214` reference) are treated as `code`, and everything else keeps the preset weights exactly as configured. The `fastest`, `reliable` and `custom` routing strategies ignore the header — those are an explicit operator choice about where on the axis to sit.
 
 ## Embeddings
 

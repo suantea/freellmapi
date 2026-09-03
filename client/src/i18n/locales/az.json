@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API açarı tələb olunur",
     "claudeAliases": "Claude Code aşkarlama aliasları",
     "claudeAliasesHint": "Şlüzün model seçicisi kataloqu göstərə bilsin deyə claude/<model> aliaslarını açın.",
+    "mcpServer": "MCP serveri",
+    "mcpServerHint": "/mcp son nöqtəsini agent klientlərinə açır. Yeni quraşdırmalar sönülü başlayır.",
     "urlTokensTitle": "Ləğv edilə bilən URL tokenləri",
     "urlTokensDesc": "Yalnız başlıqsız müştərilər üçün. URL tokenləri tarixçəyə və loqlara sıza bilər, ona görə də artıq lazım olmadıqda onları ləğv edin.",
     "urlTokenLabel": "Token etiketi",

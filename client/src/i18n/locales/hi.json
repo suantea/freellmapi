@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API कुंजी आवश्यक",
     "claudeAliases": "Claude Code खोज उपनाम",
     "claudeAliasesHint": "claude/<model> उपनाम उजागर करें ताकि गेटवे मॉडल चयनकर्ता कैटलॉग सूचीबद्ध कर सके।",
+    "mcpServer": "MCP सर्वर",
+    "mcpServerHint": "एजेंट क्लाइंट के लिए /mcp एंडपॉइंट खोलता है। नई इंस्टॉलेशन में यह बंद रहता है।",
     "urlTokensTitle": "रद्द करने योग्य URL टोकन",
     "urlTokensDesc": "केवल हेडर-रहित क्लाइंट के लिए। URL टोकन इतिहास और लॉग में लीक हो सकते हैं, इसलिए ज़रूरत न रहने पर उन्हें रद्द कर दें।",
     "urlTokenLabel": "टोकन लेबल",

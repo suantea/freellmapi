@@ -6,6 +6,7 @@
 
 - [OpenAI 兼容客户端](#openai-兼容客户端)
 - [编程智能体](#编程智能体)
+- [QwenPaw](#qwenpaw)
 - [原生 Gemini 客户端](#原生-gemini-客户端)
 - [Ollama 客户端](#ollama-客户端)
 - [无头客户端](#无头客户端)
@@ -48,10 +49,11 @@ npx freellmapi setup-dsh --url http://localhost:3001 --api-key <统一密钥>
 | **Kilo Code** | `setup-kilo` | `http://localhost:3001/v1` | OpenAI Chat |
 | **Crush** | `setup-crush` | `http://localhost:3001/v1` | OpenAI Chat |
 | **DeepSeek Harness** | `setup-dsh` | `http://localhost:3001/v1` | OpenAI Chat (`api: openai-completions`) |
+| **QwenPaw** | 手动配置 | `http://localhost:3001/v1` | OpenAI Chat (`chat.completions`) |
 | **Cursor** | `setup-cursor` 打印指引 | 公共 `https://…/v1` | OpenAI Chat |
 | **其他** | `setup-generic` 打印现成配置块 | `http://localhost:3001/v1` | OpenAI Chat |
 
-根路径与 `/v1` 的区别很重要：Claude Code 期望服务器根路径，因为它会追加 Anthropic Messages 路径。本表中兼容 OpenAI 的客户端——包括 Cline、Aider、Goose、Codex、Continue、OpenCode、Qwen、Roo、Kilo、Crush 和 DeepSeek Harness——期望它们配置的 base URL 包含 `/v1`。
+根路径与 `/v1` 的区别很重要：Claude Code 期望服务器根路径，因为它会追加 Anthropic Messages 路径。本表中兼容 OpenAI 的客户端——包括 Cline、Aider、Goose、Codex、Continue、OpenCode、Qwen、Roo、Kilo、Crush、QwenPaw 和 DeepSeek Harness——期望它们配置的 base URL 包含 `/v1`。
 
 ### DeepSeek Harness (`dsh`)
 
@@ -65,6 +67,26 @@ npx @deepseek-ai/dsh web
 ```
 
 设置是热重载的，所以运行中的 `dsh` 下一次请求就会用上这条路由。`--profile <name>` 添加第二条路由（`freellmapi-<name>`）而不改变默认模型；`--model <id>` 固定默认值。路由只声明文本——在 `freellmapi.models` 下给某模型条目加上 `input: [text, image]` 即可发图。尊重 `DSH_HOME`。
+
+### QwenPaw
+
+[QwenPaw](https://github.com/agentscope-ai/QwenPaw) 支持使用 OpenAI
+`chat.completions` API 的自定义提供商。先启动 FreeLLMAPI，并从其仪表盘创建或复制统一密钥，
+然后在 QwenPaw Console 中打开 **设置 → 模型**：
+
+1. 在 **提供商** 下选择 **添加提供商**。
+2. 填写 **提供商 ID**（例如 `freellmapi`）和 **提供商名称**（例如 `FreeLLMAPI`），
+   并将 API 兼容模式设为 OpenAI `chat.completions`。
+3. 进入该提供商的设置页，将 **Base URL** 设为 `http://localhost:3001/v1`，
+   将 **API 密钥** 设为 FreeLLMAPI 统一密钥。
+4. 在该提供商的模型页面添加模型。**模型 ID** 可填 `auto` 让 FreeLLMAPI 自动路由，
+   或从 `GET http://localhost:3001/v1/models` 复制当前可用的模型 id。
+5. 保存后把该模型设为默认（或在单次对话中选用），并发一条消息验证。
+
+如果 QwenPaw 在容器中运行，`localhost` 指向的是该容器，而不是运行 FreeLLMAPI 的宿主机。
+请改用 QwenPaw 容器能够访问的主机名或宿主机网关地址，并保留 `/v1` 后缀。不要把统一密钥
+放进 URL、截图或 issue 报告。当前 Console 字段名称以 QwenPaw 的
+[官方模型配置指南](https://qwenpaw.agentscope.io/docs/models)为准。
 
 ## 原生 Gemini 客户端
 
@@ -110,7 +132,19 @@ http://localhost:3001/v1/t/<token>/models
 
 在推理之上，路由器还是个 **MCP 服务器**：智能体能在会话中途内省它
 （可用模型及各模型支持的参数、提供方健康度、用量与缓存统计、
-路由策略）。对 Claude Code：
+路由策略）。
+
+MCP 接口是一项设置，而非始终开启的端点（#925）。**全新安装默认关闭**；升级时已配置提供方密钥的安装会保持开启，这样已有的 Claude Code 或 Cline 会话不会在升级后中断。可在「密钥」页的**智能体兼容性**里开关，也可以走 API：
+
+```bash
+curl -X PUT http://localhost:3001/api/settings/enable-mcp \
+  -H "Authorization: Bearer <dashboard-token>" -H "Content-Type: application/json" \
+  -d '{"enabled": true}'
+```
+
+关闭期间，`/mcp` 的所有方法都会返回 `403` 和一条说明用的 JSON-RPC 错误。
+
+对 Claude Code：
 
 ```bash
 claude mcp add --transport http freellmapi http://localhost:3001/mcp \

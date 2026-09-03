@@ -404,6 +404,8 @@
     "ollamaKeyRequired": "API key required",
     "claudeAliases": "Claude Code discovery aliases",
     "claudeAliasesHint": "Expose claude/<model> aliases so the gateway model picker can list the catalog.",
+    "mcpServer": "MCP server",
+    "mcpServerHint": "Expose the /mcp endpoint for agent clients. New installs start with it off.",
     "urlTokensTitle": "Revocable URL tokens",
     "urlTokensDesc": "For headerless clients only. URL tokens can leak into history and logs, so revoke them when no longer needed.",
     "urlTokenLabel": "Token label",
