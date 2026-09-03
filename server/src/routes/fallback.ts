@@ -16,6 +16,8 @@ import { getActiveProfileId } from '../services/profile-models.js';
 import { qualifiedModelMemberId } from '../lib/endpoint-scope.js';
 import { overriddenFieldNames } from '../services/model-state.js';
 import { parseModelScope, scopeAllows } from '../lib/model-scope.js';
+import { inferQuotaPoolKey } from '../services/provider-quota.js';
+import type { Platform } from '@freellmapi/shared/types.js';
 
 export const fallbackRouter = Router();
 
@@ -189,9 +191,24 @@ function orderProfileRows(rows: any[]): any[] {
 }
 
 // Get fallback chain (with dynamic penalties)
-fallbackRouter.get('/', (_req: Request, res: Response) => {
+fallbackRouter.get('/', (req: Request, res: Response) => {
   const db = getDb();
-  const activeProfileId = getActiveProfileId(db);
+  // #1047: an explicit ?profile= pins the read to that chain, so a client
+  // caching per-chain can never have "the active chain, whichever that is right
+  // now" written into a specific chain's cache entry. During an activation the
+  // active id changes between the client's two fetches; that race is how chain
+  // B's rows ended up rendered (and nearly saved) under chain A's name.
+  let activeProfileId = getActiveProfileId(db);
+  const requestedRaw = req.query.profile;
+  if (requestedRaw !== undefined) {
+    const requested = Number.parseInt(String(requestedRaw), 10);
+    if (!Number.isInteger(requested) || requested <= 0
+      || !db.prepare('SELECT 1 FROM profiles WHERE id = ?').get(requested)) {
+      res.status(404).json({ error: { message: `no such profile: ${String(requestedRaw)}` } });
+      return;
+    }
+    activeProfileId = requested;
+  }
   // `fallback_config` is the chain only for an install that has no profiles at
   // all. Once one is active it is authoritative even when it is empty — falling
   // through to the global table there is what made two different empty chains
@@ -506,13 +523,38 @@ fallbackRouter.get('/token-usage', (_req: Request, res: Response) => {
       };
     });
 
-  // Total budget counts all models (both enabled and disabled — they contribute to the pool)
-  const totalBudget = modelBudgets.reduce((s, m) => s + m.budget, 0);
+  // One budget per pool (#1065): many models on one platform draw from the
+  // same free allowance (see inferQuotaPoolKey), and every model row repeats
+  // that account pool's label — so summing per model counts one 100M Mistral
+  // allowance once per catalog model (13 models read as 1.3B). Take the
+  // largest documented value per pool, scaled by usable keys exactly like the
+  // per-model budget above; this matches /api/free-tier (#905), which reports
+  // the same pools for the same account.
+  const pools = new Map<string, { poolKey: string; platform: string; budget: number; used: number }>();
+  for (const m of modelBudgets) {
+    const poolKey = inferQuotaPoolKey(m.platform as Platform, m.modelId);
+    let pool = pools.get(poolKey);
+    if (!pool) {
+      pool = { poolKey, platform: m.platform, budget: 0, used: 0 };
+      pools.set(poolKey, pool);
+    }
+    if (m.budget > pool.budget) pool.budget = m.budget;
+    pool.used += m.used;
+  }
+  const poolList = [...pools.values()];
+
+  // Pools count all chain models (enabled or disabled — they contribute to the
+  // pool); `used` stays the per-model sum, since actual spend per model really
+  // is separate.
+  const totalBudget = poolList.reduce((s, p) => s + p.budget, 0);
   const totalUsed = modelBudgets.reduce((s, m) => s + m.used, 0);
 
   res.json({
     totalBudget,
     totalUsed,
+    // One segment per pool for the stacked bar (#1065): per-model segments
+    // would overflow the pooled total by the catalog's model count.
+    pools: poolList,
     models: modelBudgets,
   });
 });
