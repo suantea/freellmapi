@@ -1,9 +1,10 @@
 # Clients & coding agents
 
-[← Back to README](../README.md) · [Documentation index](README.md)
+[← Back to README](../README.md) · [Documentation index](../README.md)
 
 - [OpenAI-compatible clients](#openai-compatible-clients)
 - [Coding agents](#coding-agents)
+- [QwenPaw](#qwenpaw)
 - [Native Gemini clients](#native-gemini-clients)
 - [Ollama clients](#ollama-clients)
 - [Headerless clients](#headerless-clients)
@@ -28,6 +29,7 @@ Use the generator instead of hand-editing a client configuration:
 export FREELLMAPI_API_KEY=<unified-key>   # or pass --api-key on each command
 npx freellmapi setup-claude --url http://localhost:3001 --dry-run
 npx freellmapi setup-claude --url http://localhost:3001
+npx freellmapi setup-dsh --url http://localhost:3001 --api-key <unified-key>
 ```
 
 `--dry-run` prints a diff. Real writes merge with the existing configuration
@@ -50,13 +52,15 @@ context windows.
 | **Crush** | `setup-crush` | `http://localhost:3001/v1` | OpenAI Chat |
 | **DeepSeek Harness** | `setup-dsh` | `http://localhost:3001/v1` | OpenAI Chat (`api: openai-completions`) |
 | **MiMo Code** | `setup-mimo` | `http://localhost:3001/v1` | OpenAI Chat |
+| **AtomCode** | `setup-atomcode` | `http://localhost:3001/v1` | OpenAI Chat (`type = "openai"`) |
+| **QwenPaw** | Manual setup | `http://localhost:3001/v1` | OpenAI Chat (`chat.completions`) |
 | **Cursor** | `setup-cursor` prints the guide | public `https://…/v1` | OpenAI Chat |
 | **Anything else** | `setup-generic` prints a ready block | `http://localhost:3001/v1` | OpenAI Chat |
 
 The root-vs-`/v1` distinction matters: Claude Code expects the server root
 because it appends the Anthropic Messages path. OpenAI-compatible clients in
 this table—including Cline, Aider, Goose, Codex, Continue, OpenCode, Qwen,
-Roo, Kilo, Crush, MiMo Code, and DeepSeek Harness—expect their configured
+Roo, Kilo, Crush, MiMo Code, AtomCode, QwenPaw, and DeepSeek Harness—expect their configured
 base URL to include `/v1`.
 
 ### DeepSeek Harness (`dsh`)
@@ -111,6 +115,55 @@ syntax, so it stays out of the config file. There is no `MIMOCODE_API_KEY` or
 features, they are not a general fallback for config fields. Each model is
 declared with the `limit.context` and `limit.output` pair MiMo's schema
 requires, both taken from the live catalog.
+
+### AtomCode (`atomcode`)
+
+[AtomCode](https://atomcode.atomgit.com/docs/en/) is AtomGit's terminal
+coding agent, written in Rust. It reads `~/.atomcode/config.toml`, where a
+root `default_provider` key names one `[providers.<id>]` table and
+`type = "openai"` makes that table speak the OpenAI-compatible wire.
+`setup-atomcode` writes a `[providers.freellmapi]` table — `base_url` on the
+gateway's `/v1`, the unified key as `api_key`, the chosen model and its
+`context_window` from the live catalog — and sets `default_provider` to it.
+The write is a structural merge: the root key is placed above any existing
+tables, only the `freellmapi` table is replaced, and other `[providers.*]`
+tables and settings in the file are left as they were.
+
+```bash
+npx freellmapi setup-atomcode --url http://localhost:3001 --api-key <unified-key>
+atomcode
+```
+
+AtomCode has no environment-variable fallback for the key, so it is written
+into the config file; the file is created with mode 0600 and a timestamped
+backup is taken before an existing one is changed. `--model <id>` pins the
+default model.
+
+### QwenPaw
+
+[QwenPaw](https://github.com/agentscope-ai/QwenPaw) supports custom providers
+that use the OpenAI `chat.completions` API. Start FreeLLMAPI, create or copy a
+unified key from its dashboard, then open **Settings → Models** in the QwenPaw
+Console:
+
+1. Under **Providers**, choose **Add Provider**.
+2. Give it a **Provider ID** such as `freellmapi` and a **Provider Name** such
+   as `FreeLLMAPI`, and set the API compatibility mode to OpenAI
+   `chat.completions`.
+3. Open the new provider's settings and set **Base URL** to
+   `http://localhost:3001/v1` and **API Key** to your FreeLLMAPI unified key.
+4. On the provider's models page, add a model. Use `auto` as the **Model ID**
+   to let FreeLLMAPI route the request, or copy a current id from
+   `GET http://localhost:3001/v1/models`.
+5. Save, then pick the model as the default (or per chat) and send a test
+   message.
+
+If QwenPaw runs in a container, `localhost` refers to that container rather
+than the host running FreeLLMAPI. Use a hostname or host-gateway address that
+the QwenPaw container can reach, while keeping the `/v1` suffix. Do not put the
+unified key in a URL, screenshot, or issue report. See QwenPaw's
+[official model configuration guide](https://qwenpaw.agentscope.io/docs/models)
+for the current Console field names.
 
 ## Native Gemini clients
 
@@ -168,7 +221,22 @@ telemetry.
 
 On top of inference, the router is an **MCP server**: agents can introspect it mid-session
 (usable models and the params each one honors, provider health, usage and cache stats,
-routing strategy). For Claude Code:
+routing strategy).
+
+The MCP surface is a setting rather than an always-on endpoint (#925). **Fresh installs
+start with it off**; installs that already had provider keys configured when they upgraded
+keep it on, so an existing Claude Code or Cline session does not break on upgrade. Toggle
+it on the Keys page under **Agent compatibility**, or from the API:
+
+```bash
+curl -X PUT http://localhost:3001/api/settings/enable-mcp \
+  -H "Authorization: Bearer <dashboard-token>" -H "Content-Type: application/json" \
+  -d '{"enabled": true}'
+```
+
+While it is off, every verb on `/mcp` answers `403` with a JSON-RPC error saying so.
+
+For Claude Code:
 
 ```bash
 claude mcp add --transport http freellmapi http://localhost:3001/mcp \

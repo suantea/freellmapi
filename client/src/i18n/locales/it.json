@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Chiave API richiesta",
     "claudeAliases": "Alias di scoperta per Claude Code",
     "claudeAliasesHint": "Esponi gli alias claude/<model> così il selettore di modelli del gateway può elencare il catalogo.",
+    "mcpServer": "Server MCP",
+    "mcpServerHint": "Espone l'endpoint /mcp ai client agente. Le nuove installazioni partono disattivate.",
     "urlTokensTitle": "Token URL revocabili",
     "urlTokensDesc": "Solo per client senza header. I token URL possono finire nella cronologia e nei log, quindi revocali quando non servono più.",
     "urlTokenLabel": "Etichetta del token",
@@ -713,10 +715,11 @@
     "requestedModel": "Modello richiesto",
     "ttft": "TTFT",
     "requestsByAgent": "Richieste per agente",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Ordina per {column}",
+    "sortHint": "L'ordinamento si applica alle {count} righe caricate",
+    "cacheHitRate": "Tasso di hit della cache",
+    "cacheSavedTokens": "{tokens} token risparmiati",
+    "cacheHitRateHint": "{hits} hit contro {misses} miss dall'avvio del server · {requests} chiamate al provider evitate"
   },
   "logs": {
     "title": "Log",
@@ -1030,7 +1033,8 @@
       "dsh": "L'imbracatura di DeepSeek, che tiene ogni fornitore come una rotta commutabile.",
       "mimo": "L'agente da terminale di Xiaomi, un fork di OpenCode che accetta qualsiasi fornitore compatibile OpenAI.",
       "cursor": "L'editor pensato per l'IA; passa dal cloud di Cursor, quindi serve un URL pubblico.",
-      "generic": "Qualsiasi altro strumento che parli l'API di OpenAI, configurato a mano con URL base e chiave."
+      "generic": "Qualsiasi altro strumento che parli l'API di OpenAI, configurato a mano con URL base e chiave.",
+      "atomcode": "L'agente da terminale di AtomGit, scritto in Rust, che accetta qualsiasi endpoint compatibile OpenAI."
     }
   },
   "update": {

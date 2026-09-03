@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Ana buƙatar maɓallin API",
     "claudeAliases": "Sunayen gano na Claude Code",
     "claudeAliasesHint": "Fitar da sunayen claude/<model> domin mazaɓin samfura na gateway ya iya lissafa kundin.",
+    "mcpServer": "Sabar MCP",
+    "mcpServerHint": "Yana buɗe ƙarshen /mcp ga abokan huldar wakilai. Sabbin shigarwa suna farawa a kashe.",
     "urlTokensTitle": "Alamomin URL masu sokewa",
     "urlTokensDesc": "Don abokan ciniki marasa header kawai. Alamomin URL na iya zuba cikin tarihi da rajistan ayyuka, don haka soke su idan ba a buƙatarsu.",
     "urlTokenLabel": "Lakabin alama",
@@ -713,10 +715,11 @@
     "requestedModel": "Samfurin da ake nema",
     "ttft": "Saukewa: TTFT",
     "requestsByAgent": "Bukatu ta kowane wakili",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Tsara bisa {column}",
+    "sortHint": "Tsarawar ta shafi layuka {count} da aka ɗora kawai",
+    "cacheHitRate": "Yawan nasarar cache",
+    "cacheSavedTokens": "An adana tokens {tokens}",
+    "cacheHitRateHint": "Nasara {hits} kan rashi {misses} tun farawar sabar · an guji kiran mai bayarwa {requests}"
   },
   "logs": {
     "title": "Logs",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

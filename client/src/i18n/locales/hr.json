@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Potreban API ključ",
     "claudeAliases": "Aliasi za otkrivanje Claude Codea",
     "claudeAliasesHint": "Izložite claude/<model> aliase kako bi birač modela gatewaya mogao izlistati katalog.",
+    "mcpServer": "MCP poslužitelj",
+    "mcpServerHint": "Izlaže krajnju točku /mcp agentskim klijentima. Nove instalacije počinju isključene.",
     "urlTokensTitle": "Opozivi URL tokeni",
     "urlTokensDesc": "Samo za klijente bez zaglavlja. URL tokeni mogu procuriti u povijest i logove, pa ih opozovite kad više nisu potrebni.",
     "urlTokenLabel": "Oznaka tokena",
@@ -713,10 +715,11 @@
     "requestedModel": "Traženi model",
     "ttft": "TTFT",
     "requestsByAgent": "Zahtjevi po agentu",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Sortiraj po: {column}",
+    "sortHint": "Sortiranje vrijedi za {count} učitanih redaka",
+    "cacheHitRate": "Stopa pogodaka predmemorije",
+    "cacheSavedTokens": "Ušteđeno {tokens} tokena",
+    "cacheHitRateHint": "{hits} pogodaka naspram {misses} promašaja od pokretanja poslužitelja · izbjegnuto {requests} poziva pružatelju"
   },
   "logs": {
     "title": "Logovi",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Ufunguo wa API unahitajika",
     "claudeAliases": "Lakabu za ugunduzi za Claude Code",
     "claudeAliasesHint": "Onyesha lakabu za claude/<model> ili kichaguzi cha miundo cha lango kiweze kuorodhesha katalogi.",
+    "mcpServer": "Seva ya MCP",
+    "mcpServerHint": "Hufungua kiungo /mcp kwa wateja wa mawakala. Usakinishaji mpya huanza ukiwa umezimwa.",
     "urlTokensTitle": "Tokeni za URL zinazoweza kubatilishwa",
     "urlTokensDesc": "Kwa wateja wasio na vichwa pekee. Tokeni za URL zinaweza kuvuja kwenye historia na kumbukumbu, kwa hivyo zibatilishe zisipohitajika tena.",
     "urlTokenLabel": "Lebo ya tokeni",
@@ -713,10 +715,11 @@
     "requestedModel": "Umeomba muundo",
     "ttft": "TTFT",
     "requestsByAgent": "Maombi kwa kila wakala",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Panga kwa {column}",
+    "sortHint": "Upangaji unatumika kwa safu {count} zilizopakiwa",
+    "cacheHitRate": "Kiwango cha mafanikio ya akiba",
+    "cacheSavedTokens": "Tokeni {tokens} zimehifadhiwa",
+    "cacheHitRateHint": "Mafanikio {hits} dhidi ya makosa {misses} tangu seva ianze · miito {requests} kwa mtoa huduma imeepukwa"
   },
   "logs": {
     "title": "Kumbukumbu",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

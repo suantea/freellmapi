@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -6,6 +6,7 @@ import {
 } from 'recharts'
 import {
   Activity,
+  Archive,
   ArrowDown,
   ArrowUp,
   Bot,
@@ -15,7 +16,6 @@ import {
   CircleDollarSign,
   Clock,
   Coins,
-  Database,
   Gauge,
   GitBranch,
   KeyRound,
@@ -37,7 +37,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PageHeader } from '@/components/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip as HoverTooltip } from '@/components/tooltip'
+import { SortableHeader } from '@/components/sortable-header'
 import { formatSqliteUtcToLocalTime } from '@/lib/utils'
+import { sortRows, useTableSort, type SortValueFn } from '@/lib/table-sort'
 import { platformColors } from '@/lib/routing'
 import { categoryAxisProps, verticalCategoryAxisProps } from '@/lib/chart-axis'
 import { useI18n } from '@/i18n'
@@ -56,6 +58,71 @@ function storedRange(): TimeRange {
     if (v && (TIME_RANGES as string[]).includes(v)) return v as TimeRange
   } catch { /* ignore */ }
   return '7d'
+}
+
+// Sortable columns of the three breakdown tables. Sorting is client-side over
+// the rows already loaded and remembered per table (same localStorage idiom as
+// the range). Recent calls are fetched newest-first with limit=100, so its
+// sort covers that window, not the whole filtered set — the table says so
+// whenever `total` exceeds the loaded rows.
+type RecentCallCol = 'time' | 'ip' | 'agent' | 'model' | 'provider' | 'status' | 'attempts' | 'inTokens' | 'outTokens' | 'latency'
+const RECENT_CALL_COLS: readonly RecentCallCol[] = ['time', 'ip', 'agent', 'model', 'provider', 'status', 'attempts', 'inTokens', 'outTokens', 'latency']
+const RECENT_CALLS_SORT_KEY = 'analytics.recentCallsSort'
+
+// success > canceled > error, so ascending puts the failures on top.
+function statusRank(status: string): number {
+  return status === 'success' ? 2 : status === 'canceled' ? 1 : 0
+}
+
+const recentCallValue: SortValueFn<RecentCallRow, RecentCallCol> = (r, col) => {
+  switch (col) {
+    case 'time': return r.createdAt
+    case 'ip': return r.clientIp
+    case 'agent': return r.clientUserAgent
+    case 'model': return r.modelId
+    // Same text the cell shows: a labelled custom endpoint sorts by its label.
+    case 'provider': return r.platform === 'custom' && r.keyLabel ? r.keyLabel : r.platform
+    case 'status': return statusRank(r.status)
+    case 'attempts': return r.attemptCount
+    case 'inTokens': return r.inputTokens
+    case 'outTokens': return r.outputTokens
+    case 'latency': return r.latencyMs
+  }
+}
+
+type ByModelCol = 'model' | 'provider' | 'requests' | 'pinned' | 'success' | 'latency' | 'inTokens' | 'outTokens' | 'saved'
+const BY_MODEL_COLS: readonly ByModelCol[] = ['model', 'provider', 'requests', 'pinned', 'success', 'latency', 'inTokens', 'outTokens', 'saved']
+const BY_MODEL_SORT_KEY = 'analytics.byModelSort'
+
+const byModelValue: SortValueFn<ByModelRow, ByModelCol> = (m, col) => {
+  switch (col) {
+    case 'model': return m.displayName
+    case 'provider': return m.endpoint ?? m.platform
+    case 'requests': return m.requests
+    case 'pinned': return m.pinnedRequests
+    case 'success': return m.successRate
+    case 'latency': return m.avgLatencyMs
+    case 'inTokens': return m.totalInputTokens
+    case 'outTokens': return m.totalOutputTokens
+    case 'saved': return m.estimatedCost ?? null
+  }
+}
+
+type ByKeyCol = 'label' | 'provider' | 'requests' | 'success' | 'latency' | 'inTokens' | 'outTokens'
+const BY_KEY_COLS: readonly ByKeyCol[] = ['label', 'provider', 'requests', 'success', 'latency', 'inTokens', 'outTokens']
+const BY_KEY_SORT_KEY = 'analytics.byKeySort'
+
+const byKeyValue: SortValueFn<ByKeyRow, ByKeyCol> = (k, col) => {
+  switch (col) {
+    // Unlabelled keys sort by id rather than bunching as one empty string.
+    case 'label': return k.label || `#${k.keyId}`
+    case 'provider': return k.platform
+    case 'requests': return k.requests
+    case 'success': return k.successRate
+    case 'latency': return k.avgLatencyMs
+    case 'inTokens': return k.totalInputTokens
+    case 'outTokens': return k.totalOutputTokens
+  }
 }
 
 // Response shapes mirror the JSON emitted by server/src/routes/analytics.ts.
@@ -80,11 +147,16 @@ interface SummaryResponse {
 interface CacheStatsResponse {
   enabled: boolean
   entries: number
+  // Hits carried by the entries currently held (restored from SQLite), and the
+  // provider round-trips / tokens they represent.
   totalHits: number
-  totalMisses: number
-  hitRate: number
   estimatedRequestsSaved: number
   savedTokens: number
+  // Lookups since the server started — the ratio's two halves. Kept separate
+  // from totalHits, which shrinks when entries are evicted.
+  lookupHits: number
+  lookupMisses: number
+  hitRate: number
 }
 
 interface ByPlatformRow {
@@ -250,7 +322,7 @@ function formatTokens(n?: number): string {
   return String(n)
 }
 
-function Stat({ icon: Icon, label, value, hint, className }: { icon: LucideIcon; label: string; value: string | number; hint?: string; className?: string }) {
+function Stat({ icon: Icon, label, value, sub, hint, className }: { icon: LucideIcon; label: string; value: string | number; sub?: string; hint?: string; className?: string }) {
   const card = (
     <div className="rounded-3xl border bg-card px-4 py-3">
       <div className="flex items-center justify-between gap-3">
@@ -260,6 +332,9 @@ function Stat({ icon: Icon, label, value, hint, className }: { icon: LucideIcon;
         </span>
       </div>
       <p className={`text-xl font-semibold tabular-nums mt-1 ${className ?? ''}`}>{value}</p>
+      {/* Optional second figure, so one card can carry two related numbers
+          instead of spending another slot in the summary row. */}
+      {sub ? <p className="text-[11px] text-muted-foreground tabular-nums truncate">{sub}</p> : null}
     </div>
   )
   // Same portal tooltip as the routing strategy chips. Opens BELOW the card:
@@ -557,6 +632,23 @@ export default function AnalyticsPage() {
     },
   })
 
+  // Per-table column sort (client-side, remembered per table). `null` keeps
+  // the API order, so the memoised arrays are the query data itself then.
+  const recentCallsSort = useTableSort(RECENT_CALLS_SORT_KEY, RECENT_CALL_COLS)
+  const byModelSort = useTableSort(BY_MODEL_SORT_KEY, BY_MODEL_COLS)
+  const byKeySort = useTableSort(BY_KEY_SORT_KEY, BY_KEY_COLS)
+  const recentCallRows = useMemo(
+    () => sortRows(recentCalls?.rows ?? [], recentCallsSort.sort, recentCallValue),
+    [recentCalls?.rows, recentCallsSort.sort],
+  )
+  const byModelRows = useMemo(() => sortRows(byModel, byModelSort.sort, byModelValue), [byModel, byModelSort.sort])
+  const byKeyRows = useMemo(() => sortRows(byKey, byKeySort.sort, byKeyValue), [byKey, byKeySort.sort])
+  // The list is capped at 100 rows while `total` counts the whole filtered
+  // set; say so while a sort is active and there is more than what's loaded.
+  const recentCallsSortHint = recentCallsSort.sort && recentCalls && recentCalls.total > recentCalls.rows.length
+    ? t('analytics.sortHint', { count: recentCalls.rows.length })
+    : null
+
   // Savings card shows ONE stable monthly figure regardless of the selected
   // range: the last-30-days data projected to a full month from its actual
   // span (a young install with 2 days of data shows 15x its 2-day total).
@@ -638,7 +730,9 @@ export default function AnalyticsPage() {
         {/* Summary stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-3">
           {summaryLoading ? (
-            Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-[74px] rounded-3xl" />)
+            // Same count as the cards below, cache card included, so the row
+            // does not reflow when the summary lands.
+            Array.from({ length: cacheStats?.enabled ? 9 : 8 }).map((_, i) => <Skeleton key={i} className="h-[74px] rounded-3xl" />)
           ) : (
             <>
               <Stat icon={Activity} label={t('analytics.requests')} value={summary?.totalRequests ?? 0} hint={requestsHint} />
@@ -653,14 +747,18 @@ export default function AnalyticsPage() {
                   The value is a 30-day projection; the hover hint tells the whole
                   story (actual period amount + whether it was extrapolated). */}
               <Stat icon={CircleDollarSign} label={t('analytics.estSavings')} value={`$${savings30d.toFixed(2)}`} hint={savingsHint} />
-              {/* Response-cache impact: hit rate + provider round-trips avoided.
-                  Hidden when the cache is disabled, so the row doesn't show a
-                  misleading 0% on installs that opted out. */}
+              {/* Response-cache impact, as ONE card: hit rate with the tokens
+                  it gave back underneath. Rendered only when the cache is on,
+                  so installs that opted out neither lose a slot in this row nor
+                  see a misleading 0%. */}
               {cacheStats?.enabled && (
-                <>
-                  <Stat icon={Database} label={t('analytics.cacheHitRate')} value={`${Math.round(cacheStats.hitRate * 100)}%`} hint={t('analytics.cacheHitRateHint', { hits: cacheStats.totalHits, misses: cacheStats.totalMisses })} />
-                  <Stat icon={Zap} label={t('analytics.cacheRequestsSaved')} value={cacheStats.estimatedRequestsSaved} hint={t('analytics.cacheRequestsSavedHint', { tokens: formatTokens(cacheStats.savedTokens) })} />
-                </>
+                <Stat
+                  icon={Archive}
+                  label={t('analytics.cacheHitRate')}
+                  value={`${Math.round(cacheStats.hitRate * 100)}%`}
+                  sub={t('analytics.cacheSavedTokens', { tokens: formatTokens(cacheStats.savedTokens) })}
+                  hint={t('analytics.cacheHitRateHint', { hits: cacheStats.lookupHits, misses: cacheStats.lookupMisses, requests: cacheStats.estimatedRequestsSaved })}
+                />
               )}
             </>
           )}
@@ -828,7 +926,11 @@ export default function AnalyticsPage() {
                     {errors.slice(0, 20).map((e) => (
                       <TableRow key={e.id}>
                         <TableCell className="pl-4 text-xs">{e.endpoint ?? e.platform}</TableCell>
-                        <TableCell className="text-xs max-w-[200px] truncate">{e.error}</TableCell>
+                        <TableCell className="text-xs max-w-[200px]">
+                          {e.error
+                            ? <HoverTooltip text={e.error} side="top" className="block truncate">{e.error}</HoverTooltip>
+                            : null}
+                        </TableCell>
                         <TableCell className="text-right text-xs text-muted-foreground tabular-nums pr-4">
                           {formatSqliteUtcToLocalTime(e.createdAt, { hour: '2-digit', minute: '2-digit' })}
                         </TableCell>
@@ -883,6 +985,9 @@ export default function AnalyticsPage() {
                 </div>
               }
             >
+              {recentCallsSortHint && (
+                <p className="pb-2 text-xs text-muted-foreground">{recentCallsSortHint}</p>
+              )}
               {!recentCalls?.rows?.length ? (
                 <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData')}</p>
               ) : (
@@ -890,20 +995,20 @@ export default function AnalyticsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="pl-4">{t('analytics.time')}</TableHead>
-                        <TableHead>{t('analytics.clientIp')}</TableHead>
-                        <TableHead>{t('analytics.clientAgent')}</TableHead>
-                        <TableHead>{t('common.model')}</TableHead>
-                        <TableHead>{t('common.provider')}</TableHead>
-                        <TableHead>{t('common.status')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.attempts')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.inTokens')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.outTokens')}</TableHead>
-                        <TableHead className="text-right pr-4">{t('analytics.latency')}</TableHead>
+                        <SortableHeader column="time" label={t('analytics.time')} className="pl-4" sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="ip" label={t('analytics.clientIp')} sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="agent" label={t('analytics.clientAgent')} sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="model" label={t('common.model')} sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="provider" label={t('common.provider')} sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="status" label={t('common.status')} sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="attempts" label={t('analytics.attempts')} align="right" sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="inTokens" label={t('analytics.inTokens')} align="right" sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="outTokens" label={t('analytics.outTokens')} align="right" sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="latency" label={t('analytics.latency')} align="right" className="pr-4" sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {recentCalls.rows.map((r) => (
+                      {recentCallRows.map((r) => (
                         <TableRow
                           key={r.id}
                           onClick={() => setDetailId(r.id)}
@@ -1005,19 +1110,19 @@ export default function AnalyticsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="pl-4">{t('common.model')}</TableHead>
-                        <TableHead>{t('common.provider')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.requests')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.pinned')}</TableHead>
-                        <TableHead className="text-right">{t('common.success')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.latency')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.inTokens')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.outTokens')}</TableHead>
-                        <TableHead className="text-right pr-4">{t('analytics.saved')}</TableHead>
+                        <SortableHeader column="model" label={t('common.model')} className="pl-4" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="provider" label={t('common.provider')} sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="requests" label={t('analytics.requests')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="pinned" label={t('analytics.pinned')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="success" label={t('common.success')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="latency" label={t('analytics.latency')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="inTokens" label={t('analytics.inTokens')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="outTokens" label={t('analytics.outTokens')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="saved" label={t('analytics.saved')} align="right" className="pr-4" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {byModel.map((m) => (
+                      {byModelRows.map((m) => (
                         <TableRow key={`${m.providerId ?? m.platform}:${m.modelId}`}>
                           <TableCell className="pl-4 text-sm font-medium">{m.displayName}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{m.endpoint ?? m.platform}</TableCell>
@@ -1045,17 +1150,17 @@ export default function AnalyticsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="pl-4">{t('analytics.keyColumn')}</TableHead>
-                        <TableHead>{t('common.provider')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.requests')}</TableHead>
-                        <TableHead className="text-right">{t('common.success')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.latency')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.inTokens')}</TableHead>
-                        <TableHead className="text-right pr-4">{t('analytics.outTokens')}</TableHead>
+                        <SortableHeader column="label" label={t('analytics.keyColumn')} className="pl-4" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="provider" label={t('common.provider')} sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="requests" label={t('analytics.requests')} align="right" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="success" label={t('common.success')} align="right" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="latency" label={t('analytics.latency')} align="right" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="inTokens" label={t('analytics.inTokens')} align="right" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="outTokens" label={t('analytics.outTokens')} align="right" className="pr-4" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {byKey.map((k) => (
+                      {byKeyRows.map((k) => (
                         <TableRow key={k.keyId}>
                           <TableCell className="pl-4 text-sm font-medium">
                             {k.label || t('analytics.keyLabelFallback', { id: k.keyId })}

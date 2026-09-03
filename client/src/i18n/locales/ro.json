@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Cheie API necesară",
     "claudeAliases": "Aliasuri de descoperire Claude Code",
     "claudeAliasesHint": "Expune aliasurile claude/<model> pentru ca selectorul de modele al gateway-ului să poată lista catalogul.",
+    "mcpServer": "Server MCP",
+    "mcpServerHint": "Expune endpointul /mcp către clienții agent. Instalările noi pornesc dezactivate.",
     "urlTokensTitle": "Tokenuri URL revocabile",
     "urlTokensDesc": "Doar pentru clienți fără anteturi. Tokenurile URL pot ajunge în istoric și în loguri, așa că revocă-le când nu mai sunt necesare.",
     "urlTokenLabel": "Etichetă token",
@@ -713,10 +715,11 @@
     "requestedModel": "Modelul cerut",
     "ttft": "TTFT",
     "requestsByAgent": "Cereri per agent",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Sortează după {column}",
+    "sortHint": "Sortarea se aplică celor {count} rânduri încărcate",
+    "cacheHitRate": "Rata de succes a cache-ului",
+    "cacheSavedTokens": "{tokens} tokenuri economisite",
+    "cacheHitRateHint": "{hits} accesări reușite față de {misses} ratări de la pornirea serverului · {requests} apeluri către furnizor evitate"
   },
   "logs": {
     "title": "Jurnale",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

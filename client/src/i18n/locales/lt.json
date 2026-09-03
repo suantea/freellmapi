@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Reikalingas API raktas",
     "claudeAliases": "Claude Code aptikimo aliasai",
     "claudeAliasesHint": "Atskleiskite claude/<model> aliasus, kad šliuzo modelių parinkiklis galėtų pateikti katalogą.",
+    "mcpServer": "MCP serveris",
+    "mcpServerHint": "Atveria /mcp galinį tašką agentų klientams. Naujuose diegimuose iš pradžių išjungta.",
     "urlTokensTitle": "Atšaukiami URL žetonai",
     "urlTokensDesc": "Tik klientams be antraščių. URL žetonai gali nutekėti į istoriją ir žurnalus, todėl atšaukite juos, kai nebereikia.",
     "urlTokenLabel": "Žetono etiketė",
@@ -713,10 +715,11 @@
     "requestedModel": "Prašytas modelis",
     "ttft": "TTFT",
     "requestsByAgent": "Užklausos pagal agentą",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Rikiuoti pagal {column}",
+    "sortHint": "Rikiavimas taikomas {count} įkeltoms eilutėms",
+    "cacheHitRate": "Podėlio pataikymų dalis",
+    "cacheSavedTokens": "Sutaupyta {tokens} žetonų",
+    "cacheHitRateHint": "{hits} pataikymai prieš {misses} praleidimus nuo serverio paleidimo · išvengta {requests} tiekėjo užklausų"
   },
   "logs": {
     "title": "Žurnalas",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Потребан је API кључ",
     "claudeAliases": "Алијаси за откривање Claude Code-а",
     "claudeAliasesHint": "Изложите claude/<model> алијасе како би бирач модела мрежног пролаза могао да прикаже каталог.",
+    "mcpServer": "MCP сервер",
+    "mcpServerHint": "Излаже крајњу тачку /mcp агентским клијентима. Нове инсталације почињу искључене.",
     "urlTokensTitle": "Опозиви URL токени",
     "urlTokensDesc": "Само за клијенте без заглавља. URL токени могу да процуре у историју и логове, па их опозовите када више нису потребни.",
     "urlTokenLabel": "Ознака токена",
@@ -713,10 +715,11 @@
     "requestedModel": "Тражени модел",
     "ttft": "TTFT",
     "requestsByAgent": "Захтеви по агенту",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Сортирај по: {column}",
+    "sortHint": "Сортирање важи за {count} учитаних редова",
+    "cacheHitRate": "Стопа погодака кеша",
+    "cacheSavedTokens": "Уштеђено {tokens} токена",
+    "cacheHitRateHint": "{hits} погодака наспрам {misses} промашаја од покретања сервера · избегнуто {requests} позива провајдеру"
   },
   "logs": {
     "title": "Логови",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

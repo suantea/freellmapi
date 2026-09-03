@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API કી જરૂરી છે",
     "claudeAliases": "Claude Code શોધ ઉપનામો",
     "claudeAliasesHint": "ગેટવેનું મોડેલ પસંદગીકાર કેટલોગની યાદી બતાવી શકે તે માટે claude/<model> ઉપનામો ખુલ્લા કરો.",
+    "mcpServer": "MCP સર્વર",
+    "mcpServerHint": "એજન્ટ ક્લાયન્ટ માટે /mcp એન્ડપોઇન્ટ ખુલ્લું કરે છે. નવા ઇન્સ્ટોલમાં તે બંધ રહે છે.",
     "urlTokensTitle": "રદ કરી શકાય તેવા URL ટોકન્સ",
     "urlTokensDesc": "ફક્ત હેડર વગરના ક્લાયન્ટ્સ માટે. URL ટોકન્સ ઇતિહાસ અને લોગમાં લીક થઈ શકે છે, તેથી જ્યારે જરૂર ન રહે ત્યારે તેમને રદ કરો.",
     "urlTokenLabel": "ટોકન લેબલ",
@@ -713,10 +715,11 @@
     "requestedModel": "વિનંતી કરેલ મોડેલ",
     "ttft": "TTFT",
     "requestsByAgent": "એજન્ટ પ્રમાણે વિનંતીઓ",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "{column} પ્રમાણે ગોઠવો",
+    "sortHint": "ગોઠવણી ફક્ત લોડ થયેલી {count} પંક્તિઓ પર લાગુ થાય છે",
+    "cacheHitRate": "કૅશ હિટ રેટ",
+    "cacheSavedTokens": "{tokens} ટોકન બચ્યા",
+    "cacheHitRateHint": "સર્વર શરૂ થયા પછી {hits} હિટ સામે {misses} મિસ · {requests} પ્રોવાઇડર કૉલ ટાળ્યા"
   },
   "logs": {
     "title": "લોગ",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

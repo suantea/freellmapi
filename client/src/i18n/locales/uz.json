@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API kaliti talab qilinadi",
     "claudeAliases": "Claude Code aniqlash taxalluslari",
     "claudeAliasesHint": "Shlyuz model tanlagichi katalogni ro'yxatlashi uchun claude/<model> taxalluslarini oching.",
+    "mcpServer": "MCP serveri",
+    "mcpServerHint": "Agent mijozlari uchun /mcp yakuniy nuqtasini ochadi. Yangi o‘rnatishlarda u o‘chiq bo‘ladi.",
     "urlTokensTitle": "Bekor qilinadigan URL tokenlari",
     "urlTokensDesc": "Faqat sarlavhasiz mijozlar uchun. URL tokenlari tarix va jurnallarga sizib chiqishi mumkin, shuning uchun kerak bo'lmaganda ularni bekor qiling.",
     "urlTokenLabel": "Token yorlig'i",
@@ -713,10 +715,11 @@
     "requestedModel": "So'ralgan model",
     "ttft": "TTFT",
     "requestsByAgent": "Agent bo'yicha so'rovlar",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "{column} bo‘yicha saralash",
+    "sortHint": "Saralash faqat yuklangan {count} ta qatorga qo‘llanadi",
+    "cacheHitRate": "Kesh muvaffaqiyat darajasi",
+    "cacheSavedTokens": "{tokens} token tejaldi",
+    "cacheHitRateHint": "Server ishga tushganidan beri {hits} muvaffaqiyat, {misses} o‘tkazib yuborish · {requests} ta provayder so‘rovi tejaldi"
   },
   "logs": {
     "title": "Jurnal",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API കീ ആവശ്യമാണ്",
     "claudeAliases": "Claude Code കണ്ടെത്തൽ അപരനാമങ്ങൾ",
     "claudeAliasesHint": "ഗേറ്റ്‌വേ മോഡൽ പിക്കറിന് കാറ്റലോഗ് ലിസ്റ്റ് ചെയ്യാൻ claude/<model> അപരനാമങ്ങൾ തുറന്നുകൊടുക്കുക.",
+    "mcpServer": "MCP സെർവർ",
+    "mcpServerHint": "ഏജന്റ് ക്ലയന്റുകൾക്കായി /mcp എൻഡ്‌പോയിന്റ് തുറക്കുന്നു. പുതിയ ഇൻസ്റ്റാളേഷനുകളിൽ ഇത് ഓഫാണ്.",
     "urlTokensTitle": "റദ്ദാക്കാവുന്ന URL ടോക്കണുകൾ",
     "urlTokensDesc": "ഹെഡർ ഇല്ലാത്ത ക്ലയൻ്റുകൾക്ക് മാത്രം. URL ടോക്കണുകൾ ചരിത്രത്തിലേക്കും ലോഗുകളിലേക്കും ചോർന്നേക്കാം, അതിനാൽ ആവശ്യമില്ലാതാകുമ്പോൾ അവ റദ്ദാക്കുക.",
     "urlTokenLabel": "ടോക്കൺ ലേബൽ",
@@ -713,10 +715,11 @@
     "requestedModel": "അഭ്യർത്ഥിച്ച മോഡൽ",
     "ttft": "TTFT",
     "requestsByAgent": "ഏജൻ്റ് അനുസരിച്ചുള്ള അഭ്യർത്ഥനകൾ",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "{column} അനുസരിച്ച് ക്രമീകരിക്കുക",
+    "sortHint": "ക്രമീകരണം ലോഡ് ചെയ്ത {count} വരികൾക്ക് മാത്രമേ ബാധകമാകൂ",
+    "cacheHitRate": "കാഷ് ഹിറ്റ് നിരക്ക്",
+    "cacheSavedTokens": "{tokens} ടോക്കണുകൾ ലാഭിച്ചു",
+    "cacheHitRateHint": "സെർവർ ആരംഭിച്ചതിനുശേഷം {hits} ഹിറ്റുകൾ, {misses} മിസ്സുകൾ · {requests} ദാതാവ് കോളുകൾ ഒഴിവാക്കി"
   },
   "logs": {
     "title": "ലോഗുകൾ",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

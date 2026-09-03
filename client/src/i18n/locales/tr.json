@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API anahtarı gerekli",
     "claudeAliases": "Claude Code keşif takma adları",
     "claudeAliasesHint": "Ağ geçidi model seçicisinin kataloğu listeleyebilmesi için claude/<model> takma adlarını açığa çıkarın.",
+    "mcpServer": "MCP sunucusu",
+    "mcpServerHint": "/mcp uç noktasını aracı istemcilere açar. Yeni kurulumlarda kapalı başlar.",
     "urlTokensTitle": "İptal edilebilir URL belirteçleri",
     "urlTokensDesc": "Yalnızca başlık gönderemeyen istemciler için. URL belirteçleri geçmişe ve günlüklere sızabilir; bu yüzden artık gerekmediğinde iptal edin.",
     "urlTokenLabel": "Belirteç etiketi",
@@ -713,10 +715,11 @@
     "requestedModel": "İstenilen model",
     "ttft": "TTFT",
     "requestsByAgent": "Ajan başına istekler",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "{column} ölçütüne göre sırala",
+    "sortHint": "Sıralama yalnızca yüklenen {count} satıra uygulanır",
+    "cacheHitRate": "Önbellek isabet oranı",
+    "cacheSavedTokens": "{tokens} jeton tasarruf edildi",
+    "cacheHitRateHint": "Sunucu başlatıldığından beri {hits} isabet, {misses} ıskalama · {requests} sağlayıcı çağrısından kaçınıldı"
   },
   "logs": {
     "title": "Günlükler",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek'in koşum takımı; her sağlayıcıyı geçiş yapılabilir bir rota olarak tutar.",
       "mimo": "Xiaomi'nin terminal ajanı; OpenAI uyumlu her sağlayıcıyı kabul eden bir OpenCode çatallaması.",
       "cursor": "Yapay zekâ odaklı düzenleyici; Cursor bulutundan geçtiği için herkese açık bir URL ister.",
-      "generic": "OpenAI API'sini konuşan diğer her araç; temel URL ve anahtarla elle kurulur."
+      "generic": "OpenAI API'sini konuşan diğer her araç; temel URL ve anahtarla elle kurulur.",
+      "atomcode": "AtomGit'in terminal ajanı; Rust ile yazılmış, OpenAI uyumlu her uç noktayı kabul eder."
     }
   },
   "update": {

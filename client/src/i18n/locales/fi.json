@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API-avain vaaditaan",
     "claudeAliases": "Claude Coden löytämisaliakset",
     "claudeAliasesHint": "Julkaise claude/<model>-aliakset, jotta yhdyskäytävän mallivalitsin voi listata katalogin.",
+    "mcpServer": "MCP-palvelin",
+    "mcpServerHint": "Julkaisee /mcp-päätepisteen agenttiasiakkaille. Uusissa asennuksissa se on aluksi pois päältä.",
     "urlTokensTitle": "Peruutettavat URL-tokenit",
     "urlTokensDesc": "Vain otsikottomille asiakkaille. URL-tokenit voivat vuotaa historiaan ja lokeihin, joten peruuta ne, kun niitä ei enää tarvita.",
     "urlTokenLabel": "Tokenin nimi",
@@ -713,10 +715,11 @@
     "requestedModel": "Pyydetty malli",
     "ttft": "TTFT",
     "requestsByAgent": "Pyynnöt agenteittain",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Lajittele: {column}",
+    "sortHint": "Lajittelu koskee vain ladattuja {count} riviä",
+    "cacheHitRate": "Välimuistin osumaprosentti",
+    "cacheSavedTokens": "{tokens} tokenia säästetty",
+    "cacheHitRateHint": "{hits} osumaa vs. {misses} ohitusta palvelimen käynnistyksestä · {requests} palveluntarjoajan kutsua vältetty"
   },
   "logs": {
     "title": "Lokit",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

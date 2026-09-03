@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API kulcs szükséges",
     "claudeAliases": "Claude Code felderítési aliasok",
     "claudeAliasesHint": "Tedd elérhetővé a claude/<model> aliasokat, hogy az átjáró modellválasztója listázhassa a katalógust.",
+    "mcpServer": "MCP-kiszolgáló",
+    "mcpServerHint": "Elérhetővé teszi a /mcp végpontot az ügynökklienseknek. Új telepítéseknél alapból ki van kapcsolva.",
     "urlTokensTitle": "Visszavonható URL tokenek",
     "urlTokensDesc": "Csak fejléc nélküli kliensekhez. Az URL tokenek kiszivároghatnak az előzményekbe és a naplókba, ezért vond vissza őket, ha már nincs rájuk szükség.",
     "urlTokenLabel": "Token címke",
@@ -713,10 +715,11 @@
     "requestedModel": "Kért modell",
     "ttft": "TTFT",
     "requestsByAgent": "Kérések ügynökönként",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Rendezés: {column}",
+    "sortHint": "A rendezés a betöltött {count} sorra vonatkozik",
+    "cacheHitRate": "Gyorsítótár-találati arány",
+    "cacheSavedTokens": "{tokens} token megtakarítva",
+    "cacheHitRateHint": "{hits} találat és {misses} tévesztés a szerver indítása óta · {requests} szolgáltatóhívás megspórolva"
   },
   "logs": {
     "title": "Napló",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

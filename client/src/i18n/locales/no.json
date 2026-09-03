@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API-nøkkel kreves",
     "claudeAliases": "Oppdagingsaliaser for Claude Code",
     "claudeAliasesHint": "Eksponer claude/<model>-aliaser slik at gatewayens modellvelger kan liste opp katalogen.",
+    "mcpServer": "MCP-server",
+    "mcpServerHint": "Eksponerer /mcp-endepunktet for agentklienter. Nye installasjoner starter avslått.",
     "urlTokensTitle": "Tilbakekallbare URL-tokener",
     "urlTokensDesc": "Kun for klienter uten headere. URL-tokener kan lekke inn i historikk og logger, så tilbakekall dem når de ikke lenger trengs.",
     "urlTokenLabel": "Tokenetikett",
@@ -713,10 +715,11 @@
     "requestedModel": "Etterspurt modell",
     "ttft": "TTFT",
     "requestsByAgent": "Forespørsler per agent",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Sorter etter {column}",
+    "sortHint": "Sorteringen gjelder de {count} innlastede radene",
+    "cacheHitRate": "Cache-treffrate",
+    "cacheSavedTokens": "{tokens} tokens spart",
+    "cacheHitRateHint": "{hits} treff mot {misses} bom siden serveren startet · {requests} leverandørkall unngått"
   },
   "logs": {
     "title": "Logg",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Perlu kunci API",
     "claudeAliases": "Alias penemuan Claude Code",
     "claudeAliasesHint": "Ekspos alias claude/<model> agar pemilih model gateway dapat menampilkan daftar katalog.",
+    "mcpServer": "Server MCP",
+    "mcpServerHint": "Membuka endpoint /mcp untuk klien agen. Instalasi baru dimulai dalam keadaan nonaktif.",
     "urlTokensTitle": "Token URL yang dapat dicabut",
     "urlTokensDesc": "Hanya untuk klien tanpa header. Token URL bisa bocor ke riwayat dan log, jadi cabut jika sudah tidak diperlukan.",
     "urlTokenLabel": "Label token",
@@ -713,10 +715,11 @@
     "requestedModel": "Model yang diminta",
     "ttft": "TTFT",
     "requestsByAgent": "Permintaan per agen",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Urutkan berdasarkan {column}",
+    "sortHint": "Pengurutan berlaku untuk {count} baris yang dimuat",
+    "cacheHitRate": "Rasio hit cache",
+    "cacheSavedTokens": "{tokens} token dihemat",
+    "cacheHitRateHint": "{hits} hit vs {misses} miss sejak server dijalankan · {requests} panggilan penyedia dihindari"
   },
   "logs": {
     "title": "Log",
@@ -1030,7 +1033,8 @@
       "dsh": "Kerangka DeepSeek, yang menyimpan tiap penyedia sebagai rute yang bisa Anda ganti.",
       "mimo": "Agen terminal dari Xiaomi, cabang OpenCode yang menerima penyedia apa pun yang kompatibel dengan OpenAI.",
       "cursor": "Penyunting yang mengutamakan AI; lewat awan Cursor, jadi perlu URL publik.",
-      "generic": "Perkakas lain mana pun yang berbicara API OpenAI, disiapkan manual dengan URL dasar dan kunci."
+      "generic": "Perkakas lain mana pun yang berbicara API OpenAI, disiapkan manual dengan URL dasar dan kunci.",
+      "atomcode": "Agen terminal dari AtomGit, ditulis dalam Rust, yang menerima endpoint apa pun yang kompatibel dengan OpenAI."
     }
   },
   "update": {

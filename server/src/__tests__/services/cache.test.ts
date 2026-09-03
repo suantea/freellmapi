@@ -1,11 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { initDb, setSetting } from '../../db/index.js';
+import { initDb, setSetting, getDb } from '../../db/index.js';
 import {
   computeCacheKey,
   getCachedResponse,
   storeCachedResponse,
   getCacheStats,
   clearCache,
+  loadCacheFromDb,
+  __flushPersistenceForTests,
+  __resetMemoryForTests,
   isCacheableTemperature,
   parseCacheDirective,
   cacheActive,
@@ -16,6 +19,7 @@ import type { ChatMessage } from '@freellmapi/shared/types.js';
 
 const CACHE_ENV = [
   'RESPONSE_CACHE',
+  'RESPONSE_CACHE_PERSIST',
   'RESPONSE_CACHE_TTL_SECONDS',
   'RESPONSE_CACHE_MAX_TEMPERATURE',
   'RESPONSE_CACHE_MAX_ENTRIES',
@@ -368,6 +372,199 @@ describe('response cache', () => {
       expect(isCacheEnabled()).toBe(false); // explicit off beats env on
       setSetting(CACHE_ENABLED_SETTING, ''); // cleared → fall back to env
       expect(isCacheEnabled()).toBe(true);
+    });
+  });
+
+  describe('hit rate', () => {
+    it('counts every lookup, so an eviction cannot drag the rate down', () => {
+      process.env.RESPONSE_CACHE_MAX_ENTRIES = '1';
+      const a = computeCacheKey({ model: 'auto', messages: [msg('user', 'a')] });
+      const b = computeCacheKey({ model: 'auto', messages: [msg('user', 'b')] });
+
+      store(a, 'answer a');
+      expect(getCachedResponse(a)).not.toBeNull(); // 1 hit
+      // Storing b evicts a, taking a's hit_count with it.
+      store(b, 'answer b');
+      expect(getCachedResponse(b)).not.toBeNull(); // 2 hits
+
+      const stats = getCacheStats();
+      expect(stats.lookupHits).toBe(2);
+      expect(stats.lookupMisses).toBe(0);
+      expect(stats.hitRate).toBe(1);
+      // The entry-attributed count did shrink with the eviction; that is the
+      // savings figure, and precisely why the rate must not be derived from it.
+      expect(stats.totalHits).toBe(1);
+    });
+
+    it('counts misses, including a lookup that found an expired entry', () => {
+      process.env.RESPONSE_CACHE_TTL_SECONDS = '60';
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'rate')] });
+      const t0 = 5_000_000;
+
+      expect(getCachedResponse(key, t0)).toBeNull(); // cold miss
+      store(key, 'answer', t0);
+      expect(getCachedResponse(key, t0 + 1_000)).not.toBeNull(); // hit
+      expect(getCachedResponse(key, t0 + 120_000)).toBeNull(); // expired: a miss
+
+      const stats = getCacheStats();
+      expect(stats.lookupHits).toBe(1);
+      expect(stats.lookupMisses).toBe(2);
+      expect(stats.hitRate).toBeCloseTo(1 / 3, 6);
+    });
+
+    it('reports 0 before any lookup rather than dividing by zero', () => {
+      const stats = getCacheStats();
+      expect(stats.lookupHits).toBe(0);
+      expect(stats.lookupMisses).toBe(0);
+      expect(stats.hitRate).toBe(0);
+    });
+
+    it('resets the tallies when the cache is flushed', () => {
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'flush-rate')] });
+      store(key, 'answer');
+      getCachedResponse(key);
+      expect(getCacheStats().hitRate).toBe(1);
+
+      clearCache();
+      // A 100% hit rate beside zero entries would be nonsense.
+      expect(getCacheStats().hitRate).toBe(0);
+    });
+  });
+
+  // Persistence is tied to the cache master switch, so these have to turn it on.
+  // "Restart" means __resetMemoryForTests(): it drops the in-memory LRU and
+  // leaves the table alone, which is what a process restart does. clearCache()
+  // is the user-facing flush and now wipes SQLite too, so it cannot stand in.
+  describe('SQLite persistence', () => {
+    beforeEach(() => {
+      process.env.RESPONSE_CACHE = 'true';
+    });
+
+    const rowCount = (): number =>
+      (getDb().prepare('SELECT COUNT(*) AS n FROM response_cache').get() as { n: number }).n;
+
+    it('survives a restart: store -> reload from DB -> hit', () => {
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'persisted')] });
+      store(key, 'persisted answer');
+      expect(getCacheStats().entries).toBe(1);
+
+      __resetMemoryForTests();
+      expect(getCacheStats().entries).toBe(0);
+      loadCacheFromDb();
+
+      const hit = getCachedResponse(key);
+      expect(hit).not.toBeNull();
+      expect((hit!.body as any).choices[0].message.content).toBe('persisted answer');
+      expect(hit!.platform).toBe('groq');
+      expect(hit!.promptTokens).toBe(10);
+    });
+
+    it('persists nothing while the cache is off', () => {
+      process.env.RESPONSE_CACHE = 'false';
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'unpersisted')] });
+      store(key, 'answer');
+      __flushPersistenceForTests();
+      expect(rowCount()).toBe(0);
+    });
+
+    it('persists nothing when RESPONSE_CACHE_PERSIST is off', () => {
+      process.env.RESPONSE_CACHE_PERSIST = 'false';
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'memory-only')] });
+      store(key, 'answer');
+      __flushPersistenceForTests();
+      expect(rowCount()).toBe(0);
+      // Still cached in memory: only the disk half is disabled.
+      expect(getCachedResponse(key)).not.toBeNull();
+    });
+
+    it('carries the rolling hit count across a restart', () => {
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'counted')] });
+      store(key, 'answer');
+      getCachedResponse(key);
+      getCachedResponse(key);
+      expect(getCacheStats().totalHits).toBe(2);
+
+      __resetMemoryForTests();
+      loadCacheFromDb();
+      // The hits reached the row, so the savings numbers do not reset to zero.
+      expect(getCacheStats().totalHits).toBe(2);
+      getCachedResponse(key);
+      expect(getCacheStats().totalHits).toBe(3);
+    });
+
+    it('does not reload entries expired before startup', () => {
+      process.env.RESPONSE_CACHE_TTL_SECONDS = '60';
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'stale-persisted')] });
+      const t0 = 1_000_000;
+      store(key, 'stale', t0);
+
+      __resetMemoryForTests();
+      // 10 minutes later (past the 60s TTL): startup purge drops the row.
+      loadCacheFromDb(t0 + 600_000);
+      expect(getCachedResponse(key, t0 + 600_000)).toBeNull();
+      expect(getCacheStats().entries).toBe(0);
+      expect(rowCount()).toBe(0);
+    });
+
+    it('respects RESPONSE_CACHE_MAX_ENTRIES when reloading', () => {
+      process.env.RESPONSE_CACHE_MAX_ENTRIES = '2';
+      const base = 1_700_000_000_000;
+      const keys = ['p1', 'p2', 'p3'].map(t =>
+        computeCacheKey({ model: 'auto', messages: [msg('user', t)] }));
+      // Stored with the cap raised so all three reach the table, then reloaded
+      // under the cap — the load path has its own bound, separate from the LRU.
+      process.env.RESPONSE_CACHE_MAX_ENTRIES = '10';
+      keys.forEach((k, i) => store(k, `v${i}`, base + i));
+      __flushPersistenceForTests();
+      process.env.RESPONSE_CACHE_MAX_ENTRIES = '2';
+
+      __resetMemoryForTests();
+      loadCacheFromDb(base + 10);
+      // Newest two win; the oldest row is dropped past the cap.
+      expect(getCacheStats().entries).toBe(2);
+      expect(getCachedResponse(keys[0]!, base + 10)).toBeNull();
+      expect(getCachedResponse(keys[2]!, base + 10)).not.toBeNull();
+    });
+
+    it('drops the row when the LRU evicts the entry', () => {
+      process.env.RESPONSE_CACHE_MAX_ENTRIES = '1';
+      const first = computeCacheKey({ model: 'auto', messages: [msg('user', 'evicted')] });
+      const second = computeCacheKey({ model: 'auto', messages: [msg('user', 'survivor')] });
+      store(first, 'gone');
+      store(second, 'kept');
+      __flushPersistenceForTests();
+
+      expect(rowCount()).toBe(1);
+      __resetMemoryForTests();
+      loadCacheFromDb();
+      // The evicted entry must not come back from disk.
+      expect(getCachedResponse(first)).toBeNull();
+      expect(getCachedResponse(second)).not.toBeNull();
+    });
+
+    it('drops the row when a read finds the entry expired', () => {
+      process.env.RESPONSE_CACHE_TTL_SECONDS = '60';
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'ttl-row')] });
+      const t0 = 2_000_000;
+      store(key, 'stale', t0);
+      __flushPersistenceForTests();
+      expect(rowCount()).toBe(1);
+
+      expect(getCachedResponse(key, t0 + 120_000)).toBeNull();
+      __flushPersistenceForTests();
+      expect(rowCount()).toBe(0);
+    });
+
+    it('clearCache() purges SQLite too, so a restart does not resurrect entries', () => {
+      const key = computeCacheKey({ model: 'auto', messages: [msg('user', 'flushed')] });
+      store(key, 'answer');
+      __flushPersistenceForTests();
+      expect(rowCount()).toBe(1);
+
+      expect(clearCache()).toBe(1);
+      expect(rowCount()).toBe(0);
+      loadCacheFromDb();
+      expect(getCachedResponse(key)).toBeNull();
     });
   });
 });

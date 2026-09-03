@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Chave de API obrigatória",
     "claudeAliases": "Aliases de descoberta do Claude Code",
     "claudeAliasesHint": "Exponha aliases claude/<model> para que o seletor de modelos do gateway possa listar o catálogo.",
+    "mcpServer": "Servidor MCP",
+    "mcpServerHint": "Expõe o endpoint /mcp para clientes de agente. Instalações novas começam desligadas.",
     "urlTokensTitle": "Tokens de URL revogáveis",
     "urlTokensDesc": "Apenas para clientes sem cabeçalhos. Tokens de URL podem vazar para o histórico e os logs; revogue-os quando não forem mais necessários.",
     "urlTokenLabel": "Rótulo do token",
@@ -713,10 +715,11 @@
     "requestedModel": "Modelo solicitado",
     "ttft": "TTFT",
     "requestsByAgent": "Solicitações por agente",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Ordenar por {column}",
+    "sortHint": "A ordenação se aplica às {count} linhas carregadas",
+    "cacheHitRate": "Taxa de acerto do cache",
+    "cacheSavedTokens": "{tokens} tokens economizados",
+    "cacheHitRateHint": "{hits} acertos contra {misses} erros desde o início do servidor · {requests} chamadas ao provedor evitadas"
   },
   "logs": {
     "title": "Logs",
@@ -1030,7 +1033,8 @@
       "dsh": "O harness da DeepSeek, que guarda cada provedor como uma rota que você pode trocar.",
       "mimo": "O agente de terminal da Xiaomi, um fork do OpenCode que aceita qualquer provedor compatível com OpenAI.",
       "cursor": "O editor centrado em IA; ele passa pela nuvem da Cursor, então precisa de uma URL pública.",
-      "generic": "Qualquer outra ferramenta que fale a API da OpenAI, configurada à mão com URL base e chave."
+      "generic": "Qualquer outra ferramenta que fale a API da OpenAI, configurada à mão com URL base e chave.",
+      "atomcode": "O agente de terminal da AtomGit, escrito em Rust, que aceita qualquer endpoint compatível com OpenAI."
     }
   },
   "update": {

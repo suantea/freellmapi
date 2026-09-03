@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Требуется API-ключ",
     "claudeAliases": "Алиасы обнаружения Claude Code",
     "claudeAliasesHint": "Публикуйте алиасы claude/<model>, чтобы селектор моделей шлюза мог отобразить каталог.",
+    "mcpServer": "Сервер MCP",
+    "mcpServerHint": "Открывает эндпоинт /mcp для агентных клиентов. В новых установках он выключен.",
     "urlTokensTitle": "Отзываемые URL-токены",
     "urlTokensDesc": "Только для клиентов без заголовков. URL-токены могут попасть в историю и логи, поэтому отзывайте их, когда они больше не нужны.",
     "urlTokenLabel": "Метка токена",
@@ -713,10 +715,11 @@
     "requestedModel": "Запрошенная модель",
     "ttft": "TTFT",
     "requestsByAgent": "Запросы по агентам",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Сортировать по: {column}",
+    "sortHint": "Сортировка применяется к {count} загруженным строкам",
+    "cacheHitRate": "Доля попаданий в кэш",
+    "cacheSavedTokens": "Сэкономлено {tokens} токенов",
+    "cacheHitRateHint": "{hits} попаданий против {misses} промахов с момента запуска сервера · сэкономлено {requests} запросов к провайдеру"
   },
   "logs": {
     "title": "Журнал",
@@ -1030,7 +1033,8 @@
       "dsh": "Обвязка DeepSeek: каждый провайдер хранится как маршрут, между которыми можно переключаться.",
       "mimo": "Терминальный агент Xiaomi, форк OpenCode, принимает любого OpenAI-совместимого провайдера.",
       "cursor": "Редактор с упором на ИИ; работает через облако Cursor, поэтому нужен публичный URL.",
-      "generic": "Любой другой инструмент, говорящий по API OpenAI, — настраивается вручную по базовому URL и ключу."
+      "generic": "Любой другой инструмент, говорящий по API OpenAI, — настраивается вручную по базовому URL и ключу.",
+      "atomcode": "Терминальный агент AtomGit, написанный на Rust, принимает любой OpenAI-совместимый эндпоинт."
     }
   },
   "update": {

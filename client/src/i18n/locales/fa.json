@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "کلید API لازم است",
     "claudeAliases": "نام های مستعار کشف Claude Code",
     "claudeAliasesHint": "نام های مستعار claude/<model> را در دسترس قرار دهید تا انتخابگر مدل دروازه بتواند کاتالوگ را فهرست کند.",
+    "mcpServer": "سرور MCP",
+    "mcpServerHint": "نقطهٔ پایانی /mcp را برای کلاینت‌های عامل باز می‌کند. نصب‌های جدید خاموش شروع می‌شوند.",
     "urlTokensTitle": "توکن های URL قابل لغو",
     "urlTokensDesc": "فقط برای کلاینت های بدون هدر. توکن های URL ممکن است به تاریخچه و لاگ ها نشت کنند، پس وقتی دیگر لازم نیستند آنها را لغو کنید.",
     "urlTokenLabel": "برچسب توکن",
@@ -713,10 +715,11 @@
     "requestedModel": "مدل درخواستی",
     "ttft": "TTFT",
     "requestsByAgent": "درخواستها بر اساس عامل",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "مرتب‌سازی بر اساس {column}",
+    "sortHint": "مرتب‌سازی فقط روی {count} ردیف بارگذاری‌شده اعمال می‌شود",
+    "cacheHitRate": "نرخ اصابت حافظه نهان",
+    "cacheSavedTokens": "{tokens} توکن صرفه‌جویی شد",
+    "cacheHitRateHint": "{hits} اصابت در برابر {misses} خطا از زمان راه‌اندازی سرور · {requests} فراخوانی ارائه‌دهنده صرفه‌جویی شد"
   },
   "logs": {
     "title": "لاگ‌ها",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

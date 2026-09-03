@@ -112,6 +112,36 @@ and it is unset, the server auto-generates a development key and saves it to a
 installs that kept the key in the database are migrated to this file on first
 boot. Do not rely on that fallback with real provider keys; set `ENCRYPTION_KEY`.
 
+### Rotating the encryption key
+
+Stored secrets are AES-256-GCM, so simply changing `ENCRYPTION_KEY` does not
+re-encrypt anything — it makes every provider key, per-key proxy override,
+client-profile credential and saved Fetch Relay token fail to decrypt at once.
+Re-encrypt them first, with the server stopped:
+
+```bash
+# 1. Generate the new key
+NEW_KEY="$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')"
+
+# 2. Preview (reads only, writes nothing)
+cd server
+ENCRYPTION_KEY=<old key> npm run rotate-encryption-key -- \
+  --new-key "$NEW_KEY" --dry-run
+
+# 3. Rotate for real
+ENCRYPTION_KEY=<old key> npm run rotate-encryption-key -- --new-key "$NEW_KEY"
+```
+
+`--old-key <hex>` overrides the key read from `ENCRYPTION_KEY`, and
+`--db <path>` points at a database somewhere other than `server/data`. Nothing
+is written unless every value decrypts, so a wrong old key aborts with a
+non-zero exit and an untouched database.
+
+Then put the new key in `.env` (`ENCRYPTION_KEY=$NEW_KEY`) and restart. Under
+Docker, run the command inside the container against the mounted database and
+restart the container with the updated `.env`. Take a copy of the database file
+before rotating.
+
 Request analytics are retained for 90 days or 100000 request rows by default,
 whichever limit prunes first. Set `REQUEST_ANALYTICS_RETENTION_DAYS=0` or
 `REQUEST_ANALYTICS_MAX_ROWS=0` in `.env` to disable either retention limit.
@@ -330,7 +360,7 @@ the top.
 2. Remove the application:
    - **macOS** — drag `FreeLLMAPI.app` from `/Applications` to the Trash.
    - **Windows** — *Settings → Apps → Installed apps → FreeLLMAPI → Uninstall*.
-   - **Linux** — delete the AppImage, or `sudo apt remove freellmapi` for the `.deb`.
+   - **Linux** — delete the AppImage, `sudo apt remove freellmapi` for the `.deb`, or `sudo dnf remove freellmapi` for the `.rpm`.
 3. Delete the data directory to remove your keys, settings and logs for good:
    - **Windows** — `%APPDATA%\FreeLLMAPI\`
    - **macOS** — `~/Library/Application Support/FreeLLMAPI/`

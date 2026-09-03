@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "საჭიროა API გასაღები",
     "claudeAliases": "Claude Code აღმოჩენის ალიასები",
     "claudeAliasesHint": "გამოაჩინეთ claude/<model> ალიასები, რომ გეითვეის მოდელის ამრჩევმა შეძლოს კატალოგის ჩამოთვლა.",
+    "mcpServer": "MCP სერვერი",
+    "mcpServerHint": "აქვეყნებს /mcp წერტილს აგენტური კლიენტებისთვის. ახალ ინსტალაციებზე თავიდან გამორთულია.",
     "urlTokensTitle": "გაუქმებადი URL ტოკენები",
     "urlTokensDesc": "მხოლოდ ჰედერების გარეშე კლიენტებისთვის. URL ტოკენები შეიძლება მოხვდეს ისტორიასა და ჟურნალებში, ამიტომ გააუქმეთ ისინი, როცა აღარ გჭირდებათ.",
     "urlTokenLabel": "ტოკენის ლეიბლი",
@@ -713,10 +715,11 @@
     "requestedModel": "მოთხოვნილი მოდელი",
     "ttft": "TTFT",
     "requestsByAgent": "მოთხოვნები აგენტების მიხედვით",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "დალაგება: {column}",
+    "sortHint": "დალაგება ვრცელდება მხოლოდ ჩატვირთულ {count} სტრიქონზე",
+    "cacheHitRate": "ქეშის მოხვედრის მაჩვენებელი",
+    "cacheSavedTokens": "დაზოგილია {tokens} ტოკენი",
+    "cacheHitRateHint": "{hits} მოხვედრა {misses} აცდენის წინააღმდეგ სერვერის გაშვებიდან · თავიდან აცილებულია {requests} მოთხოვნა პროვაიდერთან"
   },
   "logs": {
     "title": "ჟურნალი",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

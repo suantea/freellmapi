@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "ต้องใช้กุญแจ API",
     "claudeAliases": "นามแฝงการค้นหาของ Claude Code",
     "claudeAliasesHint": "เปิดเผยนามแฝง claude/<model> เพื่อให้ตัวเลือกโมเดลของเกตเวย์แสดงรายการแค็ตตาล็อกได้",
+    "mcpServer": "เซิร์ฟเวอร์ MCP",
+    "mcpServerHint": "เปิดปลายทาง /mcp ให้ไคลเอนต์เอเจนต์ใช้งาน การติดตั้งใหม่จะเริ่มต้นโดยปิดไว้",
     "urlTokensTitle": "โทเค็น URL ที่เพิกถอนได้",
     "urlTokensDesc": "สำหรับไคลเอนต์ที่ไม่มีส่วนหัวเท่านั้น โทเค็น URL อาจรั่วไหลไปยังประวัติและบันทึก ดังนั้นให้เพิกถอนเมื่อไม่ต้องการใช้อีกต่อไป",
     "urlTokenLabel": "ป้ายกำกับโทเค็น",
@@ -713,10 +715,11 @@
     "requestedModel": "รุ่นที่ขอ",
     "ttft": "TTFT",
     "requestsByAgent": "คำขอตามเอเจนต์",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "เรียงตาม{column}",
+    "sortHint": "การเรียงลำดับใช้กับ {count} แถวที่โหลดแล้วเท่านั้น",
+    "cacheHitRate": "อัตราการเข้าถึงแคช",
+    "cacheSavedTokens": "ประหยัด {tokens} โทเค็น",
+    "cacheHitRateHint": "{hits} ครั้งที่พบ เทียบกับ {misses} ครั้งที่ไม่พบ นับตั้งแต่เซิร์ฟเวอร์เริ่มทำงาน · เลี่ยงการเรียกผู้ให้บริการ {requests} ครั้ง"
   },
   "logs": {
     "title": "บันทึก",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

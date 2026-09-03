@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Yêu cầu khóa API",
     "claudeAliases": "Bí danh khám phá Claude Code",
     "claudeAliasesHint": "Hiển thị bí danh claude/<model> để bộ chọn mô hình của cổng có thể liệt kê danh mục.",
+    "mcpServer": "Máy chủ MCP",
+    "mcpServerHint": "Mở endpoint /mcp cho các client tác nhân. Bản cài mới mặc định tắt.",
     "urlTokensTitle": "Mã thông báo URL có thể thu hồi",
     "urlTokensDesc": "Chỉ dành cho các ứng dụng khách không có tiêu đề. Mã thông báo URL có thể bị lộ vào lịch sử và nhật ký, vì vậy hãy thu hồi khi không còn cần thiết.",
     "urlTokenLabel": "Nhãn mã thông báo",
@@ -713,10 +715,11 @@
     "requestedModel": "Mô hình được yêu cầu",
     "ttft": "TTFT",
     "requestsByAgent": "Yêu cầu theo tác nhân",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "Sắp xếp theo {column}",
+    "sortHint": "Sắp xếp chỉ áp dụng cho {count} hàng đã tải",
+    "cacheHitRate": "Tỷ lệ trúng bộ nhớ đệm",
+    "cacheSavedTokens": "Tiết kiệm {tokens} token",
+    "cacheHitRateHint": "{hits} lần trúng so với {misses} lần trượt kể từ khi máy chủ khởi động · tránh được {requests} lượt gọi nhà cung cấp"
   },
   "logs": {
     "title": "Nhật ký",
@@ -1030,7 +1033,8 @@
       "dsh": "Bộ khung của DeepSeek, giữ mỗi nhà cung cấp thành một tuyến có thể chuyển đổi.",
       "mimo": "Tác nhân dòng lệnh của Xiaomi, nhánh của OpenCode, nhận mọi nhà cung cấp tương thích OpenAI.",
       "cursor": "Trình soạn thảo lấy AI làm gốc; đi qua đám mây của Cursor nên cần URL công khai.",
-      "generic": "Mọi công cụ khác nói API OpenAI, thiết lập thủ công bằng URL cơ sở và khóa."
+      "generic": "Mọi công cụ khác nói API OpenAI, thiết lập thủ công bằng URL cơ sở và khóa.",
+      "atomcode": "Tác nhân dòng lệnh của AtomGit, viết bằng Rust, nhận mọi điểm cuối tương thích OpenAI."
     }
   },
   "update": {

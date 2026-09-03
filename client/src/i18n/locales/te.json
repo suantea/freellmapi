@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API కీ అవసరం",
     "claudeAliases": "Claude Code డిస్కవరీ అలియాస్‌లు",
     "claudeAliasesHint": "గేట్‌వే మోడల్ పికర్ కేటలాగ్‌ను జాబితా చేయగలిగేలా claude/<model> అలియాస్‌లను బహిర్గతం చేయండి.",
+    "mcpServer": "MCP సర్వర్",
+    "mcpServerHint": "ఏజెంట్ క్లయింట్‌ల కోసం /mcp ఎండ్‌పాయింట్‌ను తెరుస్తుంది. కొత్త ఇన్‌స్టాలేషన్‌లలో ఇది ఆఫ్‌లో ఉంటుంది.",
     "urlTokensTitle": "రద్దు చేయగల URL టోకెన్లు",
     "urlTokensDesc": "హెడర్ లేని క్లయింట్ల కోసం మాత్రమే. URL టోకెన్లు హిస్టరీ మరియు లాగ్‌లలోకి లీక్ కావచ్చు, కాబట్టి ఇక అవసరం లేనప్పుడు వాటిని రద్దు చేయండి.",
     "urlTokenLabel": "టోకెన్ లేబుల్",
@@ -713,10 +715,11 @@
     "requestedModel": "అభ్యర్థించిన మోడల్",
     "ttft": "TTFT",
     "requestsByAgent": "ఏజెంట్ వారీగా అభ్యర్థనలు",
-    "cacheHitRate": "Cache hit rate",
-    "cacheHitRateHint": "{hits} hits vs {misses} misses this boot (cache is process-local)",
-    "cacheRequestsSaved": "Requests saved",
-    "cacheRequestsSavedHint": "Provider round-trips avoided, ~{tokens} tokens"
+    "sortBy": "{column} ప్రకారం క్రమబద్ధీకరించు",
+    "sortHint": "క్రమబద్ధీకరణ లోడ్ అయిన {count} వరుసలకు మాత్రమే వర్తిస్తుంది",
+    "cacheHitRate": "కాష్ హిట్ రేటు",
+    "cacheSavedTokens": "{tokens} టోకెన్‌ల ఆదా",
+    "cacheHitRateHint": "సర్వర్ ప్రారంభమైనప్పటి నుండి {hits} హిట్‌లు, {misses} మిస్‌లు · {requests} ప్రొవైడర్ కాల్‌లు ఆదా అయ్యాయి"
   },
   "logs": {
     "title": "లాగ్‌లు",
@@ -1030,7 +1033,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

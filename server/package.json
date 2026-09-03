@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:migrations": "vitest run --pool=forks --fileParallelism=false src/__tests__/db/migrate/roundtrip.test.ts",
     "export-catalog": "tsx src/scripts/export-catalog.ts",
+    "rotate-encryption-key": "tsx src/scripts/rotate-encryption-key.ts",
     "db:migration:up": "tsx src/db/migrate/cli.ts up",
     "db:migration:down": "tsx src/db/migrate/cli.ts down",
     "db:migration:fresh": "tsx src/db/migrate/cli.ts fresh",

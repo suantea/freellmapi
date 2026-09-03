@@ -107,6 +107,27 @@ npm run dev
 
 启动必须要有 `ENCRYPTION_KEY`。当 `NODE_ENV` 不是 `production` 且没有设置它时，服务会自动生成一个开发用的密钥，并保存到 SQLite 数据库旁边的 `.encryption-key` 文件（权限 0600）里，而不是存进数据库。以前把密钥存在数据库里的旧安装，会在首次启动时迁移到这个文件。不要在放着真实提供方密钥的环境里依赖这个兜底行为，请显式设置 `ENCRYPTION_KEY`。
 
+### 轮换加密密钥
+
+存储的密文用的是 AES-256-GCM，所以直接改 `ENCRYPTION_KEY` 不会重新加密任何东西——它只会让所有提供方密钥、按密钥的代理覆盖、客户端配置档凭据以及已保存的 Fetch Relay 令牌同时解不开。请先停掉服务，把它们重新加密：
+
+```bash
+# 1. 生成新密钥
+NEW_KEY="$(node -e 'console.log(require("crypto").randomBytes(32).toString("hex"))')"
+
+# 2. 预演（只读，不写入任何内容）
+cd server
+ENCRYPTION_KEY=<旧密钥> npm run rotate-encryption-key -- \
+  --new-key "$NEW_KEY" --dry-run
+
+# 3. 正式轮换
+ENCRYPTION_KEY=<旧密钥> npm run rotate-encryption-key -- --new-key "$NEW_KEY"
+```
+
+`--old-key <hex>` 可以覆盖从 `ENCRYPTION_KEY` 读到的密钥，`--db <path>` 用来指向 `server/data` 以外的数据库。只有当每一个值都能解密时才会写入，所以旧密钥填错会以非零状态退出，数据库保持原样。
+
+之后把新密钥写进 `.env`（`ENCRYPTION_KEY=$NEW_KEY`）并重启。使用 Docker 时，在容器内对挂载的数据库执行这条命令，然后用更新后的 `.env` 重启容器。轮换前请先备份数据库文件。
+
 请求分析数据默认保留 90 天或 100000 条请求记录，以先触发的那个上限为准。在 `.env` 里设置 `REQUEST_ANALYTICS_RETENTION_DAYS=0` 或 `REQUEST_ANALYTICS_MAX_ROWS=0` 可以分别关掉对应的保留上限。
 
 打开 http://localhost:5173 （Vite 开发界面），在 **密钥** 页添加你的提供方密钥，按喜好调整 **回退链** 的顺序，然后在 **密钥** 页顶部拿到你的统一 API 密钥。这个统一密钥就是你的 OpenAI SDK 要指向的东西。
