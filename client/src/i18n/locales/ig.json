@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Achọrọ igodo API",
     "claudeAliases": "Aha ọzọ nchọpụta Claude Code",
     "claudeAliasesHint": "Gosipụta aha ọzọ claude/<model> ka onye nhọrọ ụdị nke ọnụ ụzọ nwee ike depụta katalọgụ.",
+    "mcpServer": "Sava MCP",
+    "mcpServerHint": "Na-emeghe ọnụ ụzọ /mcp maka ndị ahịa onyeisi ọrụ. Nwụnye ọhụrụ na-amalite na-agbanyụ.",
     "urlTokensTitle": "Akara URL enwere ike ịkagbu",
     "urlTokensDesc": "Naanị maka ndị ahịa na-enweghị nkụnye eji isi mee. Akara URL nwere ike ịbanye na akụkọ ihe mere eme na ndekọ, ya mere kagbuo ha mgbe achọghịzi ha.",
     "urlTokenLabel": "Labelụ akara",

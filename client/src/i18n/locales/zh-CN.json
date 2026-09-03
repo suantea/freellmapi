@@ -554,6 +554,8 @@
     "ollamaKeyRequired": "需要 API 密钥",
     "claudeAliases": "Claude Code 发现别名",
     "claudeAliasesHint": "公开 claude/<model> 别名，以便网关模型选择器列出目录。",
+    "mcpServer": "MCP 服务器",
+    "mcpServerHint": "向智能体客户端开放 /mcp 端点。新安装默认关闭。",
     "urlTokensTitle": "可撤销的 URL 令牌",
     "urlTokensDesc": "仅供无法发送请求头的客户端使用。URL 令牌可能泄露到历史记录和日志中，不再需要时请及时撤销。",
     "urlTokenLabel": "令牌标签",

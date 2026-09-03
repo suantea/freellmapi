@@ -53,6 +53,10 @@ export function AgentCompatibilitySection() {
     queryKey: ['agent-compatibility'],
     queryFn: () => apiFetch('/api/settings/agent-compatibility'),
   })
+  const { data: mcp } = useQuery<{ enabled: boolean }>({
+    queryKey: ['enable-mcp'],
+    queryFn: () => apiFetch('/api/settings/enable-mcp'),
+  })
   const { data: models = [] } = useQuery<MappableModel[]>({
     queryKey: ['fallback'],
     queryFn: () => apiFetch('/api/fallback'),
@@ -80,6 +84,13 @@ export function AgentCompatibilitySection() {
       body: JSON.stringify(patch),
     }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agent-compatibility'] }),
+  })
+  const saveMcp = useMutation({
+    mutationFn: (enabled: boolean) => apiFetch('/api/settings/enable-mcp', {
+      method: 'PUT',
+      body: JSON.stringify({ enabled }),
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['enable-mcp'] }),
   })
   const createToken = useMutation({
     mutationFn: () => apiFetch<UrlToken>('/api/settings/url-tokens', {
@@ -177,6 +188,16 @@ export function AgentCompatibilitySection() {
               checked={compatibility?.exposeClaudeDiscoveryAliases ?? false}
               onCheckedChange={checked =>
                 saveCompatibility.mutate({ exposeClaudeDiscoveryAliases: checked })}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-medium">{t('keys.mcpServer')}</p>
+              <p className="text-xs text-muted-foreground">{t('keys.mcpServerHint')}</p>
+            </div>
+            <Switch
+              checked={mcp?.enabled ?? false}
+              onCheckedChange={checked => saveMcp.mutate(checked)}
             />
           </div>
         </div>

@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API-Schlüssel erforderlich",
     "claudeAliases": "Claude-Code-Erkennungsaliase",
     "claudeAliasesHint": "Stellen Sie claude/<model>-Aliase bereit, damit die Modellauswahl des Gateways den Katalog auflisten kann.",
+    "mcpServer": "MCP-Server",
+    "mcpServerHint": "Stellt den /mcp-Endpunkt für Agent-Clients bereit. Neue Installationen starten deaktiviert.",
     "urlTokensTitle": "Widerrufbare URL-Tokens",
     "urlTokensDesc": "Nur für Clients ohne Header. URL-Tokens können in Verlauf und Protokolle gelangen. Widerrufen Sie sie daher, wenn sie nicht mehr benötigt werden.",
     "urlTokenLabel": "Token-Bezeichnung",

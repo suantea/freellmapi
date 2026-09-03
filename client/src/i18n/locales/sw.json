@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Ufunguo wa API unahitajika",
     "claudeAliases": "Lakabu za ugunduzi za Claude Code",
     "claudeAliasesHint": "Onyesha lakabu za claude/<model> ili kichaguzi cha miundo cha lango kiweze kuorodhesha katalogi.",
+    "mcpServer": "Seva ya MCP",
+    "mcpServerHint": "Hufungua kiungo /mcp kwa wateja wa mawakala. Usakinishaji mpya huanza ukiwa umezimwa.",
     "urlTokensTitle": "Tokeni za URL zinazoweza kubatilishwa",
     "urlTokensDesc": "Kwa wateja wasio na vichwa pekee. Tokeni za URL zinaweza kuvuja kwenye historia na kumbukumbu, kwa hivyo zibatilishe zisipohitajika tena.",
     "urlTokenLabel": "Lebo ya tokeni",

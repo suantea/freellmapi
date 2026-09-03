@@ -126,6 +126,35 @@ describe('Virtual "auto" model', () => {
     expect(allModels.length).toBeGreaterThan(filteredModels.length);
   });
 
+  // #1100: every catalog row carries a machine-readable execution_status, and
+  // `?execution_status=` narrows to one of them so an agent can ask for models
+  // it can call right now without parsing the whole list.
+  it('?execution_status= narrows to that status (#1100)', async () => {
+    const all = await request(app, 'GET', '/v1/models', undefined, authHeaders());
+    expect(all.status).toBe(200);
+    const catalog = all.body.data.filter((m: any) => m.execution_status !== undefined);
+    expect(catalog.length).toBeGreaterThan(0);
+    expect(catalog.every((m: any) => ['ready', 'needsKey', 'exhausted'].includes(m.execution_status))).toBe(true);
+    expect(catalog.some((m: any) => m.execution_status === 'ready')).toBe(true);
+    expect(catalog.some((m: any) => m.execution_status === 'needsKey')).toBe(true);
+
+    const ready = await request(app, 'GET', '/v1/models?execution_status=ready', undefined, authHeaders());
+    const readyModels = ready.body.data.filter((m: any) => m.execution_status !== undefined);
+    expect(readyModels.length).toBeGreaterThan(0);
+    expect(readyModels.every((m: any) => m.execution_status === 'ready')).toBe(true);
+    expect(readyModels.length).toBeLessThan(catalog.length);
+
+    // The value is camelCase but the query is matched case-insensitively.
+    const needsKey = await request(app, 'GET', '/v1/models?execution_status=needskey', undefined, authHeaders());
+    const needsKeyModels = needsKey.body.data.filter((m: any) => m.execution_status !== undefined);
+    expect(needsKeyModels.length).toBeGreaterThan(0);
+    expect(needsKeyModels.every((m: any) => m.execution_status === 'needsKey')).toBe(true);
+
+    // An unrecognised value filters nothing rather than emptying the list.
+    const bogus = await request(app, 'GET', '/v1/models?execution_status=banana', undefined, authHeaders());
+    expect(bogus.body.data.filter((m: any) => m.execution_status !== undefined).length).toBe(catalog.length);
+  });
+
   it('marks a fully-disabled model with unavailable_reason "disabled" (#242)', async () => {
     const db = getDb();
     const row = db.prepare("SELECT display_name FROM models WHERE platform='groq' AND enabled=1 LIMIT 1").get() as { display_name: string } | undefined;

@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Wymagany klucz API",
     "claudeAliases": "Aliasy wykrywania Claude Code",
     "claudeAliasesHint": "Udostępnij aliasy claude/<model>, aby selektor modeli bramy mógł wyświetlić katalog.",
+    "mcpServer": "Serwer MCP",
+    "mcpServerHint": "Udostępnia punkt końcowy /mcp klientom agentowym. Nowe instalacje startują z wyłączonym.",
     "urlTokensTitle": "Odwoływalne tokeny URL",
     "urlTokensDesc": "Tylko dla klientów bez nagłówków. Tokeny URL mogą wyciec do historii i logów, więc odwołuj je, gdy nie są już potrzebne.",
     "urlTokenLabel": "Etykieta tokenu",

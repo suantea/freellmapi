@@ -480,12 +480,14 @@ exports[`tool generators > setup-opencode has stable golden output 1`] = `
               "fast-coder": {
                 "limit": {
                   "context": 131072,
+                  "output": 8192,
                 },
                 "name": "Fast Coder",
               },
               "reasoning-model": {
                 "limit": {
                   "context": 262144,
+                  "output": 8192,
                 },
                 "name": "Reasoning Model",
               },

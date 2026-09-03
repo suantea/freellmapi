@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Vyžadován API klíč",
     "claudeAliases": "Aliasy zjišťování pro Claude Code",
     "claudeAliasesHint": "Zpřístupněte aliasy claude/<model>, aby výběr modelů brány mohl vypsat katalog.",
+    "mcpServer": "Server MCP",
+    "mcpServerHint": "Zpřístupní endpoint /mcp agentním klientům. Nové instalace začínají vypnuté.",
     "urlTokensTitle": "Odvolatelné URL tokeny",
     "urlTokensDesc": "Pouze pro klienty bez hlaviček. URL tokeny mohou uniknout do historie a logů, proto je odvolejte, jakmile je nepotřebujete.",
     "urlTokenLabel": "Popisek tokenu",

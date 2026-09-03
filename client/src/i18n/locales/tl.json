@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Kailangan ng API key",
     "claudeAliases": "Mga discovery alias ng Claude Code",
     "claudeAliasesHint": "Ilantad ang mga claude/<model> na alias para mailista ng model picker ng gateway ang catalog.",
+    "mcpServer": "MCP server",
+    "mcpServerHint": "Ilalantad ang /mcp endpoint para sa mga agent client. Naka-off ito sa mga bagong install.",
     "urlTokensTitle": "Mga nare-revoke na URL token",
     "urlTokensDesc": "Para lamang sa mga client na walang header. Maaaring tumagas ang mga URL token sa history at mga log, kaya i-revoke ang mga ito kapag hindi na kailangan.",
     "urlTokenLabel": "Label ng token",

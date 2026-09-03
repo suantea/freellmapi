@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API-sleutel vereist",
     "claudeAliases": "Claude Code-detectiealiassen",
     "claudeAliasesHint": "Stel claude/<model>-aliassen beschikbaar zodat de modelkiezer van de gateway de catalogus kan tonen.",
+    "mcpServer": "MCP-server",
+    "mcpServerHint": "Stelt het /mcp-eindpunt beschikbaar voor agentclients. Nieuwe installaties beginnen uitgeschakeld.",
     "urlTokensTitle": "Intrekbare URL-tokens",
     "urlTokensDesc": "Alleen voor clients zonder headers. URL-tokens kunnen in geschiedenis en logs terechtkomen, dus trek ze in zodra ze niet meer nodig zijn.",
     "urlTokenLabel": "Tokenlabel",

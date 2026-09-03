@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API کلید درکار ہے۔",
     "claudeAliases": "Claude Code ڈسکوری عرفی نام",
     "claudeAliasesHint": "claude/<model> عرفی نام ظاہر کریں تاکہ گیٹ وے ماڈل منتخب کنندہ کیٹلاگ کی فہرست دکھا سکے۔",
+    "mcpServer": "MCP سرور",
+    "mcpServerHint": "ایجنٹ کلائنٹس کے لیے /mcp اینڈ پوائنٹ کھولتا ہے۔ نئی تنصیبات میں یہ بند رہتا ہے۔",
     "urlTokensTitle": "قابلِ منسوخ URL ٹوکنز",
     "urlTokensDesc": "صرف بغیر ہیڈر والے کلائنٹس کے لیے۔ URL ٹوکنز ہسٹری اور لاگز میں لیک ہو سکتے ہیں، اس لیے ضرورت نہ رہنے پر انہیں منسوخ کر دیں۔",
     "urlTokenLabel": "ٹوکن لیبل",

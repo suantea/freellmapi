@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API kaliti talab qilinadi",
     "claudeAliases": "Claude Code aniqlash taxalluslari",
     "claudeAliasesHint": "Shlyuz model tanlagichi katalogni ro'yxatlashi uchun claude/<model> taxalluslarini oching.",
+    "mcpServer": "MCP serveri",
+    "mcpServerHint": "Agent mijozlari uchun /mcp yakuniy nuqtasini ochadi. Yangi o‘rnatishlarda u o‘chiq bo‘ladi.",
     "urlTokensTitle": "Bekor qilinadigan URL tokenlari",
     "urlTokensDesc": "Faqat sarlavhasiz mijozlar uchun. URL tokenlari tarix va jurnallarga sizib chiqishi mumkin, shuning uchun kerak bo'lmaganda ularni bekor qiling.",
     "urlTokenLabel": "Token yorlig'i",

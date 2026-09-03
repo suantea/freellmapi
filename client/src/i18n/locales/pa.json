@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API ਕੁੰਜੀ ਲੋੜੀਂਦੀ ਹੈ",
     "claudeAliases": "Claude Code ਖੋਜ ਉਪਨਾਮ",
     "claudeAliasesHint": "claude/<model> ਉਪਨਾਮ ਉਪਲਬਧ ਕਰਾਓ ਤਾਂ ਜੋ ਗੇਟਵੇ ਮਾਡਲ ਚੋਣਕਾਰ ਕੈਟਾਲਾਗ ਦੀ ਸੂਚੀ ਦਿਖਾ ਸਕੇ।",
+    "mcpServer": "MCP ਸਰਵਰ",
+    "mcpServerHint": "ਏਜੰਟ ਕਲਾਇੰਟਾਂ ਲਈ /mcp ਐਂਡਪੌਇੰਟ ਖੋਲ੍ਹਦਾ ਹੈ। ਨਵੀਆਂ ਇੰਸਟਾਲੇਸ਼ਨਾਂ ਵਿੱਚ ਇਹ ਬੰਦ ਰਹਿੰਦਾ ਹੈ।",
     "urlTokensTitle": "ਰੱਦ ਕਰਨ ਯੋਗ URL ਟੋਕਨ",
     "urlTokensDesc": "ਸਿਰਫ਼ ਹੈਡਰ-ਰਹਿਤ ਕਲਾਇੰਟਾਂ ਲਈ। URL ਟੋਕਨ ਇਤਿਹਾਸ ਅਤੇ ਲੌਗਾਂ ਵਿੱਚ ਲੀਕ ਹੋ ਸਕਦੇ ਹਨ, ਇਸ ਲਈ ਲੋੜ ਨਾ ਰਹਿਣ 'ਤੇ ਇਨ੍ਹਾਂ ਨੂੰ ਰੱਦ ਕਰ ਦਿਓ।",
     "urlTokenLabel": "ਟੋਕਨ ਲੇਬਲ",

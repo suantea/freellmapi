@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import type { Request, Response } from 'express';
-import { getDb, getUnifiedApiKey } from '../db/index.js';
+import type { NextFunction, Request, Response } from 'express';
+import { getDb, getUnifiedApiKey, getSetting } from '../db/index.js';
 import { extractApiToken, timingSafeStringEqual } from './proxy.js';
 import { buildModelListing } from '../services/model-listing.js';
 import { supportedParametersForPlatforms } from '../lib/sampling-params.js';
@@ -316,6 +316,33 @@ function authenticate(req: Request, res: Response): boolean {
   }
   return true;
 }
+
+// ── Lifecycle configuration (#925, MVP-1) ───────────────────────────────────
+// The MCP surface exposes provider health, usage stats and routing controls to
+// anything holding the unified key, so it is a configured surface rather than
+// an always-on one: /api/settings/enable-mcp (and the toggle on the Keys page)
+// turns it on and off. The stored default is decided once, by migration:
+// installs that already had provider keys when they upgraded keep it on, fresh
+// installs start with it off.
+export const MCP_ENABLED_SETTING = 'enable_mcp';
+
+export function isMcpServerEnabled(): boolean {
+  return getSetting(MCP_ENABLED_SETTING) === '1';
+}
+
+// Gate every verb, not just POST: a disabled server must not answer "405, POST
+// instead" on GET/DELETE either. Runs before auth so a disabled server says so
+// plainly, without hinting whether the presented key would have been valid, and
+// reads the setting per request so the toggle applies without a restart.
+mcpRouter.use((req: Request, res: Response, next: NextFunction) => {
+  if (isMcpServerEnabled()) {
+    next();
+    return;
+  }
+  const body = req.body;
+  const id = body && typeof body === 'object' && !Array.isArray(body) && body.id !== undefined ? body.id : null;
+  res.status(403).json(rpcError(id, -32000, 'MCP server is disabled. Turn it on from the dashboard (Keys -> Agent compatibility) or with PUT /api/settings/enable-mcp {"enabled":true}.'));
+});
 
 mcpRouter.post('/', (req: Request, res: Response) => {
   if (!authenticate(req, res)) return;

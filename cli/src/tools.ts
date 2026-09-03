@@ -224,7 +224,7 @@ function opencode(ctx: GenerateContext): Generation {
     .filter(model => model.id !== 'auto')
     .map(model => [model.id, {
       name: model.name ?? model.id,
-      limit: { context: contextWindow(model) },
+      limit: { context: contextWindow(model), output: outputLimit(model) },
     }]));
   return {
     files: [{
@@ -524,7 +524,7 @@ function dsh(ctx: GenerateContext): Generation {
 //     and merges them in that order, so writing `config.json` — the first and
 //     weakest layer — leaves a hand-written `mimocode.json` in charge.
 //   * `provider.<id>.models.<id>.limit` requires BOTH `context` and `output`
-//     in MiMo's schema, unlike OpenCode which takes `context` alone.
+//     in MiMo's schema, the same as OpenCode's (https://opencode.ai/config.json).
 // There is no MIMOCODE_API_KEY or MIMOCODE_BASE_URL: MiMo's environment
 // variables locate resources and toggle features, they are not a fallback for
 // config fields. The key travels through the config file's own `{env:VAR}`
