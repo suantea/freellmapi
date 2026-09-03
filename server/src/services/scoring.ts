@@ -201,11 +201,31 @@ export function peakAdjustedWeights(
 // header (or `auto` with no code signal) leaves the preset weights untouched.
 export const TASK_WEIGHT_SHARE = 0.3;
 
+/**
+ * Presets exempt from the task-type bias.
+ *
+ * The same reasoning as `PEAK_EXEMPT_STRATEGIES` (see above), plus `custom`:
+ * `fastest` and `reliable` are the ends of the axis an operator picks when they
+ * have already decided which end they want, and rewriting them turns one preset
+ * into a noisy copy of another; `custom` is the operator's hand-set sliders, the
+ * one weight vector they typed themselves, so a per-request header must not move
+ * it. The bias therefore applies only to the mixed presets (`balanced`,
+ * `smartest`). `priority` never reaches here — it has no weight vector at all.
+ */
+export const TASK_EXEMPT_STRATEGIES: readonly RoutingStrategy[] = [...PEAK_EXEMPT_STRATEGIES, 'custom'];
+
+/** Whether this strategy opts out of the task-type bias (see above). */
+export function isTaskExemptStrategy(strategy: RoutingStrategy): boolean {
+  return TASK_EXEMPT_STRATEGIES.includes(strategy);
+}
+
 export function taskAdjustedWeights(
   base: RoutingWeights,
   task: 'code' | 'chat',
+  strategy: RoutingStrategy,
   share = TASK_WEIGHT_SHARE,
 ): { weights: RoutingWeights; adjusted: boolean } {
+  if (isTaskExemptStrategy(strategy)) return { weights: base, adjusted: false };
   // share 0 disables the bias entirely — an operator-set value of 0 means "keep
   // the preset weights for this task type".
   if (share <= 0) return { weights: base, adjusted: false };

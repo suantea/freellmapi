@@ -133,4 +133,25 @@ describe('task-type-aware routing', () => {
     const counts = pickCounts(TASK_RUNS, 'chat');
     expect(counts['fast'] ?? 0).toBeGreaterThan(counts['smart'] ?? 0);
   });
+
+  // Same fixture, but the fast model is now visibly less reliable, which puts
+  // `fastest`'s pick close enough to the edge that the code bias WOULD flip it
+  // (0.55/0.10 speed/intelligence becomes 0.385/0.265). It must not: `fastest`,
+  // `reliable` and `custom` are the operator's explicit choice of where on the
+  // axis to sit, so a per-request header does not get to rewrite them (#1127).
+  // The other two exempt strategies are covered exactly in scoring.test.ts.
+  function seedSmartVsFlakyFast() {
+    addModel({ platform: 'google', modelId: 'smart', name: 'Smart', intelligenceRank: 1, speedRank: 9, sizeLabel: 'Large', budget: '~50M', priority: 1 });
+    addModel({ platform: 'groq', modelId: 'fast', name: 'Fast', intelligenceRank: 2, speedRank: 1, sizeLabel: 'Large', budget: '~50M', priority: 2 });
+    addHistory('google', 'smart', { successes: 100, failures: 0, outTokens: 1, latencyMs: 60000, ttfbMs: 4999 });
+    addHistory('groq', 'fast', { successes: 50, failures: 50, outTokens: 10000, latencyMs: 100, ttfbMs: 10 });
+  }
+
+  it('leaves the fastest preset alone on a code task', () => {
+    seedSmartVsFlakyFast();
+    setRoutingStrategy('fastest');
+    refreshStatsCache(getDb(), true);
+    const counts = pickCounts(TASK_RUNS, 'code');
+    expect(counts['fast'] ?? 0).toBeGreaterThan(counts['smart'] ?? 0);
+  });
 });

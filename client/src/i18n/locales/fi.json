@@ -417,6 +417,13 @@
     "saveProxy": "Tallenna",
     "savingProxy": "Säästäminen...",
     "proxyLoadFailed": "Välityspalvelimen asetuksia ei voinut ladata.",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "Lisää mukautettu OpenAI-yhteensopiva malli",
     "addCustomDescription": "Pistechat, upotus, kuva tai äänimallit missä tahansa OpenAI-yhteensopivassa päätepisteessä. API-avain on valinnainen paikallisille palvelimille.",
     "customType": "Tyyppi",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "Aloita siirtymä pyynnön alusta · Yrityksen kesto",
     "requestedModel": "Pyydetty malli",
     "ttft": "TTFT",
-    "requestsByAgent": "Pyynnöt agenteittain"
+    "requestsByAgent": "Pyynnöt agenteittain",
+    "sortBy": "Lajittele: {column}",
+    "sortHint": "Lajittelu koskee vain ladattuja {count} riviä"
   },
   "logs": {
     "title": "Lokit",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

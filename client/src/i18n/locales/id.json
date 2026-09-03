@@ -417,6 +417,13 @@
     "saveProxy": "Simpan",
     "savingProxy": "Menyimpan…",
     "proxyLoadFailed": "Tidak dapat memuat setelan proxy.",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "Tambahkan model khusus yang kompatibel dengan OpenAI",
     "addCustomDescription": "Arahkan model obrolan, penyematan, gambar, atau audio ke titik akhir mana pun yang kompatibel dengan OpenAI. Kunci API bersifat opsional untuk server lokal.",
     "customType": "Ketik",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "Mulai offset dari awal permintaan · durasi upaya",
     "requestedModel": "Model yang diminta",
     "ttft": "TTFT",
-    "requestsByAgent": "Permintaan per agen"
+    "requestsByAgent": "Permintaan per agen",
+    "sortBy": "Urutkan berdasarkan {column}",
+    "sortHint": "Pengurutan berlaku untuk {count} baris yang dimuat"
   },
   "logs": {
     "title": "Log",
@@ -1019,7 +1028,8 @@
       "dsh": "Kerangka DeepSeek, yang menyimpan tiap penyedia sebagai rute yang bisa Anda ganti.",
       "mimo": "Agen terminal dari Xiaomi, cabang OpenCode yang menerima penyedia apa pun yang kompatibel dengan OpenAI.",
       "cursor": "Penyunting yang mengutamakan AI; lewat awan Cursor, jadi perlu URL publik.",
-      "generic": "Perkakas lain mana pun yang berbicara API OpenAI, disiapkan manual dengan URL dasar dan kunci."
+      "generic": "Perkakas lain mana pun yang berbicara API OpenAI, disiapkan manual dengan URL dasar dan kunci.",
+      "atomcode": "Agen terminal dari AtomGit, ditulis dalam Rust, yang menerima endpoint apa pun yang kompatibel dengan OpenAI."
     }
   },
   "update": {

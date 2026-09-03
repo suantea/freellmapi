@@ -5,6 +5,7 @@ import {
   expectedReliability, SPEED_PRIOR, HEADROOM_FLOOR,
   isPeakHours, peakAdjustedWeights, hourInTimezone, isValidPeakHour, isValidTimezone,
   isPeakExemptStrategy, DEFAULT_PEAK_HOURS, PEAK_SPEED_TO_RELIABILITY,
+  taskAdjustedWeights, isTaskExemptStrategy, TASK_WEIGHT_SHARE,
   type PeakHoursConfig,
 } from '../../services/scoring.js';
 
@@ -366,5 +367,51 @@ describe('scoring: time-of-day dynamic ranking (#760)', () => {
     const base = BANDIT_PRESETS.balanced;
     const bad = { enabled: true, startHour: 99, endHour: 6, timezone: 'UTC' } as PeakHoursConfig;
     expect(peakAdjustedWeights(base, 'balanced', bad, new Date('2026-08-18T20:00:00Z')).weights).toEqual(base);
+  });
+});
+
+describe('scoring: task-type weight bias (#1127)', () => {
+  it('moves speed onto intelligence for a code turn, and back for a chat turn', () => {
+    const base = BANDIT_PRESETS.balanced;
+    const code = taskAdjustedWeights(base, 'code', 'balanced');
+    expect(code.adjusted).toBe(true);
+    expect(code.weights.intelligence).toBeCloseTo(base.intelligence + base.speed * TASK_WEIGHT_SHARE, 5);
+    expect(code.weights.speed).toBeCloseTo(base.speed - base.speed * TASK_WEIGHT_SHARE, 5);
+    expect(code.weights.reliability).toBe(base.reliability);
+    expect(code.weights.reliability + code.weights.speed + code.weights.intelligence).toBeCloseTo(1, 5);
+
+    const chat = taskAdjustedWeights(base, 'chat', 'balanced');
+    expect(chat.adjusted).toBe(true);
+    expect(chat.weights.speed).toBeCloseTo(base.speed + base.intelligence * TASK_WEIGHT_SHARE, 5);
+    expect(chat.weights.intelligence).toBeCloseTo(base.intelligence - base.intelligence * TASK_WEIGHT_SHARE, 5);
+    expect(chat.weights.reliability + chat.weights.speed + chat.weights.intelligence).toBeCloseTo(1, 5);
+  });
+
+  it('exempts fastest, reliable and custom', () => {
+    // fastest/reliable are the ends of the axis the operator already picked;
+    // custom is the vector they set by hand. A per-request header must not
+    // rewrite any of the three.
+    for (const strategy of ['fastest', 'reliable', 'custom'] as const) {
+      expect(isTaskExemptStrategy(strategy)).toBe(true);
+      const base = strategy === 'custom'
+        ? { reliability: 0.2, speed: 0.5, intelligence: 0.3 }
+        : BANDIT_PRESETS[strategy];
+      for (const task of ['code', 'chat'] as const) {
+        const out = taskAdjustedWeights(base, task, strategy);
+        expect(out.weights).toEqual(base);
+        expect(out.adjusted).toBe(false);
+      }
+    }
+    for (const strategy of ['balanced', 'smartest'] as const) {
+      expect(isTaskExemptStrategy(strategy)).toBe(false);
+      expect(taskAdjustedWeights(BANDIT_PRESETS[strategy], 'code', strategy).adjusted).toBe(true);
+    }
+  });
+
+  it('is a no-op when the axis it would move is already zero', () => {
+    const noSpeed = { reliability: 0.5, speed: 0, intelligence: 0.5 };
+    expect(taskAdjustedWeights(noSpeed, 'code', 'balanced')).toEqual({ weights: noSpeed, adjusted: false });
+    const noIntel = { reliability: 0.5, speed: 0.5, intelligence: 0 };
+    expect(taskAdjustedWeights(noIntel, 'chat', 'balanced')).toEqual({ weights: noIntel, adjusted: false });
   });
 });

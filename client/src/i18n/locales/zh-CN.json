@@ -421,6 +421,13 @@
     "proxyTestOk": "代理可用 — 往返耗时 {ms}ms",
     "proxyTestFail": "代理测试失败：{reason}",
     "proxyLoadFailed": "无法加载代理设置。",
+    "proxyMode": "Mode",
+    "proxyModeForward": "Forward proxy",
+    "proxyModeFetchRelay": "Fetch relay",
+    "relayToken": "Relay token",
+    "relayTokenConfigured": "Configured. Leave unchanged to keep.",
+    "relayTokenPlaceholder": "Relay bearer token (optional)",
+    "relayHeadersHint": "The relay reads the destination and its own credential from",
     "addCustom": "添加自定义 OpenAI 兼容模型",
     "addCustomDescription": "指向任意 OpenAI 兼容的端点：llama.cpp、LM Studio、vLLM、本地 Ollama 或远程网关。API 密钥是可选的（大多数本地服务器不需要）。",
     "customType": "类型",
@@ -705,7 +712,9 @@
     "attemptTimingHint": "自请求开始的偏移 · 尝试耗时",
     "requestedModel": "请求的模型",
     "ttft": "首个词元用时",
-    "requestsByAgent": "按智能体统计的请求"
+    "requestsByAgent": "按智能体统计的请求",
+    "sortBy": "按{column}排序",
+    "sortHint": "排序仅作用于已加载的 {count} 行"
   },
   "logs": {
     "title": "日志",
@@ -1019,7 +1028,8 @@
       "dsh": "DeepSeek 的框架，把每个供应商都存成可随时切换的线路。",
       "mimo": "小米的终端智能体，OpenCode 分支，可接任意 OpenAI 兼容供应商。",
       "cursor": "以 AI 为核心的编辑器，请求走 Cursor 云端，因此需要公网 URL。",
-      "generic": "其他任何说 OpenAI 接口的工具，用基础 URL 和密钥手动配置。"
+      "generic": "其他任何说 OpenAI 接口的工具，用基础 URL 和密钥手动配置。",
+      "atomcode": "AtomGit 的终端智能体，用 Rust 编写，可接任意 OpenAI 兼容端点。"
     }
   },
   "update": {
