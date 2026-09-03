@@ -83,13 +83,13 @@ describe('taskAdjustedWeights share parameter', () => {
   const base = { reliability: 0.5, speed: 0.25, intelligence: 0.25 };
 
   it('share 0 disables the bias entirely', () => {
-    const out = taskAdjustedWeights(base, 'code', 0);
+    const out = taskAdjustedWeights(base, 'code', 'balanced', 0);
     expect(out.adjusted).toBe(false);
     expect(out.weights).toEqual(base);
   });
 
   it('moves share of the speed axis onto intelligence for code', () => {
-    const out = taskAdjustedWeights(base, 'code', 0.5);
+    const out = taskAdjustedWeights(base, 'code', 'balanced', 0.5);
     expect(out.adjusted).toBe(true);
     expect(out.weights.speed).toBeCloseTo(0.25 - 0.25 * 0.5);
     expect(out.weights.intelligence).toBeCloseTo(0.25 + 0.25 * 0.5);
@@ -97,9 +97,19 @@ describe('taskAdjustedWeights share parameter', () => {
   });
 
   it('moves share of the intelligence axis onto speed for chat', () => {
-    const out = taskAdjustedWeights(base, 'chat', 0.5);
+    const out = taskAdjustedWeights(base, 'chat', 'balanced', 0.5);
     expect(out.adjusted).toBe(true);
     expect(out.weights.speed).toBeCloseTo(0.25 + 0.25 * 0.5);
     expect(out.weights.intelligence).toBeCloseTo(0.25 - 0.25 * 0.5);
+  });
+
+  it('an exempt strategy ignores the configured share', () => {
+    // The share only scales a bias the strategy accepts in the first place:
+    // fastest/reliable/custom stay exactly where the operator put them (#1128).
+    for (const strategy of ['fastest', 'reliable', 'custom'] as const) {
+      const out = taskAdjustedWeights(base, 'code', strategy, 1);
+      expect(out.adjusted).toBe(false);
+      expect(out.weights).toEqual(base);
+    }
   });
 });
