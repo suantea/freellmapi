@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API キーが必要",
     "claudeAliases": "Claude Code 検出エイリアス",
     "claudeAliasesHint": "claude/<model> エイリアスを公開して、ゲートウェイのモデルピッカーがカタログを一覧表示できるようにします。",
+    "mcpServer": "MCP サーバー",
+    "mcpServerHint": "エージェントクライアント向けに /mcp エンドポイントを公開します。新規インストールでは既定でオフです。",
     "urlTokensTitle": "取り消し可能な URL トークン",
     "urlTokensDesc": "ヘッダーを使えないクライアント専用です。URL トークンは履歴やログに漏れる可能性があるため、不要になったら取り消してください。",
     "urlTokenLabel": "トークンラベル",

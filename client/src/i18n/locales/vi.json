@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Yêu cầu khóa API",
     "claudeAliases": "Bí danh khám phá Claude Code",
     "claudeAliasesHint": "Hiển thị bí danh claude/<model> để bộ chọn mô hình của cổng có thể liệt kê danh mục.",
+    "mcpServer": "Máy chủ MCP",
+    "mcpServerHint": "Mở endpoint /mcp cho các client tác nhân. Bản cài mới mặc định tắt.",
     "urlTokensTitle": "Mã thông báo URL có thể thu hồi",
     "urlTokensDesc": "Chỉ dành cho các ứng dụng khách không có tiêu đề. Mã thông báo URL có thể bị lộ vào lịch sử và nhật ký, vì vậy hãy thu hồi khi không còn cần thiết.",
     "urlTokenLabel": "Nhãn mã thông báo",

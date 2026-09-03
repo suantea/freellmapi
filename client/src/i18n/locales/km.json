@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "ត្រូវការកូនសោ API",
     "claudeAliases": "ឈ្មោះក្លែងសម្រាប់ការរកឃើញ Claude Code",
     "claudeAliasesHint": "បង្ហាញឈ្មោះក្លែង claude/<model> ដើម្បីឱ្យឧបករណ៍ជ្រើសរើសម៉ូដែលរបស់ gateway អាចរាយកាតាឡុកបាន។",
+    "mcpServer": "ម៉ាស៊ីនមេ MCP",
+    "mcpServerHint": "បើកចំណុចបញ្ចប់ /mcp សម្រាប់កម្មវិធីភ្នាក់ងារ។ ការដំឡើងថ្មីចាប់ផ្ដើមដោយបិទ។",
     "urlTokensTitle": "Token URL ដែលអាចដកហូតបាន",
     "urlTokensDesc": "សម្រាប់តែ client ដែលគ្មាន header ប៉ុណ្ណោះ។ Token URL អាចលេចធ្លាយចូលទៅក្នុងប្រវត្តិ និងកំណត់ហេតុ ដូច្នេះដកហូតវានៅពេលលែងត្រូវការ។",
     "urlTokenLabel": "ស្លាក token",

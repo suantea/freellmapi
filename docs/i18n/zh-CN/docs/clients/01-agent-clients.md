@@ -132,7 +132,19 @@ http://localhost:3001/v1/t/<token>/models
 
 在推理之上，路由器还是个 **MCP 服务器**：智能体能在会话中途内省它
 （可用模型及各模型支持的参数、提供方健康度、用量与缓存统计、
-路由策略）。对 Claude Code：
+路由策略）。
+
+MCP 接口是一项设置，而非始终开启的端点（#925）。**全新安装默认关闭**；升级时已配置提供方密钥的安装会保持开启，这样已有的 Claude Code 或 Cline 会话不会在升级后中断。可在「密钥」页的**智能体兼容性**里开关，也可以走 API：
+
+```bash
+curl -X PUT http://localhost:3001/api/settings/enable-mcp \
+  -H "Authorization: Bearer <dashboard-token>" -H "Content-Type: application/json" \
+  -d '{"enabled": true}'
+```
+
+关闭期间，`/mcp` 的所有方法都会返回 `403` 和一条说明用的 JSON-RPC 错误。
+
+对 Claude Code：
 
 ```bash
 claude mcp add --transport http freellmapi http://localhost:3001/mcp \

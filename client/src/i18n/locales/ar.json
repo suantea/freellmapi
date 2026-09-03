@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "مفتاح API مطلوب",
     "claudeAliases": "أسماء بديلة لاكتشاف Claude Code",
     "claudeAliasesHint": "اعرض أسماء بديلة بصيغة claude/<model> ليتمكن منتقي النماذج في البوابة من عرض الكتالوج.",
+    "mcpServer": "خادم MCP",
+    "mcpServerHint": "يتيح نقطة النهاية /mcp لعملاء الوكلاء. التثبيتات الجديدة تبدأ وهو معطَّل.",
     "urlTokensTitle": "رموز URL قابلة للإلغاء",
     "urlTokensDesc": "للعملاء بدون ترويسات فقط. قد تتسرب رموز URL إلى المحفوظات والسجلات، لذا ألغِها عندما لا تعود هناك حاجة إليها.",
     "urlTokenLabel": "تسمية الرمز",

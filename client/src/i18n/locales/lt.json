@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Reikalingas API raktas",
     "claudeAliases": "Claude Code aptikimo aliasai",
     "claudeAliasesHint": "Atskleiskite claude/<model> aliasus, kad šliuzo modelių parinkiklis galėtų pateikti katalogą.",
+    "mcpServer": "MCP serveris",
+    "mcpServerHint": "Atveria /mcp galinį tašką agentų klientams. Naujuose diegimuose iš pradžių išjungta.",
     "urlTokensTitle": "Atšaukiami URL žetonai",
     "urlTokensDesc": "Tik klientams be antraščių. URL žetonai gali nutekėti į istoriją ir žurnalus, todėl atšaukite juos, kai nebereikia.",
     "urlTokenLabel": "Žetono etiketė",

@@ -221,7 +221,22 @@ telemetry.
 
 On top of inference, the router is an **MCP server**: agents can introspect it mid-session
 (usable models and the params each one honors, provider health, usage and cache stats,
-routing strategy). For Claude Code:
+routing strategy).
+
+The MCP surface is a setting rather than an always-on endpoint (#925). **Fresh installs
+start with it off**; installs that already had provider keys configured when they upgraded
+keep it on, so an existing Claude Code or Cline session does not break on upgrade. Toggle
+it on the Keys page under **Agent compatibility**, or from the API:
+
+```bash
+curl -X PUT http://localhost:3001/api/settings/enable-mcp \
+  -H "Authorization: Bearer <dashboard-token>" -H "Content-Type: application/json" \
+  -d '{"enabled": true}'
+```
+
+While it is off, every verb on `/mcp` answers `403` with a JSON-RPC error saying so.
+
+For Claude Code:
 
 ```bash
 claude mcp add --transport http freellmapi http://localhost:3001/mcp \
