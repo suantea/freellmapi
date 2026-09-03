@@ -1548,6 +1548,18 @@ export function hasOtherUsableKey(modelDbId: number, excludingKeyId: number, ski
 }
 
 /**
+ * Can ANY key serve this model right now? The same gates hasOtherUsableKey
+ * applies — scope (#657), per-key cooldown, and the provider/model rate and
+ * token windows — with no key excluded. /v1/models uses it to tell a `ready`
+ * model from an `exhausted` one (#1100), so the listing cannot claim a model
+ * the router would immediately skip.
+ */
+export function hasUsableKeyForModel(modelDbId: number): boolean {
+  // Key ids are AUTOINCREMENT and start at 1, so -1 excludes nothing.
+  return hasOtherUsableKey(modelDbId, -1);
+}
+
+/**
  * Every key that can be ROUTED to this model: enabled + healthy/unknown, not
  * scoped away from the model (#657), and — for a custom model — belonging to
  * the model's own endpoint (#212, #619). Deliberately ignores the transient

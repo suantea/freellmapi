@@ -31,7 +31,7 @@ import { enforceJsonContent } from '../lib/structured-output.js';
 import type { Platform } from '@freellmapi/shared/types.js';
 import { inferQuotaPoolKey, type QuotaObservationContext } from '../services/provider-quota.js';
 import { isUnifyEnabled, getModelGroups, resolveRequestedIdForDispatch } from '../services/model-groups.js';
-import { buildModelListing } from '../services/model-listing.js';
+import { buildModelListing, type NormalizedModel } from '../services/model-listing.js';
 import { claudeFamilyDiscoveryEntries } from '../services/anthropic-map.js';
 import { compressRequest, formatCompressionHeader } from '../services/compression/pipeline.js';
 
@@ -371,12 +371,18 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
     : [];
 
   // Machine-readable execution filter: `?execution_status=ready` narrows to
-  // models a request can actually serve RIGHT NOW (healthy, non-exhausted
-  // keys). `ready` implies available; `needsKey`/`exhausted` select the rest.
-  const es = String(req.query.execution_status ?? '').toLowerCase();
-  const esFiltered = es === 'ready' || es === 'needskey' || es === 'exhausted'
-    ? listed.filter(m => m.executionStatus === es)
-    : listed;
+  // models a request can actually serve RIGHT NOW (a key that is not scoped
+  // away, cooling down or out of window). `ready` implies available;
+  // `needsKey`/`exhausted` select the rest. Matched case-insensitively because
+  // the value itself is camelCase; an unrecognised value filters nothing, the
+  // same way an unrecognised `?available=` does. Like `?available=`, this
+  // narrows only the catalog rows: `auto`, `fusion` and the named chains are
+  // router entries, not models with keys of their own.
+  const esValues: Record<string, NormalizedModel['executionStatus']> = {
+    ready: 'ready', needskey: 'needsKey', exhausted: 'exhausted',
+  };
+  const es = esValues[String(req.query.execution_status ?? '').toLowerCase()];
+  const esFiltered = es ? listed.filter(m => m.executionStatus === es) : listed;
 
   res.json({
     object: 'list',
@@ -419,7 +425,7 @@ proxyRouter.get('/models', (req: Request, res: Response) => {
         available: p.usable === 1,
         unavailable_reason: p.usable === 1 ? null : 'no_models',
       })),
-      ...listed.map(m => ({
+      ...esFiltered.map(m => ({
         id: m.id,
         object: 'model',
         created: 0,

@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { initDb, getDb } from '../../db/index.js';
 import { buildModelListing } from '../../services/model-listing.js';
+import { setCooldown } from '../../services/ratelimit.js';
 
 // #1100: /v1/models gains a per-model execution_status (ready / needsKey /
-// exhausted) derived from the live api_keys.status of each model's candidate
-// keys, so agents can filter ?execution_status=ready and route around
-// exhausted models instead of 429ing.
+// exhausted) derived from whether the router could actually dispatch to the
+// model right now, so agents can filter ?execution_status=ready and route
+// around exhausted models instead of 429ing.
 
 function seedModel(platform: string, modelId: string, enabled = 1) {
   getDb().prepare(`
@@ -15,11 +16,13 @@ function seedModel(platform: string, modelId: string, enabled = 1) {
   `).run(platform, modelId, modelId, enabled);
 }
 
-function seedKey(platform: string, status: string, enabled = 1) {
-  getDb().prepare(`
-    INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled)
-    VALUES (?, ?, 'x', 'x', 'x', ?, ?)
-  `).run(platform, `${platform}-${status}`, status, enabled);
+let keySeq = 0;
+function seedKey(platform: string, status: string, enabled = 1, scope: string[] | null = null) {
+  keySeq += 1;
+  return Number(getDb().prepare(`
+    INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled, model_scope_json)
+    VALUES (?, ?, 'x', 'x', 'x', ?, ?, ?)
+  `).run(platform, `${platform}-${status}-${keySeq}`, status, enabled, scope ? JSON.stringify(scope) : null).lastInsertRowid);
 }
 
 function statusFor(modelId: string) {
@@ -69,5 +72,36 @@ describe('buildModelListing execution_status (#1100)', () => {
     seedModel('groq', 'disabled-model', 0);
     seedKey('groq', 'healthy');
     expect(statusFor('disabled-model')).toBe('needsKey');
+  });
+
+  // A live 429 never writes api_keys.status: it writes a per-key cooldown row.
+  // Reading status alone therefore called a cooling-down model ready.
+  it('marks a model exhausted when its only key is on cooldown', () => {
+    seedModel('groq', 'cooling-model');
+    const keyId = seedKey('groq', 'healthy');
+    setCooldown('groq', 'cooling-model', keyId, 60_000, 'header');
+    expect(statusFor('cooling-model')).toBe('exhausted');
+  });
+
+  it('stays ready when a sibling key is not on cooldown', () => {
+    seedModel('groq', 'sibling-model');
+    const cooling = seedKey('groq', 'healthy');
+    seedKey('groq', 'healthy');
+    setCooldown('groq', 'sibling-model', cooling, 60_000, 'header');
+    expect(statusFor('sibling-model')).toBe('ready');
+  });
+
+  // #657: a key scoped to other models cannot serve this one, so it must not
+  // make the model look ready.
+  it('ignores a key scoped away from the model', () => {
+    seedModel('groq', 'scoped-out-model');
+    seedKey('groq', 'healthy', 1, ['some-other-model']);
+    expect(statusFor('scoped-out-model')).toBe('exhausted');
+  });
+
+  it('counts a key scoped to the model itself', () => {
+    seedModel('groq', 'scoped-in-model');
+    seedKey('groq', 'healthy', 1, ['scoped-in-model']);
+    expect(statusFor('scoped-in-model')).toBe('ready');
   });
 });

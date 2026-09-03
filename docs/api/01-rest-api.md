@@ -8,6 +8,7 @@ Any OpenAI-compatible client works (Anthropic / Claude clients too — see [Anth
 
 - [Chat completions](#chat-completions)
 - [Routing strategies (`auto:*`)](#routing-strategies-auto)
+- [Model listing](#model-listing)
 - [Streaming](#streaming)
 - [Tool calling](#tool-calling)
 - [Gemini Google Search grounding](#gemini-google-search-grounding)
@@ -91,6 +92,23 @@ curl http://localhost:3001/v1/chat/completions \
 ```
 
 An unknown profile name returns a clear `400` rather than silently falling back. Profiles are named fallback chains (see [Features](../README.md#features)) — create and switch them from the dashboard; whichever is active is what plain `auto` uses.
+
+## Model listing
+
+`GET /v1/models` lists the whole catalog, including models you cannot call yet, so a client can show what exists as well as what is connected. `?available=true` (aliases `?connected=true`, `?ready=true`) narrows to models that can serve a request now.
+
+Each catalog entry also carries `execution_status`, a live answer to "would a request work right now":
+
+- `ready` — at least one key can actually serve it: enabled, healthy or not yet probed, not scoped away from this model, not on a rate-limit cooldown, and inside its rate and token windows. A key whose `status` is still `unknown` counts as ready, because probing is lazy and a fresh key is usable until something says otherwise.
+- `needsKey` — the model is disabled, or no enabled key matches it at all.
+- `exhausted` — keys match the model but every one of them is blocked at this moment, so a request would fail immediately. This is the state a burst of 429s produces, and it clears on its own when the cooldowns expire.
+
+`?execution_status=ready` (also `needsKey`, `exhausted`; matched case-insensitively) narrows the catalog rows to one status, so an agent can ask for models it can call without reading the whole list. An unrecognised value filters nothing. Like `?available=`, the filter applies only to catalog rows: `auto`, `fusion` and the `auto:<profile>` chains are router entries rather than models with keys of their own, and are always listed.
+
+```bash
+curl "http://localhost:3001/v1/models?execution_status=ready" \
+  -H "Authorization: Bearer freellmapi-your-unified-key"
+```
 
 ## Streaming
 

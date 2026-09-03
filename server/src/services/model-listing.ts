@@ -1,6 +1,7 @@
 import type { ModelListRow } from '@freellmapi/shared/types.js';
 import { getDb } from '../db/index.js';
 import { isUnifyEnabled, getModelGroups } from './model-groups.js';
+import { hasUsableKeyForModel } from './router.js';
 
 // Shared catalog-listing logic behind both the OpenAI `GET /v1/models` and the
 // Anthropic `GET /v1/models` endpoints, so the two wire formats list the exact
@@ -20,10 +21,10 @@ export interface NormalizedModel {
   // `supported_parameters` so agents can pick knobs per model.
   platforms: string[];
   supportsTools: boolean;
-  // Dynamic execution status for agents: `ready` (a healthy key can serve
-  // right now), `needsKey` (no enabled key — available=0's breakdown), or
-  // `exhausted` (keys exist but are all rate-limited/invalid/error — a
-  // request would 429 immediately). Derived from api_keys.status.
+  // Dynamic execution status for agents: `ready` (a key can serve it right
+  // now), `needsKey` (disabled, or no enabled key matches it — available=0's
+  // breakdown), or `exhausted` (keys exist but every one is currently blocked,
+  // so a request would fail immediately).
   executionStatus: 'ready' | 'needsKey' | 'exhausted';
 }
 
@@ -36,37 +37,21 @@ export interface ModelListing {
   autoContextWindow: number | null;
 }
 
-// Aggregate the live health of every candidate key per model row. One query for
-// the whole catalog; per-model status is derived from the statuses of its
-// enabled keys (same matching rule as the `available` expression).
-type KeyStatusRow = { model_db_id: number; status: string };
-
-function keyStatusMap(): Map<number, string[]> {
-  const rows = getDb().prepare(`
-    SELECT m.id AS model_db_id, k.status AS status
-      FROM models m
-      JOIN api_keys k
-        ON k.platform = m.platform
-       AND k.enabled = 1
-       AND (m.key_id IS NULL OR k.id = m.key_id)
-  `).all() as KeyStatusRow[];
-  const byModel = new Map<number, string[]>();
-  for (const row of rows) {
-    const list = byModel.get(row.model_db_id) ?? [];
-    list.push(row.status);
-    byModel.set(row.model_db_id, list);
-  }
-  return byModel;
-}
-
-// `ready` — at least one candidate key is healthy (or still unknown, i.e.
-// never probed yet: probing is lazy, so an unprobed fresh key is treated as
-// usable). `exhausted` — keys exist but every one is rate-limited/invalid/
-// error. Anything else (no keys at all) is `needsKey`.
-function executionStatusFor(statuses: string[] | undefined, available: number): 'ready' | 'needsKey' | 'exhausted' {
-  if (available !== 1 || !statuses || statuses.length === 0) return 'needsKey';
-  if (statuses.some(s => s === 'healthy' || s === 'unknown')) return 'ready';
-  return 'exhausted';
+// `ready` — at least one key could actually serve a request for this model
+// right now: enabled, healthy or never probed (probing is lazy, so an unprobed
+// key counts as usable), not scoped away from the model (#657), not on
+// cooldown, and inside its rate and token windows. `exhausted` — keys match
+// the model but every one of them is currently blocked, so a request would
+// fail straight away. `needsKey` — nothing matches it at all, or the model is
+// disabled.
+//
+// The gates are the router's own (hasOtherUsableKey), deliberately rather than
+// a second reading of api_keys.status: a live 429 never writes that column, it
+// writes a cooldown row (see services/ratelimit.ts, lib/fallback-loop.ts), so
+// status alone reports a cooling-down model as ready.
+function executionStatusFor(modelDbIds: number[], available: number): 'ready' | 'needsKey' | 'exhausted' {
+  if (available !== 1) return 'needsKey';
+  return modelDbIds.some(id => hasUsableKeyForModel(id)) ? 'ready' : 'exhausted';
 }
 
 export function buildModelListing(): ModelListing {
@@ -91,11 +76,9 @@ export function buildModelListing(): ModelListing {
       FROM models m
     `).all() as AvailRow[];
     const byId = new Map(rows.map(r => [r.id, r]));
-    const keyStatuses = keyStatusMap();
     allListed = getModelGroups().map(g => {
       const infos = g.members.map(m => byId.get(m.model_db_id)).filter(Boolean) as AvailRow[];
       const ctxs = infos.map(i => i.context_window).filter((c): c is number => c != null);
-      const statuses = g.members.flatMap(m => keyStatuses.get(m.model_db_id) ?? []);
       const available = infos.some(i => i.available === 1) ? 1 : 0;
       return {
         id: g.canonicalId,
@@ -107,7 +90,9 @@ export function buildModelListing(): ModelListing {
         intel: infos.length ? Math.min(...infos.map(i => i.intelligence_rank)) : Number.MAX_SAFE_INTEGER,
         platforms: [...new Set(infos.map(i => i.platform))],
         supportsTools: infos.some(i => i.supports_tools === 1),
-        executionStatus: executionStatusFor(statuses, available),
+        // A group is ready when ANY member can serve it — that is exactly the
+        // choice the router has when it dispatches the group.
+        executionStatus: executionStatusFor(g.members.map(m => m.model_db_id), available),
       };
     });
   } else {
@@ -127,14 +112,13 @@ export function buildModelListing(): ModelListing {
       )
       WHERE rn = 1
     `).all() as (ModelListRow & { intelligence_rank: number; id: number; supports_tools: number })[];
-    const keyStatuses = keyStatusMap();
     allListed = models.map(m => ({
       id: m.model_id, name: m.display_name, ownedBy: m.platform,
       available: m.available, enabled: m.enabled, contextWindow: m.context_window,
       intel: m.intelligence_rank,
       platforms: [m.platform],
       supportsTools: m.supports_tools === 1,
-      executionStatus: executionStatusFor(keyStatuses.get(m.id), m.available),
+      executionStatus: executionStatusFor([m.id], m.available),
     }));
   }
 
