@@ -26,7 +26,9 @@ const METRIC_KEYS: Record<string, string> = {
 // extracted from FallbackPage.
 export function TokenUsageBar({ data }: { data: TokenUsageData }) {
   const { t } = useI18n()
-  const { totalBudget, totalUsed, pools, models } = data
+  // `pools` is new in this payload (#1065); an older server, or a cached
+  // response from one, simply has no segments to draw.
+  const { totalBudget, totalUsed, pools = [], models } = data
   const remaining = Math.max(0, totalBudget - totalUsed)
   const remainingPct = totalBudget > 0 ? formatPercent(remaining / totalBudget) : '0%'
 
@@ -47,9 +49,15 @@ export function TokenUsageBar({ data }: { data: TokenUsageData }) {
   // model on a platform draws on the same segment.
   const poolSegments = pools.map(p => {
     const remainingTokens = Math.max(0, p.budget - p.used)
+    const scope = poolScopeWords(p.poolKey)
     return {
       ...p,
       remainingTokens,
+      // The raw key ("mistral::experiment-pool") is server vocabulary; the
+      // legend headers already say it in words, so the segment does too.
+      label: scope
+        ? t('freeTier.poolLabel', { platform: p.platform, scope })
+        : t('freeTier.poolLabelBare', { platform: p.platform }),
       widthPct: totalBudget > 0 ? (remainingTokens / totalBudget) * 100 : 0,
     }
   })
@@ -109,7 +117,7 @@ export function TokenUsageBar({ data }: { data: TokenUsageData }) {
         {poolSegments.map(p => (
           <div
             key={p.poolKey}
-            title={`${p.poolKey}: ${formatTokens(p.remainingTokens)} ${t('models.remaining')}, ${formatTokens(p.used)} ${t('models.used')}`}
+            title={`${p.label}: ${formatTokens(p.remainingTokens)} ${t('models.remaining')}, ${formatTokens(p.used)} ${t('models.used')}`}
             style={{
               width: `${p.widthPct}%`,
               backgroundColor: platformColors[p.platform] ?? '#94a3b8',

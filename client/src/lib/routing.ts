@@ -113,8 +113,9 @@ export interface TokenUsageData {
   totalBudget: number
   totalUsed: number
   // One row per quota pool (#1065): the total counts each shared platform
-  // allowance once, so the bar segments are per pool, not per model.
-  pools: { poolKey: string; platform: string; budget: number; used: number }[]
+  // allowance once, so the bar segments are per pool, not per model. Optional
+  // because a response from a server older than #1065 carries no such field.
+  pools?: { poolKey: string; platform: string; budget: number; used: number }[]
   models: { displayName: string; platform: string; modelId?: string; budget: number; used?: number }[]
 }
 
