@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Kunci API diperlukan",
     "claudeAliases": "Alias penemuan Claude Code",
     "claudeAliasesHint": "Dedahkan alias claude/<model> supaya pemilih model gateway dapat menyenaraikan katalog.",
+    "mcpServer": "Pelayan MCP",
+    "mcpServerHint": "Mendedahkan titik akhir /mcp kepada klien ejen. Pemasangan baharu bermula dalam keadaan dimatikan.",
     "urlTokensTitle": "Token URL boleh dibatalkan",
     "urlTokensDesc": "Untuk klien tanpa pengepala sahaja. Token URL boleh bocor ke dalam sejarah dan log, jadi batalkannya apabila tidak lagi diperlukan.",
     "urlTokenLabel": "Label token",
@@ -712,7 +714,9 @@
     "attemptTimingHint": "Offset mula dari permintaan mula · tempoh cubaan",
     "requestedModel": "Model yang diminta",
     "ttft": "TTFT",
-    "requestsByAgent": "Permintaan mengikut ejen"
+    "requestsByAgent": "Permintaan mengikut ejen",
+    "sortBy": "Isih mengikut {column}",
+    "sortHint": "Pengisihan hanya digunakan pada {count} baris yang dimuatkan"
   },
   "logs": {
     "title": "Log",
@@ -1026,7 +1030,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

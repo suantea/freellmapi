@@ -112,6 +112,10 @@ export type Row = FallbackEntry & Partial<RoutingScore>
 export interface TokenUsageData {
   totalBudget: number
   totalUsed: number
+  // One row per quota pool (#1065): the total counts each shared platform
+  // allowance once, so the bar segments are per pool, not per model. Optional
+  // because a response from a server older than #1065 carries no such field.
+  pools?: { poolKey: string; platform: string; budget: number; used: number }[]
   models: { displayName: string; platform: string; modelId?: string; budget: number; used?: number }[]
 }
 
@@ -376,6 +380,7 @@ export const platformColors: Record<string, string> = {
   google:      '#4285f4',
   groq:        '#f55036',
   cerebras:    '#8b5cf6',
+  sail:        '#0ea5e9',
   bai:         '#111827',
   nvidia:      '#76b900',
   mistral:     '#f59e0b',

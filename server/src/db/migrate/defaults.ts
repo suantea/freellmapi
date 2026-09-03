@@ -28,6 +28,9 @@ import * as backupsTable from '../migrations/20260823_000002_backups_table.js';
 import * as attemptKeyLabel from '../migrations/20260823_000003_attempt_key_label.js';
 import * as profileAutoInclude from '../migrations/20260823_000004_profile_auto_include.js';
 import * as idempotencyClaims from '../migrations/20260901_000001_idempotency_claims.js';
+import * as quotaObservationLookup from '../migrations/20260901_000002_quota_observation_lookup.js';
+import * as analyticsLatencyPercentileIndex from '../migrations/20260902_000001_analytics_latency_percentile_index.js';
+import * as mcpEnabledDefault from '../migrations/20260903_000001_mcp_enabled_default.js';
 
 export interface MigrationModule {
   up(db: Db): void;
@@ -68,6 +71,9 @@ export const BACKUPS_TABLE_FILENAME = '20260823_000002_backups_table.ts';
 export const ATTEMPT_KEY_LABEL_FILENAME = '20260823_000003_attempt_key_label.ts';
 export const PROFILE_AUTO_INCLUDE_FILENAME = '20260823_000004_profile_auto_include.ts';
 export const IDEMPOTENCY_CLAIMS_FILENAME = '20260901_000001_idempotency_claims.ts';
+export const QUOTA_OBSERVATION_LOOKUP_FILENAME = '20260901_000002_quota_observation_lookup.ts';
+export const ANALYTICS_LATENCY_PERCENTILE_INDEX_FILENAME = '20260902_000001_analytics_latency_percentile_index.ts';
+export const MCP_ENABLED_DEFAULT_FILENAME = '20260903_000001_mcp_enabled_default.ts';
 
 export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: LEGACY_BASELINE_FILENAME, module: legacyBaseline },
@@ -99,4 +105,7 @@ export const DEFAULT_MIGRATIONS: readonly DefaultMigration[] = [
   { filename: ATTEMPT_KEY_LABEL_FILENAME, module: attemptKeyLabel },
   { filename: PROFILE_AUTO_INCLUDE_FILENAME, module: profileAutoInclude },
   { filename: IDEMPOTENCY_CLAIMS_FILENAME, module: idempotencyClaims },
+  { filename: QUOTA_OBSERVATION_LOOKUP_FILENAME, module: quotaObservationLookup },
+  { filename: ANALYTICS_LATENCY_PERCENTILE_INDEX_FILENAME, module: analyticsLatencyPercentileIndex },
+  { filename: MCP_ENABLED_DEFAULT_FILENAME, module: mcpEnabledDefault },
 ];

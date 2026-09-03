@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API ကီး လိုအပ်သည်",
     "claudeAliases": "Claude Code ရှာဖွေမှု အမည်ပွားများ",
     "claudeAliasesHint": "Gateway မော်ဒယ်ရွေးချယ်ကိရိယာက catalog ကို စာရင်းပြနိုင်ရန် claude/<model> အမည်ပွားများကို ဖော်ပြပေးပါ။",
+    "mcpServer": "MCP ဆာဗာ",
+    "mcpServerHint": "အေးဂျင့်ကလိုင်းယင့်များအတွက် /mcp အဆုံးမှတ်ကို ဖွင့်ပေးသည်။ တပ်ဆင်မှုအသစ်များတွင် ပိတ်ထားသည်။",
     "urlTokensTitle": "ရုပ်သိမ်းနိုင်သော URL တိုကင်များ",
     "urlTokensDesc": "Header မပါသော client များအတွက်သာ ဖြစ်သည်။ URL တိုကင်များသည် မှတ်တမ်းနှင့် log များထဲသို့ ပေါက်ကြားနိုင်သဖြင့် မလိုအပ်တော့ပါက ရုပ်သိမ်းပါ။",
     "urlTokenLabel": "တိုကင် တံဆိပ်",
@@ -712,7 +714,9 @@
     "attemptTimingHint": "တောင်းဆိုမှုစတင်ချိန်မှ စတင်အော့ဖ်ဆက် · ကြိုးစားမှုကြာချိန်",
     "requestedModel": "တောင်းဆိုထားသော မော်ဒယ်",
     "ttft": "TTFT",
-    "requestsByAgent": "အေးဂျင့်အလိုက် တောင်းဆိုမှုများ"
+    "requestsByAgent": "အေးဂျင့်အလိုက် တောင်းဆိုမှုများ",
+    "sortBy": "{column} အလိုက် စီရန်",
+    "sortHint": "စီစဉ်ခြင်းသည် ဖွင့်ပြီးသော အတန်း {count} ခုအတွက်သာ သက်ရောက်သည်"
   },
   "logs": {
     "title": "မှတ်တမ်းများ",
@@ -1026,7 +1030,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

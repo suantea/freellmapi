@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API କୀ ଆବଶ୍ୟକ",
     "claudeAliases": "Claude Code ଆବିଷ୍କାର ଉପନାମଗୁଡ଼ିକ",
     "claudeAliasesHint": "ଗେଟୱେ ମଡେଲ ଚୟନକାରୀ କାଟାଲଗ୍ ତାଲିକାଭୁକ୍ତ କରିପାରିବା ପାଇଁ claude/<model> ଉପନାମଗୁଡ଼ିକୁ ଉପଲବ୍ଧ କରାନ୍ତୁ।",
+    "mcpServer": "MCP ସର୍ଭର",
+    "mcpServerHint": "ଏଜେଣ୍ଟ କ୍ଲାଏଣ୍ଟ ପାଇଁ /mcp ଏଣ୍ଡପଏଣ୍ଟ ଖୋଲେ। ନୂଆ ଇନଷ୍ଟଲରେ ଏହା ବନ୍ଦ ଥାଏ।",
     "urlTokensTitle": "ପ୍ରତ୍ୟାହାରଯୋଗ୍ୟ URL ଟୋକେନ୍‌ଗୁଡ଼ିକ",
     "urlTokensDesc": "କେବଳ ହେଡର୍-ବିହୀନ କ୍ଲାଏଣ୍ଟଙ୍କ ପାଇଁ। URL ଟୋକେନ୍ ଇତିହାସ ଏବଂ ଲଗରେ ଲିକ୍ ହୋଇପାରେ, ତେଣୁ ଆଉ ଆବଶ୍ୟକ ନ ହେଲେ ସେଗୁଡ଼ିକୁ ପ୍ରତ୍ୟାହାର କରନ୍ତୁ।",
     "urlTokenLabel": "ଟୋକେନ୍ ଲେବଲ୍",
@@ -712,7 +714,9 @@
     "attemptTimingHint": "ଅନୁରୋଧ ଆରମ୍ଭରୁ ଅଫସେଟ୍ ଆରମ୍ଭ କରନ୍ତୁ · ଉଦ୍ୟମ ଅବଧି",
     "requestedModel": "ଅନୁରୋଧିତ ମଡେଲ୍",
     "ttft": "TTFT",
-    "requestsByAgent": "ଏଜେଣ୍ଟ ଦ୍ୱାରା ଅନୁରୋଧଗୁଡିକ"
+    "requestsByAgent": "ଏଜେଣ୍ଟ ଦ୍ୱାରା ଅନୁରୋଧଗୁଡିକ",
+    "sortBy": "{column} ଅନୁସାରେ ସଜାନ୍ତୁ",
+    "sortHint": "ସଜାଣି କେବଳ ଲୋଡ୍ ହୋଇଥିବା {count} ଧାଡ଼ି ପାଇଁ ପ୍ରଯୁଜ୍ୟ"
   },
   "logs": {
     "title": "ଲଗ",
@@ -1026,7 +1030,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

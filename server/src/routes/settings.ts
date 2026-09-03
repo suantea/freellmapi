@@ -24,6 +24,7 @@ import {
   setCompressionConfig,
 } from '../services/compression/config.js';
 import { getHeadroomThresholds, setHeadroomThresholds } from '../services/router.js';
+import { MCP_ENABLED_SETTING, isMcpServerEnabled } from './mcp.js';
 import { z } from 'zod';
 import { getAppVersion } from '../lib/app-version.js';
 import {
@@ -129,6 +130,27 @@ settingsRouter.put('/fusion', (req: Request, res: Response) => {
   }
   const saved = setSavedFusionConfig(parsed.data);
   res.json({ config: saved, maxK: getFusionMaxK() });
+});
+
+// ── MCP server lifecycle (#925, MVP-1) ──────────────────────────────────────
+// Config surface for the /mcp introspection server. The Keys page renders this
+// as a switch under Agent compatibility; the stored default is seeded once by
+// migration so upgrades keep serving the clients they already had.
+
+settingsRouter.get('/enable-mcp', (_req: Request, res: Response) => {
+  res.json({ enabled: isMcpServerEnabled() });
+});
+
+const enableMcpSchema = z.object({ enabled: z.boolean() });
+
+settingsRouter.put('/enable-mcp', (req: Request, res: Response) => {
+  const parsed = enableMcpSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: { message: 'Invalid MCP setting: enabled must be a boolean.', type: 'invalid_request_error' } });
+    return;
+  }
+  setSetting(MCP_ENABLED_SETTING, parsed.data.enabled ? '1' : '0');
+  res.json({ enabled: parsed.data.enabled });
 });
 
 // Get the Claude Code model map (opus/sonnet/haiku/default → 'auto' | model_id).

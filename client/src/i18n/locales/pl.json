@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "Wymagany klucz API",
     "claudeAliases": "Aliasy wykrywania Claude Code",
     "claudeAliasesHint": "Udostępnij aliasy claude/<model>, aby selektor modeli bramy mógł wyświetlić katalog.",
+    "mcpServer": "Serwer MCP",
+    "mcpServerHint": "Udostępnia punkt końcowy /mcp klientom agentowym. Nowe instalacje startują z wyłączonym.",
     "urlTokensTitle": "Odwoływalne tokeny URL",
     "urlTokensDesc": "Tylko dla klientów bez nagłówków. Tokeny URL mogą wyciec do historii i logów, więc odwołuj je, gdy nie są już potrzebne.",
     "urlTokenLabel": "Etykieta tokenu",
@@ -712,7 +714,9 @@
     "attemptTimingHint": "Przesunięcie początku od początku żądania · czas trwania próby",
     "requestedModel": "Żądany model",
     "ttft": "TTFT",
-    "requestsByAgent": "Żądania według agenta"
+    "requestsByAgent": "Żądania według agenta",
+    "sortBy": "Sortuj według: {column}",
+    "sortHint": "Sortowanie dotyczy {count} załadowanych wierszy"
   },
   "logs": {
     "title": "Logi",
@@ -1026,7 +1030,8 @@
       "dsh": "Uprząż DeepSeeka, w której każdy dostawca to przełączalna trasa.",
       "mimo": "Agent terminalowy Xiaomi, fork OpenCode przyjmujący dowolnego dostawcę zgodnego z OpenAI.",
       "cursor": "Edytor pisany pod AI; działa przez chmurę Cursora, więc potrzebuje publicznego adresu URL.",
-      "generic": "Każde inne narzędzie mówiące API OpenAI, ustawiane ręcznie adresem bazowym i kluczem."
+      "generic": "Każde inne narzędzie mówiące API OpenAI, ustawiane ręcznie adresem bazowym i kluczem.",
+      "atomcode": "Agent terminalowy AtomGit, napisany w Rust, przyjmujący dowolny endpoint zgodny z OpenAI."
     }
   },
   "update": {

@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "የAPI ቁልፍ ያስፈልጋል",
     "claudeAliases": "የClaude Code ፍለጋ ተለዋጭ ስሞች",
     "claudeAliasesHint": "የጌትዌዩ ሞዴል መራጭ ካታሎጉን መዘርዘር እንዲችል የclaude/<model> ተለዋጭ ስሞችን ይክፈቱ።",
+    "mcpServer": "MCP አገልጋይ",
+    "mcpServerHint": "ለወኪል ደንበኞች የ/mcp መዳረሻን ይክፈቱ። አዲስ ተከላዎች ጠፍቶ ይጀምራሉ።",
     "urlTokensTitle": "ሊሻሩ የሚችሉ የURL ቶከኖች",
     "urlTokensDesc": "ራስጌ ለሌላቸው ደንበኞች ብቻ። የURL ቶከኖች ወደ ታሪክ እና ምዝግብ ማስታወሻዎች ሊፈሱ ይችላሉ፣ ስለዚህ በማያስፈልጉበት ጊዜ ይሽሯቸው።",
     "urlTokenLabel": "የቶከን መለያ",
@@ -712,7 +714,9 @@
     "attemptTimingHint": "ከጥያቄ ጅምር ማካካሻ ጀምር · የሙከራ ጊዜ",
     "requestedModel": "የተጠየቀው ሞዴል",
     "ttft": "TTFT",
-    "requestsByAgent": "ጥያቄዎች በወኪል"
+    "requestsByAgent": "ጥያቄዎች በወኪል",
+    "sortBy": "በ{column} ደርድር",
+    "sortHint": "መደርደሩ የሚሠራው በተጫኑት {count} ረድፎች ላይ ብቻ ነው"
   },
   "logs": {
     "title": "መዝገቦች",
@@ -1026,7 +1030,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

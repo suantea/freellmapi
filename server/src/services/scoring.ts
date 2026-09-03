@@ -193,6 +193,62 @@ export function peakAdjustedWeights(
   };
 }
 
+// ── Task-type weight bias (#1127) ─────────────────────────────────────────
+// A coding turn is quality-sensitive, a chat turn is budget/speed-sensitive.
+// When a request declares (or derives) a task type, move part of one axis onto
+// the other — code: speed → intelligence, chat: intelligence → speed. The
+// deltas are deliberately conservative and the whole thing is opt-in: no
+// header (or `auto` with no code signal) leaves the preset weights untouched.
+export const TASK_WEIGHT_SHARE = 0.3;
+
+/**
+ * Presets exempt from the task-type bias.
+ *
+ * The same reasoning as `PEAK_EXEMPT_STRATEGIES` (see above), plus `custom`:
+ * `fastest` and `reliable` are the ends of the axis an operator picks when they
+ * have already decided which end they want, and rewriting them turns one preset
+ * into a noisy copy of another; `custom` is the operator's hand-set sliders, the
+ * one weight vector they typed themselves, so a per-request header must not move
+ * it. The bias therefore applies only to the mixed presets (`balanced`,
+ * `smartest`). `priority` never reaches here — it has no weight vector at all.
+ */
+export const TASK_EXEMPT_STRATEGIES: readonly RoutingStrategy[] = [...PEAK_EXEMPT_STRATEGIES, 'custom'];
+
+/** Whether this strategy opts out of the task-type bias (see above). */
+export function isTaskExemptStrategy(strategy: RoutingStrategy): boolean {
+  return TASK_EXEMPT_STRATEGIES.includes(strategy);
+}
+
+export function taskAdjustedWeights(
+  base: RoutingWeights,
+  task: 'code' | 'chat',
+  strategy: RoutingStrategy,
+): { weights: RoutingWeights; adjusted: boolean } {
+  if (isTaskExemptStrategy(strategy)) return { weights: base, adjusted: false };
+  if (task === 'code') {
+    const shift = base.speed * TASK_WEIGHT_SHARE;
+    if (shift <= 0) return { weights: base, adjusted: false };
+    return {
+      weights: {
+        reliability: base.reliability,
+        speed: base.speed - shift,
+        intelligence: base.intelligence + shift,
+      },
+      adjusted: true,
+    };
+  }
+  const shift = base.intelligence * TASK_WEIGHT_SHARE;
+  if (shift <= 0) return { weights: base, adjusted: false };
+  return {
+    weights: {
+      reliability: base.reliability,
+      speed: base.speed + shift,
+      intelligence: base.intelligence - shift,
+    },
+    adjusted: true,
+  };
+}
+
 // ── Reliability ───────────────────────────────────────────────────────────
 // Beta(1,1) prior = uniform: an unseen model is genuinely uncertain, not assumed
 // good or bad. With decay-weighted pseudo-counts the alpha/beta are continuous.

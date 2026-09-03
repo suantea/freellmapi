@@ -550,6 +550,8 @@
     "ollamaKeyRequired": "API کلید درکار ہے۔",
     "claudeAliases": "Claude Code ڈسکوری عرفی نام",
     "claudeAliasesHint": "claude/<model> عرفی نام ظاہر کریں تاکہ گیٹ وے ماڈل منتخب کنندہ کیٹلاگ کی فہرست دکھا سکے۔",
+    "mcpServer": "MCP سرور",
+    "mcpServerHint": "ایجنٹ کلائنٹس کے لیے /mcp اینڈ پوائنٹ کھولتا ہے۔ نئی تنصیبات میں یہ بند رہتا ہے۔",
     "urlTokensTitle": "قابلِ منسوخ URL ٹوکنز",
     "urlTokensDesc": "صرف بغیر ہیڈر والے کلائنٹس کے لیے۔ URL ٹوکنز ہسٹری اور لاگز میں لیک ہو سکتے ہیں، اس لیے ضرورت نہ رہنے پر انہیں منسوخ کر دیں۔",
     "urlTokenLabel": "ٹوکن لیبل",
@@ -712,7 +714,9 @@
     "attemptTimingHint": "درخواست کے آغاز سے آفسیٹ شروع کریں · کوشش کی مدت",
     "requestedModel": "ماڈل کی درخواست کی۔",
     "ttft": "TTFT",
-    "requestsByAgent": "فی ایجنٹ درخواستیں"
+    "requestsByAgent": "فی ایجنٹ درخواستیں",
+    "sortBy": "{column} کے لحاظ سے ترتیب دیں",
+    "sortHint": "ترتیب صرف لوڈ شدہ {count} قطاروں پر لاگو ہوتی ہے"
   },
   "logs": {
     "title": "لاگز",
@@ -1026,7 +1030,8 @@
       "dsh": "DeepSeek's harness, which keeps every provider as a route you can switch between.",
       "mimo": "Xiaomi's terminal agent, an OpenCode fork that takes any OpenAI-compatible provider.",
       "cursor": "The AI-first editor; it calls through Cursor's cloud, so it needs a public URL.",
-      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key."
+      "generic": "Anything else that speaks the OpenAI API, set up by hand from a base URL and key.",
+      "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint."
     }
   },
   "update": {

@@ -1,7 +1,7 @@
 name: CLI release
 
 # Publishes the `freellmapi` CLI to npm. Closes #671 — the README and
-# docs/clients.md have always documented `npx freellmapi setup-claude`, but the
+# docs/clients/01-agent-clients.md have always documented `npx freellmapi setup-claude`, but the
 # package was never pushed to the registry, so every one of those commands died
 # with npm E404.
 #
@@ -49,9 +49,9 @@ jobs:
     name: Publish to npm
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
