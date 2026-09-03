@@ -43,6 +43,10 @@ export interface QuotaForecastEntry {
   low_balance: boolean;
   /** Seconds until reset_at, or null when reset_at is unknown/expired. */
   seconds_until_reset: number | null;
+  /** Estimated time until quota exhaustion based on current usage rate.
+   *  Null when the usage rate cannot be determined (e.g. first request, or
+   *  remaining is unknown). */
+  estimated_exhaustion_at: string | null;
 }
 
 function secondsUntilReset(resetAt: string | null): number | null {
@@ -50,6 +54,47 @@ function secondsUntilReset(resetAt: string | null): number | null {
   const ms = new Date(resetAt).getTime() - Date.now();
   if (Number.isNaN(ms) || ms <= 0) return null;
   return Math.floor(ms / 1000);
+}
+
+/**
+ * Estimate time until quota exhaustion based on usage rate.
+ * 
+ * @param used - Requests already used in current window
+ * @param remaining - Requests remaining (null = unknown)
+ * @param windowStart - When the window started (ISO string or null)
+ * @returns ISO timestamp of estimated exhaustion, or null if rate cannot be determined
+ */
+function estimateExhaustionAt(
+  used: number | null,
+  remaining: number | null,
+  windowStart: string | null
+): string | null {
+  // Can't estimate if we don't know remaining or used
+  if (remaining === null || used === null || used <= 0) {
+    return null;
+  }
+  
+  // Need window start to calculate rate
+  if (!windowStart) {
+    return null;
+  }
+  
+  const windowStartMs = new Date(windowStart).getTime();
+  const now = Date.now();
+  const elapsedSeconds = (now - windowStartMs) / 1000;
+  
+  // Need at least some elapsed time to calculate a meaningful rate
+  if (elapsedSeconds <= 0) {
+    return null;
+  }
+  
+  // Calculate requests per second, then estimate time to exhaust
+  const ratePerSecond = used / elapsedSeconds;
+  const secondsToExhaust = remaining / ratePerSecond;
+  
+  // Return ISO timestamp
+  const exhaustionMs = now + secondsToExhaust * 1000;
+  return new Date(exhaustionMs).toISOString();
 }
 
 function entryFor(row: QuotaObservationView): QuotaForecastEntry | null {
@@ -74,6 +119,13 @@ function entryFor(row: QuotaObservationView): QuotaForecastEntry | null {
       || remaining / limit < LOW_BALANCE_THRESHOLD;
   }
 
+  // Calculate estimated exhaustion time based on usage rate
+  const estimatedExhaustionAt = estimateExhaustionAt(
+    used,
+    remaining,
+    row.observedAt ?? null
+  );
+
   return {
     platform: row.platform,
     pool: row.quotaPoolKey ?? `${row.platform}::default`,
@@ -84,6 +136,7 @@ function entryFor(row: QuotaObservationView): QuotaForecastEntry | null {
     reset_at: row.resetAt ?? null,
     low_balance: lowBalance,
     seconds_until_reset: secondsUntilReset(row.resetAt ?? null),
+    estimated_exhaustion_at: estimatedExhaustionAt,
   };
 }
 

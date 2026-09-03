@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { initDb, getDb } from '../../db/index.js';
 import { getQuotaForecast } from '../../services/quota-forecast.js';
 
@@ -10,15 +10,26 @@ function insertState(row: {
   limit: number | null;
   remaining: number | null;
   resetAt: string | null;
+  observedAt?: string | null;
 }) {
   getDb().prepare(`
     INSERT INTO provider_quota_state
       (platform, key_id, quota_pool_key, metric, limit_value, remaining_value, reset_at, observed_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-  `).run(row.platform, row.keyId, row.pool, row.metric, row.limit, row.remaining, row.resetAt);
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+  `).run(
+    row.platform,
+    row.keyId,
+    row.pool,
+    row.metric,
+    row.limit,
+    row.remaining,
+    row.resetAt ?? null,
+    row.observedAt ?? new Date(Date.now() - 3600_000).toISOString() // 1h ago by default
+  );
 }
 
-const future = () => new Date(Date.now() + 12 * 3600 * 1000).toISOString(); // 12h ahead → within today
+const future = (hoursAhead = 12) =>
+  new Date(Date.now() + hoursAhead * 3600 * 1000).toISOString();
 
 describe('quota-forecast: daily balance aggregation (#1104)', () => {
   beforeAll(() => {
@@ -98,6 +109,7 @@ describe('quota-forecast: daily balance aggregation (#1104)', () => {
     expect(e.remaining).toBeNull();
     expect(e.remaining_pct).toBeNull();
     expect(e.low_balance).toBe(false);
+    expect(e.estimated_exhaustion_at).toBeNull();
   });
 
   it('keys the dedupe on the pool alone, which already names its platform', () => {
@@ -115,5 +127,35 @@ describe('quota-forecast: daily balance aggregation (#1104)', () => {
 
     const forecast = getQuotaForecast();
     expect(forecast).toHaveLength(0);
+  });
+
+  describe('estimatedExhaustionAt', () => {
+    it('returns null when remaining is unknown', () => {
+      insertState({ platform: 'groq', keyId: 1, pool: 'groq::account', metric: 'requests', limit: 100, remaining: null, resetAt: future(), observedAt: new Date(Date.now() - 3600_000).toISOString() });
+      const e = getQuotaForecast()[0];
+      expect(e.estimated_exhaustion_at).toBeNull();
+    });
+
+    it('returns null when no requests have been used yet', () => {
+      insertState({ platform: 'groq', keyId: 1, pool: 'groq::account', metric: 'requests', limit: 100, remaining: 100, resetAt: future(), observedAt: new Date(Date.now() - 3600_000).toISOString() });
+      const e = getQuotaForecast()[0];
+      expect(e.estimated_exhaustion_at).toBeNull();
+    });
+
+    it('returns a future timestamp when usage rate is known', () => {
+      // Simulate: 60 requests used in last hour, 40 remaining
+      insertState({ platform: 'groq', keyId: 1, pool: 'groq::account', metric: 'requests', limit: 100, remaining: 40, resetAt: future(24), observedAt: new Date(Date.now() - 3600_000).toISOString() });
+      const e = getQuotaForecast()[0];
+      expect(e.estimated_exhaustion_at).not.toBeNull();
+      // Should be in the future
+      const exhaustionMs = new Date(e.estimated_exhaustion_at!).getTime();
+      expect(exhaustionMs).toBeGreaterThan(Date.now());
+    });
+
+    it('returns null when observedAt is null', () => {
+      insertState({ platform: 'groq', keyId: 1, pool: 'groq::account', metric: 'requests', limit: 100, remaining: 60, resetAt: future(), observedAt: null });
+      const e = getQuotaForecast()[0];
+      expect(e.estimated_exhaustion_at).toBeNull();
+    });
   });
 });
