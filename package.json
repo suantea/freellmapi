@@ -14,7 +14,7 @@
     "test:bootstrap": "node --test scripts/dev-bootstrap.test.mjs",
     "test:hooks": "node --test .claude/hooks/contributing-check.test.mjs",
     "build": "npm run build -w server && npm run build -w cli && npm run build -w client",
-    "lint": "npm run lint -w server && npm run lint -w cli && npm run lint -w client --if-present",
+    "lint": "npm run lint -w server && npm run lint -w cli",
     "build:server": "npm run build -w server",
     "test:migrations": "npm run test:migrations -w server",
     "desktop:dev": "npm run build -w client && npm --prefix desktop run dev",

@@ -35,7 +35,7 @@ const CODE_MARKERS: readonly RegExp[] = [
   /```/,
   // Shell prompt at the start of a line, followed by a command-looking word.
   // The word gate keeps "$ 20 per seat" out.
-  /^[ \t]*\$[ \t]+[a-z][\w.\/-]*(?=[ \t]|$)/m,
+  /^[ \t]*\$[ \t]+[a-z][\w./-]*(?=[ \t]|$)/m,
   // Declarations and definitions.
   /\b(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=/,
   /\bfunction\s*\*?\s*[A-Za-z_$][\w$]*\s*\(/,
@@ -52,10 +52,10 @@ const CODE_MARKERS: readonly RegExp[] = [
   /\brequire\s*\(\s*['"]/,
   /^[ \t]*#\s*include\s*[<"]/m,
   // A source file path next to a line number: `src/router.ts:214`.
-  /\b[\w.\/-]+\.(?:[jt]sx?|mjs|cjs|py|rb|go|rs|java|kt|swift|php|cs|cpp|cc|hpp|sh|sql|css|scss|html|vue|svelte|ya?ml|json|toml)\s*:\s*\d+/,
+  /\b[\w./-]+\.(?:[jt]sx?|mjs|cjs|py|rb|go|rs|java|kt|swift|php|cs|cpp|cc|hpp|sh|sql|css|scss|html|vue|svelte|ya?ml|json|toml)\s*:\s*\d+/,
   // Same, for the one-letter C extensions — the base name must start with a
   // letter so an enumerated prose clause ("4.c: twelve") cannot match.
-  /\b[A-Za-z_][\w.\/-]*\.[ch]\s*:\s*\d+/,
+  /\b[A-Za-z_][\w./-]*\.[ch]\s*:\s*\d+/,
   // Stack frames: V8 (`at fn (file.js:1:2)`), Python (`File "x.py", line 3`).
   /^\s*at\s+\S.*\(.*:\d+:\d+\)/m,
   /^\s*File\s+"[^"\n]+",\s*line\s+\d+/m,

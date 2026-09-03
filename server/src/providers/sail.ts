@@ -237,18 +237,16 @@ export class SailProvider extends BaseProvider {
     if (ms <= 0) return;
     if (signal?.aborted) throw signal.reason ?? new Error('Sail request aborted');
     await new Promise<void>((resolve, reject) => {
-      let timer: ReturnType<typeof setTimeout>;
-      let onAbort: () => void;
       const finish = (error?: unknown) => {
         clearTimeout(timer);
         signal?.removeEventListener('abort', onAbort);
         if (error !== undefined) reject(error);
         else resolve();
       };
-      onAbort = () => {
+      const onAbort = () => {
         finish(signal?.reason ?? new Error('Sail request aborted'));
       };
-      timer = setTimeout(() => finish(), ms);
+      const timer = setTimeout(() => finish(), ms);
       signal?.addEventListener('abort', onAbort, { once: true });
     });
   }
