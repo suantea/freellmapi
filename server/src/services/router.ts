@@ -21,7 +21,7 @@ import {
   reliabilityPosterior, expectedReliability, sampleBeta,
   speedScore, intelligenceScore, intelligenceComposite, headroomFactor, rateWindowHeadroomFactor,
   rateLimitFactor, combineScore,
-  peakAdjustedWeights, taskAdjustedWeights, isValidPeakHour, isValidTimezone,
+  peakAdjustedWeights, taskAdjustedWeights, TASK_WEIGHT_SHARE, isValidPeakHour, isValidTimezone,
   DEFAULT_PEAK_HOURS, type PeakHoursConfig,
   observedSpeedRank, TIMEOUT_LATENCY_CAP_MS,
   type HeadroomThresholds,
@@ -382,6 +382,33 @@ export function setHeadroomThresholds(rampStart?: number | null, floor?: number 
   };
   apply(HEADROOM_RAMP_START_KEY, rampStart);
   apply(HEADROOM_FLOOR_KEY, floor);
+}
+
+// ── Task-type weight share (persisted) ─────────────────────────────────────
+// #1127 follow-up: the bandit bias applied for a declared/derived task type
+// moves `share` of one axis onto the other (code: speed → intelligence; chat:
+// the reverse). The default matches the scoring.ts constant; operators can
+// tune it 0..1 (0 = bias disabled) without a code change. Absent/invalid
+// values fall back to the constant so existing installs are untouched.
+export const TASK_WEIGHT_SHARE_KEY = 'routing_task_weight_share';
+
+export function getTaskWeightShare(): number {
+  const raw = getSetting(TASK_WEIGHT_SHARE_KEY);
+  if (raw === undefined || raw.trim() === '') return TASK_WEIGHT_SHARE;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : TASK_WEIGHT_SHARE;
+}
+
+// null clears back to the default; a value outside 0..1 throws.
+export function setTaskWeightShare(value: number | null): void {
+  if (value === null) {
+    getDb().prepare('DELETE FROM settings WHERE key = ?').run(TASK_WEIGHT_SHARE_KEY);
+    return;
+  }
+  if (!Number.isFinite(value) || value < 0 || value > 1) {
+    throw new Error(`Invalid value ${value} for ${TASK_WEIGHT_SHARE_KEY} (must be 0..1)`);
+  }
+  setSetting(TASK_WEIGHT_SHARE_KEY, String(value));
 }
 
 /** Chance per request that an unmeasured model gets tried first when the
@@ -1068,9 +1095,10 @@ function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true
   // one axis onto the other (code: speed → intelligence; chat: the reverse).
   // Applied AFTER the peak-hours adjustment, on the same weights the rest of
   // the chain scores with; opt-in, so absent a signal the preset stands.
-  // `fastest`, `reliable` and `custom` are exempt (see TASK_EXEMPT_STRATEGIES).
+  // `fastest`, `reliable` and `custom` are exempt (see TASK_EXEMPT_STRATEGIES),
+  // and the share is operator-tunable via settings (0 disables the bias).
   if (task) {
-    const adjusted = taskAdjustedWeights(weights, task, strategy);
+    const adjusted = taskAdjustedWeights(weights, task, strategy, getTaskWeightShare());
     weights = adjusted.adjusted ? adjusted.weights : weights;
   }
 

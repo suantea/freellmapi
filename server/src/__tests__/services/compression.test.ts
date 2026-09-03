@@ -383,7 +383,10 @@ describe('compression engines', () => {
   // outside verification on Node 22 saw a 10-11 ms median and 252-277 ms on
   // the linearity payload), so the same numbers there only produce false
   // failures. Loosen them where nothing depends on them; CI keeps them exact.
-  const slack = process.env.CI ? 1 : 3;
+  // The coverage leg is instrumented by v8, which inflates these timings by
+  // roughly 2-3x, so it gets the same slack as a laptop. The uninstrumented
+  // matrix leg still holds the exact caps.
+  const slack = process.env.CI && process.env.COVERAGE !== '1' ? 1 : 3;
 
   it('stays within the 100 KB synchronous performance budget', () => {
     const payload = `${'plain status line without protected tokens\n'.repeat(2_500)}tail`;

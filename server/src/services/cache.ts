@@ -22,14 +22,21 @@
 //     replaying one frozen answer would defeat that. Cached only when the
 //     temperature is omitted or at/below RESPONSE_CACHE_MAX_TEMPERATURE.
 //   - In-memory and bounded. Entries live in a size-capped LRU map (oldest use
-//     evicted first), so the cache can never grow without bound and a restart
-//     simply flushes it. No schema, no migration, no persisted response blobs.
+//     evicted first), so the cache can never grow without bound.
+//   - Optionally durable. When the cache is ON, the same entries are written
+//     through to the response_cache table so a restart does not throw the day's
+//     savings away (the daily quota-reset re-run pattern). This means PLAINTEXT
+//     model responses land on disk, which is a privacy posture change, so it is
+//     tied to the cache master switch and can be turned off on its own with
+//     RESPONSE_CACHE_PERSIST=false (memory-only, the pre-0.9.5 behaviour). The
+//     SQLite row is dropped whenever the memory entry goes: TTL expiry, LRU
+//     eviction, an explicit flush, or the startup purge.
 //   - Fail-safe reads. The settings lookup that decides the master switch is
 //     wrapped, so a not-yet-initialized DB disables the cache rather than
 //     throwing in the proxy hot path (mirrors services/ratelimit.ts).
 
 import crypto from 'crypto';
-import { getSetting } from '../db/index.js';
+import { getSetting, getDb } from '../db/index.js';
 import type { ChatMessage } from '@freellmapi/shared/types.js';
 
 // ── Config (read on each call so tests and the dashboard can toggle live) ──
@@ -71,6 +78,16 @@ export function isCacheEnabled(): boolean {
     return /^(1|true|on|yes)$/i.test(stored.trim());
   }
   return envFlag('RESPONSE_CACHE', false);
+}
+
+/**
+ * Write-through to SQLite. Only meaningful when the cache itself is on, so an
+ * install that never enabled caching persists nothing and the feature is inert.
+ * Separately switchable because persisting plaintext model responses to disk is
+ * a privacy decision an operator may want to decline while still caching.
+ */
+export function cachePersistenceEnabled(): boolean {
+  return isCacheEnabled() && envFlag('RESPONSE_CACHE_PERSIST', true);
 }
 
 /** Entry lifetime. Default 1h: long enough to absorb retries and agent re-runs,
@@ -263,10 +280,65 @@ interface CacheEntry {
 // at the end (delete + set), so eviction from the front drops the coldest entry.
 const store = new Map<string, CacheEntry>();
 
+// ── Deferred SQLite write-through ──
+// better-sqlite3 is synchronous, so a store/hit write would sit on the request
+// path (a large completion body is a multi-KB write with an fsync behind it).
+// Every persistence write is therefore queued and drained on the next tick: the
+// in-memory map is already correct by then, and a crash in the gap only costs
+// a cache entry. Individually wrapped so one bad write cannot take down the
+// drain, and skipped entirely when persistence is off.
+const pendingWrites: Array<() => void> = [];
+let drainScheduled = false;
+
+function schedulePersist(op: () => void): void {
+  if (!cachePersistenceEnabled()) return;
+  pendingWrites.push(op);
+  if (drainScheduled) return;
+  drainScheduled = true;
+  setImmediate(drainPendingWrites);
+}
+
+function drainPendingWrites(): void {
+  drainScheduled = false;
+  const ops = pendingWrites.splice(0, pendingWrites.length);
+  for (const op of ops) {
+    try {
+      op();
+    } catch {
+      // best-effort: a DB failure degrades to memory-only, never to a 500
+    }
+  }
+}
+
+function scheduleRowDelete(cacheKey: string): void {
+  schedulePersist(() => {
+    getDb().prepare('DELETE FROM response_cache WHERE cache_key = ?').run(cacheKey);
+  });
+}
+
+/**
+ * Test-only: run the queued write-through immediately instead of on the next
+ * tick, so a synchronous test can assert on what actually reached SQLite.
+ */
+export function __flushPersistenceForTests(): void {
+  drainPendingWrites();
+}
+
+/**
+ * Test-only: drop the in-memory LRU while leaving the SQLite table intact, the
+ * way a process restart does. (clearCache() is the user-facing flush and wipes
+ * both, so it cannot stand in for a restart.) Pending write-through is drained
+ * first, since a real restart's writes had already landed.
+ */
+export function __resetMemoryForTests(): void {
+  drainPendingWrites();
+  store.clear();
+}
+
 /**
  * Look up a cached completion. Returns null on a miss or when the entry has aged
- * past the TTL (expired entries are deleted lazily on read). A hit bumps the
- * entry's hit_count and moves it to most-recently-used.
+ * past the TTL (expired entries are deleted lazily on read, in memory and on
+ * disk). A hit bumps the entry's hit_count and moves it to most-recently-used.
  */
 export function getCachedResponse(cacheKey: string, now = Date.now()): CachedResponse | null {
   const entry = store.get(cacheKey);
@@ -274,6 +346,8 @@ export function getCachedResponse(cacheKey: string, now = Date.now()): CachedRes
 
   if (now - entry.createdAtMs > cacheTtlMs()) {
     store.delete(cacheKey);
+    // The row would otherwise outlive its memory entry until the next restart.
+    scheduleRowDelete(cacheKey);
     return null;
   }
 
@@ -282,6 +356,15 @@ export function getCachedResponse(cacheKey: string, now = Date.now()): CachedRes
   // Move to most-recently-used.
   store.delete(cacheKey);
   store.set(cacheKey, entry);
+
+  // Keep the persisted counters in step so the savings numbers survive a
+  // restart instead of resetting to whatever the last store wrote.
+  const hitCount = entry.hitCount;
+  schedulePersist(() => {
+    getDb()
+      .prepare('UPDATE response_cache SET hit_count = ?, last_hit_at_ms = ? WHERE cache_key = ?')
+      .run(hitCount, now, cacheKey);
+  });
 
   return {
     body: entry.body,
@@ -299,11 +382,18 @@ export function getCachedResponse(cacheKey: string, now = Date.now()): CachedRes
  * Enforces the entry cap by evicting the least-recently-used entries. Best-
  * effort: an unserializable body is skipped so caching can never break a
  * request that already succeeded.
+ *
+ * SQLite persistence: when the cache is on, the entry is also written through
+ * to the response_cache table so it survives a restart (the daily quota-reset
+ * re-run pattern). The write is deferred to the next tick and best-effort, so
+ * it never sits on — or throws into — the proxy hot path; a DB failure degrades
+ * to in-memory-only, exactly as before.
  */
 export function storeCachedResponse(cacheKey: string, input: StoreInput, now = Date.now()): void {
   // Reject bodies that can't be JSON-serialized; a hit must be replayable.
+  let bodyJson: string;
   try {
-    JSON.stringify(input.body);
+    bodyJson = JSON.stringify(input.body);
   } catch {
     return;
   }
@@ -329,6 +419,105 @@ export function storeCachedResponse(cacheKey: string, input: StoreInput, now = D
     const oldest = store.keys().next().value as string | undefined;
     if (oldest === undefined) break;
     store.delete(oldest);
+    // Evicting in memory but not on disk would let the table grow without
+    // bound and let a restart resurrect entries the LRU already gave up on.
+    scheduleRowDelete(oldest);
+  }
+
+  // Write-through to SQLite. hit_count is stored at its current in-memory value
+  // (0 for a fresh store, since an overwrite resets the rolling stat with the
+  // answer it counts); subsequent hits update the row in getCachedResponse.
+  const entry = store.get(cacheKey);
+  if (!entry) return; // cap of 0: the entry was evicted by the loop above
+  const expiresAtMs = now + cacheTtlMs();
+  schedulePersist(() => {
+    getDb().prepare(
+      `INSERT INTO response_cache
+         (cache_key, body_json, platform, model_id, key_id, prompt_tokens, completion_tokens, hit_count, created_at_ms, last_hit_at_ms, expires_at_ms)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(cache_key) DO UPDATE SET
+         body_json = excluded.body_json,
+         platform = excluded.platform,
+         model_id = excluded.model_id,
+         key_id = excluded.key_id,
+         prompt_tokens = excluded.prompt_tokens,
+         completion_tokens = excluded.completion_tokens,
+         hit_count = excluded.hit_count,
+         created_at_ms = excluded.created_at_ms,
+         last_hit_at_ms = excluded.last_hit_at_ms,
+         expires_at_ms = excluded.expires_at_ms`,
+    ).run(
+      cacheKey,
+      bodyJson,
+      input.platform,
+      input.modelId,
+      input.keyId,
+      input.promptTokens,
+      input.completionTokens,
+      entry.hitCount,
+      now,
+      entry.lastHitAtMs,
+      expiresAtMs,
+    );
+  });
+}
+
+/**
+ * Reload unexpired entries from SQLite into the in-memory LRU, bounded by
+ * RESPONSE_CACHE_MAX_ENTRIES. Called once at startup (after initDb) from both
+ * boot paths, server/src/index.ts and desktop/src/server-host.ts; expired rows
+ * are purged opportunistically. Best-effort: any DB error leaves the cache
+ * empty (memory-only), matching the pre-persistence behavior.
+ */
+export function loadCacheFromDb(now = Date.now()): void {
+  try {
+    const db = getDb();
+    // Purge expired rows lazily on startup so the table doesn't accumulate
+    // dead entries between restarts. Unconditional: rows written while the
+    // cache was on must still age out after it is switched off.
+    db.prepare('DELETE FROM response_cache WHERE expires_at_ms <= ?').run(now);
+    // Hydration only when the operator actually wants the cache (and its
+    // on-disk half). Off by default, so this is inert on an untouched install.
+    if (!cachePersistenceEnabled()) return;
+    const rows = db.prepare(
+      `SELECT cache_key, body_json, platform, model_id, key_id, prompt_tokens, completion_tokens, hit_count, created_at_ms, last_hit_at_ms
+         FROM response_cache
+        ORDER BY created_at_ms ASC`,
+    ).all() as Array<{
+      cache_key: string;
+      body_json: string;
+      platform: string;
+      model_id: string;
+      key_id: number | null;
+      prompt_tokens: number;
+      completion_tokens: number;
+      hit_count: number;
+      created_at_ms: number;
+      last_hit_at_ms: number | null;
+    }>;
+    const cap = cacheMaxEntries();
+    // Newest wins: drop rows past the cap from the FRONT (oldest first).
+    const keep = rows.length > cap ? rows.slice(rows.length - cap) : rows;
+    for (const row of keep) {
+      if (now - row.created_at_ms > cacheTtlMs()) continue; // aged between purge and read
+      try {
+        store.set(row.cache_key, {
+          body: JSON.parse(row.body_json),
+          platform: row.platform,
+          modelId: row.model_id,
+          keyId: row.key_id,
+          promptTokens: row.prompt_tokens,
+          completionTokens: row.completion_tokens,
+          hitCount: row.hit_count,
+          createdAtMs: row.created_at_ms,
+          lastHitAtMs: row.last_hit_at_ms,
+        });
+      } catch {
+        // corrupt body — skip; it will be overwritten on the next store
+      }
+    }
+  } catch {
+    // best-effort: DB unavailable at startup → memory-only cache
   }
 }
 
@@ -358,9 +547,22 @@ export function getCacheStats(): CacheStats {
   return { entries: store.size, totalHits, savedPromptTokens, savedCompletionTokens };
 }
 
-/** Drop every cached entry. Returns the number removed. */
+/**
+ * Drop every cached entry, in memory AND on disk. Returns the number removed.
+ * The persisted table has to go too: DELETE /api/cache is how an operator
+ * forces fresh answers (changed keys, a bad reply, a privacy request), and a
+ * flush that left the rows behind would resurrect all of it on the next
+ * restart. Queued write-through is discarded for the same reason. Runs inline
+ * rather than deferred: this is an admin route, not the proxy hot path.
+ */
 export function clearCache(): number {
   const removed = store.size;
   store.clear();
+  pendingWrites.length = 0;
+  try {
+    getDb().prepare('DELETE FROM response_cache').run();
+  } catch {
+    // best-effort: no DB (or no table yet) means there is nothing persisted
+  }
   return removed;
 }

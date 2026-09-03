@@ -18,6 +18,7 @@ import { startCooldownProbe } from '../../server/src/services/cooldown-probe.js'
 import { startCustomModelSync } from '../../server/src/services/custom-model-sync.js';
 import { startBackupScheduler } from '../../server/src/services/backups.js';
 import { cleanupExpiredCooldowns } from '../../server/src/services/ratelimit.js';
+import { loadCacheFromDb } from '../../server/src/services/cache.js';
 import { startWakeDetect } from '../../server/src/lib/wake-detect.js';
 import { installProcessSafetyNet } from '../../server/src/lib/process-safety-net.js';
 import { installLogRedaction } from '../../server/src/lib/log-redaction.js';
@@ -96,6 +97,10 @@ export async function startServer(opts: StartOptions): Promise<ServerHandle> {
   // the URL saved in the settings table is ignored on every restart and the
   // outbound proxy fields appear empty until re-saved.
   restoreProxySettings();
+  // Rehydrate the persisted response cache, same as server/src/index.ts. The
+  // desktop app is restarted far more often than a server (every quit, every
+  // update), so without this the cache is effectively never warm here.
+  loadCacheFromDb();
   const app = createApp();
   const { server, port } = await listenWithScan(app, opts.host, opts.preferredPort);
   // Background timers need a Scheduler since the abstraction landed (4cbb571);

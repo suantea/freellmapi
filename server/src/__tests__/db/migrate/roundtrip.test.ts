@@ -36,6 +36,7 @@ const IDEMPOTENCY_CLAIMS_FILENAME = '20260901_000001_idempotency_claims.ts';
 const QUOTA_OBSERVATION_LOOKUP_FILENAME = '20260901_000002_quota_observation_lookup.ts';
 const ANALYTICS_LATENCY_PERCENTILE_INDEX_FILENAME = '20260902_000001_analytics_latency_percentile_index.ts';
 const MCP_ENABLED_DEFAULT_FILENAME = '20260903_000001_mcp_enabled_default.ts';
+const RESPONSE_CACHE_FILENAME = '20260903_000002_response_cache.ts';
 
 interface SchemaRow {
   type: string;
@@ -118,6 +119,7 @@ describe('migration round trip', () => {
         QUOTA_OBSERVATION_LOOKUP_FILENAME,
         ANALYTICS_LATENCY_PERCENTILE_INDEX_FILENAME,
         MCP_ENABLED_DEFAULT_FILENAME,
+        RESPONSE_CACHE_FILENAME,
       ]);
     } finally {
       db.close();

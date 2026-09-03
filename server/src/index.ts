@@ -19,6 +19,7 @@ import { warnOnEnvDrift } from './lib/env-drift.js';
 import { warnOnRoutingOverrideDrift } from './services/model-weight-overrides.js';
 import { installLogRedaction } from './lib/log-redaction.js';
 import { cleanupExpiredCooldowns } from './services/ratelimit.js';
+import { loadCacheFromDb } from './services/cache.js';
 
 // Before any other statement runs, so no provider key can reach stdout — users
 // paste server output into bug reports. Module scope, not inside main(), so it
@@ -45,6 +46,11 @@ async function main() {
   applyDeclarativeConfigFromEnv();
   // After initDb: the unknown-model half of this check reads the catalog.
   warnOnRoutingOverrideDrift();
+
+  // Reload the persisted response cache into the in-memory LRU so entries
+  // survive a restart (the daily quota-reset re-run pattern). Best-effort:
+  // a DB failure leaves the cache empty (memory-only), exactly as before.
+  loadCacheFromDb();
 
   // Cooldowns persist across restarts on purpose, but their expiry is collected
   // lazily (isOnCooldown, per model+key). Rows for routes nothing asks about
