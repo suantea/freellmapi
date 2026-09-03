@@ -1,5 +1,5 @@
 // Migration: persistent response cache
-// Created: 2026-09-01
+// Created: 2026-09-03
 //
 // DOWN: reversible
 //
@@ -9,13 +9,20 @@
 // cache a durable backing store while keeping the in-memory LRU as the hot
 // path: storeCachedResponse writes through, startup reloads unexpired rows.
 //
+// Note this puts PLAINTEXT model responses on disk, which the memory-only cache
+// never did. It is therefore tied to the cache master switch (off by default)
+// and separately disableable with RESPONSE_CACHE_PERSIST=false.
+//
 // cache_key is the canonical SHA-256 from computeCacheKey (PK).
 // body_json is the full OpenAI-shaped completion, replayed verbatim on a hit.
-// hit_count is a rolling value refreshed whenever a store overwrites the key;
-// reads bump only the in-memory entry so the proxy hot path never blocks on a
-// write (stats survive restarts to the last store's value).
+// hit_count / last_hit_at_ms carry the savings stats: a store writes them and
+// every hit updates the row, so the dashboard numbers survive a restart. Both
+// writes are queued off the proxy hot path (services/cache.ts drains them on
+// the next tick) because better-sqlite3 is synchronous.
 // created_at_ms anchors TTL checks; expires_at_ms is a denormalized
 // created_at_ms + TTL for cheap startup purges and index scans.
+// Rows are dropped whenever their memory entry goes (TTL expiry, LRU eviction,
+// DELETE /api/cache) plus a startup sweep, so the table stays LRU-bounded.
 
 import type { Db } from '../types.js';
 
