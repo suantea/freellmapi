@@ -4,6 +4,7 @@
 
 - [OpenAI-compatible clients](#openai-compatible-clients)
 - [Coding agents](#coding-agents)
+- [QwenPaw](#qwenpaw)
 - [Native Gemini clients](#native-gemini-clients)
 - [Ollama clients](#ollama-clients)
 - [Headerless clients](#headerless-clients)
@@ -52,13 +53,14 @@ context windows.
 | **DeepSeek Harness** | `setup-dsh` | `http://localhost:3001/v1` | OpenAI Chat (`api: openai-completions`) |
 | **MiMo Code** | `setup-mimo` | `http://localhost:3001/v1` | OpenAI Chat |
 | **AtomCode** | `setup-atomcode` | `http://localhost:3001/v1` | OpenAI Chat (`type = "openai"`) |
+| **QwenPaw** | Manual setup | `http://localhost:3001/v1` | OpenAI Chat (`chat.completions`) |
 | **Cursor** | `setup-cursor` prints the guide | public `https://…/v1` | OpenAI Chat |
 | **Anything else** | `setup-generic` prints a ready block | `http://localhost:3001/v1` | OpenAI Chat |
 
 The root-vs-`/v1` distinction matters: Claude Code expects the server root
 because it appends the Anthropic Messages path. OpenAI-compatible clients in
 this table—including Cline, Aider, Goose, Codex, Continue, OpenCode, Qwen,
-Roo, Kilo, Crush, MiMo Code, AtomCode, and DeepSeek Harness—expect their configured
+Roo, Kilo, Crush, MiMo Code, AtomCode, QwenPaw, and DeepSeek Harness—expect their configured
 base URL to include `/v1`.
 
 ### DeepSeek Harness (`dsh`)
@@ -136,6 +138,32 @@ AtomCode has no environment-variable fallback for the key, so it is written
 into the config file; the file is created with mode 0600 and a timestamped
 backup is taken before an existing one is changed. `--model <id>` pins the
 default model.
+
+### QwenPaw
+
+[QwenPaw](https://github.com/agentscope-ai/QwenPaw) supports custom providers
+that use the OpenAI `chat.completions` API. Start FreeLLMAPI, create or copy a
+unified key from its dashboard, then open **Settings → Models** in the QwenPaw
+Console:
+
+1. Under **Providers**, choose **Add Provider**.
+2. Give it a **Provider ID** such as `freellmapi` and a **Provider Name** such
+   as `FreeLLMAPI`, and set the API compatibility mode to OpenAI
+   `chat.completions`.
+3. Open the new provider's settings and set **Base URL** to
+   `http://localhost:3001/v1` and **API Key** to your FreeLLMAPI unified key.
+4. On the provider's models page, add a model. Use `auto` as the **Model ID**
+   to let FreeLLMAPI route the request, or copy a current id from
+   `GET http://localhost:3001/v1/models`.
+5. Save, then pick the model as the default (or per chat) and send a test
+   message.
+
+If QwenPaw runs in a container, `localhost` refers to that container rather
+than the host running FreeLLMAPI. Use a hostname or host-gateway address that
+the QwenPaw container can reach, while keeping the `/v1` suffix. Do not put the
+unified key in a URL, screenshot, or issue report. See QwenPaw's
+[official model configuration guide](https://qwenpaw.agentscope.io/docs/models)
+for the current Console field names.
 
 ## Native Gemini clients
 
