@@ -1068,8 +1068,9 @@ function orderChain(chain: ChainRow[], strategy: RoutingStrategy, sampled = true
   // one axis onto the other (code: speed → intelligence; chat: the reverse).
   // Applied AFTER the peak-hours adjustment, on the same weights the rest of
   // the chain scores with; opt-in, so absent a signal the preset stands.
+  // `fastest`, `reliable` and `custom` are exempt (see TASK_EXEMPT_STRATEGIES).
   if (task) {
-    const adjusted = taskAdjustedWeights(weights, task);
+    const adjusted = taskAdjustedWeights(weights, task, strategy);
     weights = adjusted.adjusted ? adjusted.weights : weights;
   }
 

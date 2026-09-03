@@ -83,7 +83,7 @@ describe('POST /v1/responses (#96)', () => {
     expect(mockRouteRequest.mock.calls.at(-1)?.[3]).toBe(true);
   });
 
-  it('forwards a declared x-freellmapi-task-type to the router as the task arg (#1127)', async () => {
+  it('forwards a declared x-freellm-task-type to the router as the task arg (#1127)', async () => {
     mockRouteRequest.mockClear();
     mockRouteRequest.mockReturnValue(fakeRoute({
       async chatCompletion() {
@@ -96,7 +96,7 @@ describe('POST /v1/responses (#96)', () => {
       async *streamChatCompletion() { /* unused */ },
     }));
 
-    const { status } = await post(app, '/v1/responses', { input: 'refactor this function' }, key, { 'x-freellmapi-task-type': 'code' });
+    const { status } = await post(app, '/v1/responses', { input: 'refactor this function' }, key, { 'x-freellm-task-type': 'code' });
     expect(status).toBe(200);
     // routeRequest arg [10] is the task type.
     expect(mockRouteRequest.mock.calls.at(-1)?.[10]).toBe('code');

@@ -288,6 +288,8 @@ The opt-in response cache can be toggled per request with `X-FreeLLM-Cache: on|o
 
 When [prompt compression](../compression/01-compression-pipeline.md) is enabled, `X-FreeLLM-Compress: off|on|lossless|standard|aggressive` can disable or lower the configured mode for one request. It cannot raise the operator's configured mode. The response reports the effective mode and estimated savings, for example `X-FreeLLM-Compress: standard; saved~=1840`.
 
+`X-FreeLLM-Task-Type: code|chat|auto` tells the router what kind of turn this is, so it can bias the routing weights: `code` trades some of the speed weight for intelligence (a wrong answer costs more than a slow one), `chat` does the reverse. It is a soft preference only — capability gates, the failover chain and the model catalog are untouched, and the shift is 30% of one axis. The default is `auto`: tool-bearing requests and messages carrying unambiguous code markers (a fenced block, a declaration, a stack frame, a `file.ts:214` reference) are treated as `code`, and everything else keeps the preset weights exactly as configured. The `fastest`, `reliable` and `custom` routing strategies ignore the header — those are an explicit operator choice about where on the axis to sit.
+
 ## Embeddings
 
 `/v1/embeddings` is OpenAI-compatible, with one deliberate difference from chat routing: **failover never crosses models.** Vectors from different models live in incompatible spaces — silently switching models would corrupt any vector store built on top of the proxy. So embeddings route by **family** (one model identity + dimension), and failover only walks the providers serving that same family.
