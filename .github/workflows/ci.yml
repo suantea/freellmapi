@@ -31,11 +31,12 @@ jobs:
       - name: Check migration round trip
         run: npm run test:migrations
 
-      - name: Run tests
+      # COVERAGE makes the server suite collect coverage inside this run rather
+      # than running the whole suite a second time. Reporting only, not a gate.
+      - name: Run tests (with server coverage)
+        env:
+          COVERAGE: '1'
         run: npm test
-
-      - name: Report test coverage (server)
-        run: npm run test:coverage -w server -- --reporter=dot
 
       - name: Build workspaces
         run: npm run build
