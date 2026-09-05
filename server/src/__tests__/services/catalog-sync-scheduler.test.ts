@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterEach, vi } from 'vitest';
-import { initDb } from '../../db/index.js';
+import { initDb, getDb } from '../../db/index.js';
 import { startCatalogSync, stopCatalogSync } from '../../services/catalog-sync.js';
 import type { Scheduler } from '../../lib/scheduler.js';
 
@@ -35,13 +35,34 @@ describe('startCatalogSync / stopCatalogSync', () => {
     delete process.env.CATALOG_SYNC_DISABLED;
   });
 
-  it('registers a 10-second boot delay and a 12-hour interval', () => {
+  // #934: a fresh install (no media_models rows) fast-boots the catalog sync
+  // at 500 ms; once transcription models exist the full BOOT_DELAY applies.
+  const seedTranscriptionModel = () => {
+    getDb().prepare(`
+      INSERT INTO media_models (platform, model_id, display_name, modality, priority, enabled, quota_label, key_id, meta_json)
+      VALUES (?, ?, ?, ?, ?, 1, '', ?, ?)
+    `).run('groq', 'whisper-large-v3-turbo', 'Whisper Large v3 Turbo', 'transcription', 1, null, null);
+  };
+  const clearMediaModels = () => {
+    getDb().prepare('DELETE FROM media_models').run();
+  };
+
+  it('registers a 10-second boot delay and a 12-hour interval once models exist', () => {
+    seedTranscriptionModel();
     const { scheduler, every, after } = makeScheduler();
     startCatalogSync(scheduler);
     expect(after).toHaveLength(1);
     expect(after[0].ms).toBe(10 * 1000);
     expect(every).toHaveLength(1);
     expect(every[0].ms).toBe(12 * 60 * 60 * 1000);
+  });
+
+  it('fast-boots at 500 ms on a fresh install with no media models (#934)', () => {
+    clearMediaModels();
+    const { scheduler, after } = makeScheduler();
+    startCatalogSync(scheduler);
+    expect(after).toHaveLength(1);
+    expect(after[0].ms).toBe(500);
   });
 
   it('is idempotent — double-start registers only one set of jobs', () => {
