@@ -1,6 +1,13 @@
 import type { Db } from '../types.js';
 
+/** Guard so the migration can be re-run safely (catalog-sync test does this). */
+function hasColumn(db: Db, table: string, column: string): boolean {
+  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+  return columns.some(col => col.name === column);
+}
+
 export function up(db: Db): void {
+  // Tables and indexes are CREATE IF NOT EXISTS — safe to re-run.
   db.exec(`
     -- Tenants: each tenant is an isolated "virtual user" with its own API key,
     -- rate limits, and usage tracking. The admin creates tenants; each gets a
@@ -31,20 +38,20 @@ export function up(db: Db): void {
       PRIMARY KEY (tenant_id, period)
     );
 
-    -- Add tenant_id column to requests table for per-tenant logging.
-    -- Nullable: existing rows have no tenant (unified-key requests).
-    -- Make the ALTER idempotent for roundtrip tests: drop the index first (so
-    -- the column may already exist without hitting the unique-index issue),
-    -- add the column (skipped by SQLite when it already exists), then recreate
-    -- the index.
-    DROP INDEX IF EXISTS idx_requests_tenant;
-    ALTER TABLE requests ADD COLUMN tenant_id INTEGER REFERENCES tenants(id) ON DELETE SET NULL;
-    CREATE INDEX IF NOT EXISTS idx_requests_tenant ON requests(tenant_id);
-
     CREATE INDEX IF NOT EXISTS idx_tenants_token_hash ON tenants(token_hash);
     CREATE INDEX IF NOT EXISTS idx_tenant_usage_tenant ON tenant_usage(tenant_id, period);
-    CREATE INDEX IF NOT EXISTS idx_requests_tenant ON requests(tenant_id);
   `);
+
+  // Column adds must be guarded: catalog-sync.test.ts deletes non-baseline
+  // migration records and re-runs `up`, so this ALTER would throw on a second
+  // run if the column already exists.
+  if (!hasColumn(db, 'requests', 'tenant_id')) {
+    db.prepare('ALTER TABLE requests ADD COLUMN tenant_id INTEGER REFERENCES tenants(id) ON DELETE SET NULL').run();
+  }
+  // Recreate the index after the column is guaranteed to exist (or already
+  // existed from a prior run). DROP FIRST so re-runs don't hit "index exists".
+  db.prepare('DROP INDEX IF EXISTS idx_requests_tenant').run();
+  db.prepare('CREATE INDEX IF NOT EXISTS idx_requests_tenant ON requests(tenant_id)').run();
 }
 
 export function down(db: Db): void {
