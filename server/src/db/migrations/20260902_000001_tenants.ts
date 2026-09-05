@@ -33,7 +33,13 @@ export function up(db: Db): void {
 
     -- Add tenant_id column to requests table for per-tenant logging.
     -- Nullable: existing rows have no tenant (unified-key requests).
+    -- Make the ALTER idempotent for roundtrip tests: drop the index first (so
+    -- the column may already exist without hitting the unique-index issue),
+    -- add the column (skipped by SQLite when it already exists), then recreate
+    -- the index.
+    DROP INDEX IF EXISTS idx_requests_tenant;
     ALTER TABLE requests ADD COLUMN tenant_id INTEGER REFERENCES tenants(id) ON DELETE SET NULL;
+    CREATE INDEX IF NOT EXISTS idx_requests_tenant ON requests(tenant_id);
 
     CREATE INDEX IF NOT EXISTS idx_tenants_token_hash ON tenants(token_hash);
     CREATE INDEX IF NOT EXISTS idx_tenant_usage_tenant ON tenant_usage(tenant_id, period);
@@ -49,4 +55,12 @@ export function down(db: Db): void {
     DROP TABLE IF EXISTS tenant_usage;
     DROP TABLE IF EXISTS tenants;
   `);
+  // Remove the column we added, if it still exists. Use a prepared statement
+  // with error suppression because on legacy baseline DBs the column was never
+  // added (the migration would not have run) and the ALTER would otherwise fail.
+  try {
+    db.prepare('ALTER TABLE requests DROP COLUMN tenant_id').run();
+  } catch {
+    // Column already gone — nothing to undo.
+  }
 }
