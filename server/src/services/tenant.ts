@@ -216,7 +216,6 @@ export function checkTenantRateLimit(tenantId: number): string | null {
   if (!tenant) return 'tenant not found';
 
   const today = new Date().toISOString().slice(0, 10);
-  const month = today.slice(0, 7);
 
   if (tenant.maxRpm > 0) {
     // Check RPM (approximate: requests in last minute from requests table)
