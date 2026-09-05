@@ -177,7 +177,18 @@ export async function runModerations(
     );
   }
 
-  const chain = listModerationModels().filter(m => m.modelId === resolved);
+  const models = listModerationModels();
+  // A default/legacy request walks EVERY available platform in order — each
+  // provider calls its own catalog model, which is what makes the cross-
+  // platform failover below real (OpenRouter's omni-moderation id carries an
+  // `openai/` prefix, so an exact-modelId filter would silently drop it).
+  // An explicit model narrows the chain to the platform(s) exposing it.
+  const isDefaultRequest = !model
+    || model === 'text-moderation-stable'
+    || model === 'text-moderation-latest';
+  const chain = isDefaultRequest
+    ? models
+    : models.filter(m => m.modelId === resolved);
   if (chain.length === 0) {
     throw new ModerationError(`No enabled providers for moderation model '${resolved}'.`, 503);
   }
