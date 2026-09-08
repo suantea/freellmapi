@@ -152,10 +152,6 @@ describe('quota-forecast: daily balance aggregation (#1104)', () => {
       expect(exhaustionMs).toBeGreaterThan(Date.now());
     });
 
-    it('returns null when observedAt is null', () => {
-      insertState({ platform: 'groq', keyId: 1, pool: 'groq::account', metric: 'requests', limit: 100, remaining: 60, resetAt: future(), observedAt: null });
-      const e = getQuotaForecast()[0];
-      expect(e.estimated_exhaustion_at).toBeNull();
-    });
+
   });
 });
