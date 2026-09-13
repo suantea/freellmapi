@@ -9,6 +9,13 @@ import { ModelScopeProvider } from './modelscope.js';
 import { PollinationsProvider } from './pollinations.js';
 import { ZhipuProvider } from './zhipu.js';
 import { SailProvider } from './sail.js';
+import { ElectronHubProvider } from './electronhub.js';
+import { ExperientialProvider } from './experiential.js';
+import { Router9Provider } from './router9.js';
+import { SeptorProvider } from './septor.js';
+import { ClodProvider } from './clod.js';
+import { SpeechifyProvider } from './speechify.js';
+import { BlazeProvider } from './blaze.js';
 
 const providers = new Map<Platform, BaseProvider>();
 
@@ -43,6 +50,19 @@ register(new OpenAICompatProvider({
 // stay in Oracle so the existing Premium-now / Free-after-30-days gate applies.
 register(new SailProvider());
 
+// Free-plan grants are shared wallets, not free credits per model. Eligibility
+// and tested model rows belong in Oracle, never in bundled DB migrations.
+register(new ElectronHubProvider());
+register(new ExperientialProvider());
+// Router9 has shared monthly credits; Septor's zero-price models share daily
+// quota (its signup credit is one-time). Model rows live only in Oracle so
+// the existing Premium-now / Free-after-30-days gate remains authoritative.
+register(new Router9Provider());
+register(new SeptorProvider());
+register(new ClodProvider());
+register(new SpeechifyProvider());
+register(new BlazeProvider());
+
 // B.AI — OpenAI-compatible gateway. Provider support is first-class, but the
 // only free catalog row currently published is a limited-time 0-credit promo;
 // keep commercial eligibility in the hosted catalog rather than seeding it.
@@ -70,6 +90,19 @@ register(new OpenAICompatProvider({
   platform: 'anyapi',
   name: 'AnyAPI',
   baseUrl: 'https://api.anyapi.ai/v1',
+}));
+
+// AMD Radeon Cloud TokenFactory — the shared Model API is OpenAI-compatible
+// and its current public roster is free without consuming GPU-instance
+// credits. Public models are experimental and may rotate, so their ids remain
+// in the hosted catalog rather than migrations. Both current models reject
+// parallel tool calls; long reasoning requests may run for up to ten minutes.
+register(new OpenAICompatProvider({
+  platform: 'radeon',
+  name: 'AMD Radeon Cloud',
+  baseUrl: 'https://developer.amd.com.cn/radeon/api/v1',
+  forceSingleToolCall: true,
+  timeoutMs: 600_000,
 }));
 
 // SambaNova was dropped in V23 (June 2026): the free tier is permanently gone.
@@ -265,6 +298,10 @@ register(new OpenAICompatProvider({
 // accepts image/video input). Balance is dashboard-only (no credits API).
 // Catalog rows live in the catalog (premium → age into free); they are NOT
 // shipped as freeapi model migrations.
+//
+// UPDATE 2026-09-13: New accounts no longer receive frictionless free trial
+// credits. Payment method attachment and prepaid credits are now required.
+// Marked as [Billing Required] — exclude from default zero-cost auto-routing.
 register(new OpenAICompatProvider({
   platform: 'reka',
   name: 'Reka',
