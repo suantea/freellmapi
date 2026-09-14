@@ -106,7 +106,7 @@ export function checkMonthlyBudget(
   if (caps.requestCap > 0 && usage.requests >= caps.requestCap) {
     return { allowed: false, reason: 'monthly_request_cap', retryAfterSec: secondsUntilNextMonth(now) };
   }
-  if (caps.tokenCap > 0 && usage.tokens + Math.max(0, estimatedTokens) > caps.tokenCap) {
+  if (caps.tokenCap > 0 && (usage.tokens >= caps.tokenCap || usage.tokens + Math.max(0, estimatedTokens) > caps.tokenCap)) {
     return { allowed: false, reason: 'monthly_token_cap', retryAfterSec: secondsUntilNextMonth(now) };
   }
   return { allowed: true };

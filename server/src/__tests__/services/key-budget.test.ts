@@ -121,6 +121,12 @@ describe('key-budget: monthly caps (#1158)', () => {
     expect(checkMonthlyBudget(keyId, 800)).toEqual({ allowed: true });
   });
 
+  it('blocks requests with no token estimate once the token cap is fully spent', () => {
+    insertKey({ monthlyTokenCap: 150 });
+    recordSuccess(inThisMonth());
+    expect(checkMonthlyBudget(keyId, 0)).toMatchObject({ allowed: false, reason: 'monthly_token_cap' });
+  });
+
   it('does not reject when the cap is hit exactly on the boundary request', () => {
     insertKey({ monthlyRequestCap: 2 });
     recordSuccess(inThisMonth());

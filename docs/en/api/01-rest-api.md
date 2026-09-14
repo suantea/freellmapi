@@ -453,9 +453,9 @@ Endpoints (all behind `requireAuth`):
 
 Authenticated dashboard clients can set `monthlyRequestCap` and `monthlyTokenCap`
 through `PATCH /api/keys/:id`. Both are nonnegative integers; `0` means unlimited.
-These limits apply to an upstream provider key, across its models, and reset at
-00:00 UTC on the first of each month. They do not apply separately to downstream
-client profiles.
+These limits apply to an upstream provider key across chat, embeddings, and
+keyed media requests, and reset at 00:00 UTC on the first of each month. They do
+not apply separately to downstream client profiles.
 
 Successful request counts and reported tokens are stored in a durable monthly
 ledger. Request-log cleanup does not clear this ledger. Existing retained request
@@ -466,10 +466,12 @@ including long-running streams. Failed attempts release their reservation.
 Token reservations use routing estimates. Actual provider token usage can differ,
 so the final response can take recorded usage above the configured token cap;
 further requests are then rejected. This is a usage guard, not an exact billing
-limit. Reservations coordinate requests within the gateway process.
+limit. Media requests count toward the request cap; the current media adapters
+do not report token usage. Reservations coordinate requests within one gateway
+process, not across multiple gateway replicas.
 
 When all otherwise eligible keys have exhausted their monthly budget, inference
-returns HTTP `429` with `error.code: "quota_exceeded"` and a `Retry-After` header
-pointing to the next UTC month. If another key has capacity, normal fallback can
-use it.
-
+returns HTTP `429` with a `Retry-After` header pointing to the next UTC month.
+OpenAI-compatible endpoints also return `error.code: "quota_exceeded"`; other
+protocol adapters preserve their native error format. If another key has capacity,
+normal fallback can use it.

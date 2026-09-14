@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 import { z } from 'zod';
 import type { ChatMessage, ChatToolCall, TokenUsage } from '@freellmapi/shared/types.js';
 import { type RouteResult, type ResolvedChain, type ChainRow, routeRequest, resolveRoutingChain, resolveModelGroupCandidates, resolveStickyPreference, hasEnabledVisionModel, hasEnabledToolsModel, routingReserveTokens } from '../services/router.js';
+import { secondsUntilNextMonth } from '../services/key-budget.js';
 import { runEmbeddings, EmbeddingsError } from '../services/embeddings.js';
 import { runImageGeneration, runVideoGeneration, runSpeech, runTranscription, MediaError, MAX_TRANSCRIPTION_BYTES } from '../services/media.js';
 import multer from 'multer';
@@ -689,8 +690,9 @@ proxyRouter.post('/embeddings', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     const status = err instanceof EmbeddingsError ? err.status : 502;
+    const code = err instanceof EmbeddingsError ? inferenceBudgetCode(err, res) : {};
     const type = status === 400 ? 'invalid_request_error' : status === 429 ? 'rate_limit_error' : 'server_error';
-    res.status(status).json({ error: { message: `embedding error: ${err?.message ?? 'unknown'}`, type } });
+    res.status(status).json({ error: { message: `embedding error: ${err?.message ?? 'unknown'}`, type, ...code } });
   }
 });
 
@@ -705,6 +707,11 @@ const ImageBody = z.object({
   size: z.string().optional(),
   response_format: z.enum(['url', 'b64_json']).optional(),
 });
+
+function inferenceBudgetCode(error: { code?: string }, res: Response): { code?: string } {
+  if (error.code === 'quota_exceeded') res.setHeader('Retry-After', secondsUntilNextMonth());
+  return error.code ? { code: error.code } : {};
+}
 
 function mediaErrorType(status: number): string {
   if (status === 400 || status === 413) return 'invalid_request_error';
@@ -732,8 +739,9 @@ proxyRouter.post('/images/generations', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     const status = err instanceof MediaError ? err.status : 502;
+    const code = err instanceof MediaError ? inferenceBudgetCode(err, res) : {};
     const httpStatus = status >= 400 && status < 600 ? status : 502;
-    res.status(httpStatus).json({ error: { message: `image generation error: ${err?.message ?? 'unknown'}`, type: mediaErrorType(status) } });
+    res.status(httpStatus).json({ error: { message: `image generation error: ${err?.message ?? 'unknown'}`, type: mediaErrorType(status), ...code } });
   }
 });
 
@@ -789,9 +797,10 @@ proxyRouter.post('/videos/generations', async (req: Request, res: Response) => {
     // Nothing to report to a socket that is already gone.
     if (clientAbort.signal.aborted || res.writableEnded) return;
     const status = err instanceof MediaError ? err.status : 502;
+    const code = err instanceof MediaError ? inferenceBudgetCode(err, res) : {};
     const httpStatus = status >= 400 && status < 600 ? status : 502;
     res.status(httpStatus).json({
-      error: { message: `video generation error: ${err?.message ?? 'unknown'}`, type: mediaErrorType(status) },
+      error: { message: `video generation error: ${err?.message ?? 'unknown'}`, type: mediaErrorType(status), ...code },
     });
   }
 });
@@ -821,8 +830,9 @@ proxyRouter.post('/audio/speech', async (req: Request, res: Response) => {
     res.send(result.audio);
   } catch (err: any) {
     const status = err instanceof MediaError ? err.status : 502;
+    const code = err instanceof MediaError ? inferenceBudgetCode(err, res) : {};
     const httpStatus = status >= 400 && status < 600 ? status : 502;
-    res.status(httpStatus).json({ error: { message: `speech error: ${err?.message ?? 'unknown'}`, type: mediaErrorType(status) } });
+    res.status(httpStatus).json({ error: { message: `speech error: ${err?.message ?? 'unknown'}`, type: mediaErrorType(status), ...code } });
   }
 });
 
@@ -943,8 +953,8 @@ proxyRouter.post('/audio/transcriptions', (req: Request, res: Response, next) =>
     res.json({ text: result.text });
   } catch (err: any) {
     const status = err instanceof MediaError ? err.status : 502;
+    const code = err instanceof MediaError ? inferenceBudgetCode(err, res) : {};
     const httpStatus = status >= 400 && status < 600 ? status : 502;
-    const code = err instanceof MediaError && err.code ? { code: err.code } : {};
     res.status(httpStatus).json({ error: { message: `transcription error: ${err?.message ?? 'unknown'}`, type: mediaErrorType(status), ...code } });
   }
 });
