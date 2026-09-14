@@ -99,11 +99,11 @@ export function UnifiedKeySection() {
   -d '{"model":"auto","messages":[{"role":"user","content":"Hello"}]}'`}</code></pre>
           </div>
           <div>
-            <div className="mb-1 text-[11px] font-medium text-muted-foreground">{t('keys.examplePinned')}</div>
+            <div className="mb-1 text-[11px] font-medium text-muted-foreground">{t('keys.exampleFast')}</div>
             <pre className="overflow-x-auto rounded-lg bg-background p-3 font-mono text-[11px] leading-relaxed"><code>{`curl ${baseUrl}/chat/completions \\
   -H "Authorization: Bearer $YOUR_KEY" \\
   -H "Content-Type: application/json" \\
-  -d '{"model":"auto:gemini-flash","messages":[{"role":"user","content":"Hello"}]}'`}</code></pre>
+  -d '{"model":"auto:fast","messages":[{"role":"user","content":"Hello"}]}'`}</code></pre>
           </div>
         </div>
       </details>
