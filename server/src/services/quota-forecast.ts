@@ -1,6 +1,7 @@
 import type { QuotaObservationView } from './provider-quota.js';
-import { getQuotaStateForKeys } from './provider-quota.js';
+import { getQuotaStateForKeys, inferPoolForPlatform } from './provider-quota.js';
 import { getDb } from '../db/index.js';
+import type { Platform } from '@freellmapi/shared/types.js';
 
 // Daily free-tier balance forecast (#1104). Free tiers reset on a per-account
 // window (usually UTC midnight) and the only way to know how much headroom is
@@ -70,37 +71,30 @@ function secondsUntilReset(resetAt: string | null): number | null {
   return Math.floor(ms / 1000);
 }
 
-function estimateRatePerMin(platform: string): number | null {
-  // Count requests in the observation window and convert to per-minute rate.
-  // Null when the window is too empty to support a meaningful estimate — a
-  // silent 0/min would make exhaustion-at project to "now" and mislead callers.
-  try {
-    const windowMs = RATE_OBSERVATION_WINDOW_MINUTES * 60 * 1000;
-    const since = new Date(Date.now() - windowMs).toISOString();
-    // better-sqlite3 returns aggregate results as { cnt: number | bigint }
-    // (bigint when the count exceeds Number.MAX_SAFE_INTEGER, which won't
-    // happen here, but the type reflects the runtime value). Cast via any to
-    // keep the branch simple.
-    const raw = getDb().prepare(
-      `SELECT COUNT(*) AS cnt FROM requests
-       WHERE platform = ? AND created_at >= ?`,
-    ).get(platform, since) as any;
-    const cnt = typeof raw?.cnt === 'bigint' ? Number(raw.cnt)
-      : typeof raw?.cnt === 'number' ? raw.cnt
-      : 0;
-    if (!Number.isFinite(cnt)) return null;
-    if (cnt < 3) return null;
-    return Math.round((cnt / RATE_OBSERVATION_WINDOW_MINUTES) * 100) / 100;
-  } catch {
-    return null;
+/** Successful traffic grouped by the same key/pool identity used for observations. */
+function recentRequestCounts(now: number): Map<string, number> {
+  const sqliteUtc = (ms: number) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+  const since = sqliteUtc(now - RATE_OBSERVATION_WINDOW_MINUTES * 60_000);
+  const rows = getDb().prepare(`
+    SELECT platform, key_id AS keyId, model_id AS modelId, COUNT(*) AS count
+      FROM requests
+     WHERE created_at >= ? AND datetime(created_at) >= ? AND datetime(created_at) <= ?
+       AND status = 'success' AND key_id IS NOT NULL
+     GROUP BY platform, key_id, model_id
+  `).all(since, since, sqliteUtc(now)) as { platform: Platform; keyId: number; modelId: string; count: number }[];
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    const identity = JSON.stringify([row.platform, inferPoolForPlatform(row.platform, row.modelId), row.keyId]);
+    counts.set(identity, (counts.get(identity) ?? 0) + Number(row.count));
   }
+  return counts;
 }
 
 function estimateExhaustionAt(
   remaining: number,
-  limit: number,
   ratePerMin: number | null,
   resetAt: string | null,
+  now: number,
 ): string | null {
   // No observed rate → no honest projection. Rates too low to matter are
   // excluded at the caller level (rate_per_min itself is null).
@@ -108,18 +102,17 @@ function estimateExhaustionAt(
   // Remaining is known (caller checks) and limit is positive (enforced below).
   const minutesUntilEmpty = remaining / ratePerMin;
   const secondsFromNow = Math.ceil(minutesUntilEmpty * 60);
-  const ms = Date.now() + secondsFromNow * 1000;
+  const ms = now + secondsFromNow * 1000;
   // Never project past the natural window reset: if the window expires first,
   // we have headroom even if the request count would otherwise exhaust the
   // pool — the quota header tracks the remaining *before* reset, not absolute
   // spending.
   const resetMs = resetAt ? new Date(resetAt).getTime() : Infinity;
-  const capped = Math.min(ms, resetMs - 1);
-  if (capped <= Date.now()) return null;
-  return new Date(capped).toISOString();
+  if (!Number.isFinite(ms) || Number.isNaN(resetMs) || ms >= resetMs || ms <= now) return null;
+  return new Date(ms).toISOString();
 }
 
-function entryFor(row: QuotaObservationView): QuotaForecastEntry | null {
+function entryFor(row: QuotaObservationView, ratePerMin: number | null, now: number): QuotaForecastEntry | null {
   // Only request-based windows are predictable from quota headers; token pools
   // reset semantics vary too much across providers to forecast honestly.
   if (row.metric !== 'requests') return null;
@@ -143,9 +136,9 @@ function entryFor(row: QuotaObservationView): QuotaForecastEntry | null {
 
   // Rate projection is gated on remaining being known (unknown remaining makes
   // any rate look like a free lunch until the next quota refresh).
-  const ratePerMin = remaining !== null ? estimateRatePerMin(row.platform) : null;
+  if (remaining === null) ratePerMin = null;
   const estimatedExhaustionAt = (remaining !== null && ratePerMin !== null && remaining > 0)
-    ? estimateExhaustionAt(remaining, limit, ratePerMin, row.resetAt ?? null)
+    ? estimateExhaustionAt(remaining, ratePerMin, row.resetAt ?? null, now)
     : null;
 
   return {
@@ -168,8 +161,23 @@ function entryFor(row: QuotaObservationView): QuotaForecastEntry | null {
 // matters for "can I keep calling" is the least headroom left.
 export function getQuotaForecast(): QuotaForecastEntry[] {
   const byKey = new Map<string, QuotaForecastEntry>();
-  for (const row of getQuotaStateForKeys()) {
-    const entry = entryFor(row);
+  const rows = getQuotaStateForKeys();
+  const now = Date.now();
+  const counts = rows.length ? recentRequestCounts(now) : new Map<string, number>();
+  const poolKeys = new Map<string, Set<string>>();
+  for (const row of rows) {
+    if (row.metric !== 'requests') continue;
+    const pool = JSON.stringify([row.platform, row.quotaPoolKey]);
+    const keys = poolKeys.get(pool) ?? new Set<string>();
+    keys.add(JSON.stringify([row.platform, row.quotaPoolKey, row.keyId]));
+    poolKeys.set(pool, keys);
+  }
+  for (const row of rows) {
+    const keys = poolKeys.get(JSON.stringify([row.platform, row.quotaPoolKey])) ?? [];
+    let count = 0;
+    for (const key of keys) count += counts.get(key) ?? 0;
+    const rate = count < 3 ? null : Math.round(count / RATE_OBSERVATION_WINDOW_MINUTES * 100) / 100;
+    const entry = entryFor(row, rate, now);
     if (!entry) continue;
     // `pool` already carries its platform ("groq::account"), so it is the key.
     const key = entry.pool;
