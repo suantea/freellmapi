@@ -448,3 +448,28 @@ Endpoints (all behind `requireAuth`):
 | `DELETE` | `/api/backups/:id` | Delete one backup |
 | `GET` | `/api/backups/tables` | Tables a dump may contain |
 | `GET` / `PUT` | `/api/backups/schedule` | Read / write the backup schedule (HH:mm, interval days, path) |
+
+## Monthly provider-key budgets
+
+Authenticated dashboard clients can set `monthlyRequestCap` and `monthlyTokenCap`
+through `PATCH /api/keys/:id`. Both are nonnegative integers; `0` means unlimited.
+These limits apply to an upstream provider key, across its models, and reset at
+00:00 UTC on the first of each month. They do not apply separately to downstream
+client profiles.
+
+Successful request counts and reported tokens are stored in a durable monthly
+ledger. Request-log cleanup does not clear this ledger. Existing retained request
+history is backfilled during upgrade; usage already pruned before the upgrade
+cannot be reconstructed. In-flight requests reserve capacity until completion,
+including long-running streams. Failed attempts release their reservation.
+
+Token reservations use routing estimates. Actual provider token usage can differ,
+so the final response can take recorded usage above the configured token cap;
+further requests are then rejected. This is a usage guard, not an exact billing
+limit. Reservations coordinate requests within the gateway process.
+
+When all otherwise eligible keys have exhausted their monthly budget, inference
+returns HTTP `429` with `error.code: "quota_exceeded"` and a `Retry-After` header
+pointing to the next UTC month. If another key has capacity, normal fallback can
+use it.
+

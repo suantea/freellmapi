@@ -109,7 +109,7 @@ function pickBetterSource(existing: QuotaObservationSource | null | undefined, n
   return SOURCE_PRIORITY[next] >= SOURCE_PRIORITY[existing] ? next : existing;
 }
 
-function inferPoolForPlatform(platform: Platform, modelId?: string | null): string {
+export function inferPoolForPlatform(platform: Platform, modelId?: string | null): string {
   const normalizedModelId = modelId?.trim() ?? '';
   if (platform === 'openrouter') return normalizedModelId.endsWith(':free') ? 'openrouter::free' : 'openrouter::account';
   if (platform === 'google') return 'google::project';
