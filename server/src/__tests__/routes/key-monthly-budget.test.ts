@@ -63,6 +63,18 @@ describe('monthly budget exhaustion on inference endpoints', () => {
     expect(Number(res.headers.get('Retry-After'))).toBeGreaterThan(0);
   });
 
+  it.each(['/v1/chat/completions', '/v1/responses'])('Fusion through %s cannot bypass a capped provider key', async path => {
+    const input = path === '/v1/responses' ? { input: 'hello' } : { messages: [{ role: 'user', content: 'hello' }] };
+    const before = getDb().prepare('SELECT SUM(requests) AS requests FROM key_monthly_usage').get();
+    const res = await fetch(`${baseUrl}${path}`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...input, model: 'fusion', fusion: { models: [model] }, max_tokens: 20 }),
+    });
+    expect(res.status).toBe(429);
+    expect((await res.json()).error.type).toBe('rate_limit_error');
+    expect(getDb().prepare('SELECT SUM(requests) AS requests FROM key_monthly_usage').get()).toEqual(before);
+  });
+
   it.each(['/v1/chat/completions', '/v1/responses', '/v1/messages'])('%s returns quota_exceeded and the month reset header', async path => {
     const input = path === '/v1/responses' ? { input: 'hello' } : { messages: [{ role: 'user', content: 'hello' }] };
     const res = await fetch(`${baseUrl}${path}`, {
