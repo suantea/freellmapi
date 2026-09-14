@@ -27,7 +27,7 @@ import {
   type HeadroomThresholds,
 } from './scoring.js';
 import { TIMEOUT_ERROR_MARKERS } from '../lib/error-classify.js';
-import { checkMonthlyBudget } from './key-budget.js';
+import { checkMonthlyBudget, reserveMonthlyBudget } from './key-budget.js';
 import { applyModelWeightOverride, getModelWeightOverrides } from './model-weight-overrides.js';
 import { modelsWithOverriddenField } from './model-state.js';
 import { parseBudget } from '../lib/budget.js';
@@ -1524,6 +1524,9 @@ function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: 
     roundRobinIndex.set(rrKey, idx);
     // Taken only once the key has cleared every gate and is definitely being
     // returned, so a rejected candidate never consumes concurrency budget.
+    const proxyUrl = decryptProxyUrl(key);
+    const budget = reserveMonthlyBudget(key.id, estimatedTokens);
+    if (!budget.allowed) { note('monthly-budget-cap'); continue; }
     const leaseId = acquireLease(entry.platform, entry.model_id, key.id, estimatedTokens);
     return {
       provider: resolvedProvider,
@@ -1533,13 +1536,13 @@ function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: 
       keyId: key.id,
       keyLabel: key.label || null,
       // Decrypted once here, at the point the row is already in hand (#590).
-      proxyUrl: decryptProxyUrl(key),
+      proxyUrl,
       platform: entry.platform,
       displayName: entry.display_name,
       endpointScope: entry.endpoint_scope ?? '',
       rpdLimit: limits.rpd,
       tpdLimit: limits.tpd,
-      release: () => releaseLease(leaseId),
+      release: () => { releaseLease(leaseId); budget.release(); },
     };
   }
 

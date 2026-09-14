@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { initDb, getDb } from '../../db/index.js';
 import { encrypt } from '../../lib/crypto.js';
+import { pruneRequestAnalytics } from '../../services/request-retention.js';
+import { routePinnedModel, routeRequest } from '../../services/router.js';
+import { routingExhaustionBody, setExhaustionHeaders } from '../../lib/fallback-loop.js';
+import * as ledgerMigration from '../../db/migrations/20260914_000001_key_monthly_usage.js';
 import {
+  reserveMonthlyBudget,
   getMonthlyBudgetCaps,
   setMonthlyBudgetCaps,
   getMonthlyUsage,
@@ -122,6 +127,98 @@ describe('key-budget: monthly caps (#1158)', () => {
     recordSuccess(inThisMonth());
     // usage.requests === cap → rejected (strictly at/over the cap counts spent).
     expect(checkMonthlyBudget(keyId, 0).allowed).toBe(false);
+  });
+
+  it('retains spent budgets when request logs are pruned', () => {
+    insertKey({ monthlyRequestCap: 2 });
+    recordSuccess(inThisMonth()); recordSuccess(inThisMonth());
+    expect(checkMonthlyBudget(keyId, 0).allowed).toBe(false);
+    const old = process.env.REQUEST_ANALYTICS_MAX_ROWS;
+    try {
+      process.env.REQUEST_ANALYTICS_MAX_ROWS = '1';
+      pruneRequestAnalytics({ force: true });
+      expect(getDb().prepare('SELECT COUNT(*) AS n FROM requests').get()).toEqual({ n: 1 });
+      expect(getMonthlyUsage(keyId)).toEqual({ requests: 2, tokens: 300 });
+      expect(checkMonthlyBudget(keyId, 0).allowed).toBe(false);
+    } finally {
+      if (old === undefined) delete process.env.REQUEST_ANALYTICS_MAX_ROWS;
+      else process.env.REQUEST_ANALYTICS_MAX_ROWS = old;
+    }
+  });
+
+  it('backfills the ledger once and does not double count when up is rerun', () => {
+    insertKey();
+    ledgerMigration.down(getDb());
+    recordSuccess(inThisMonth());
+    ledgerMigration.up(getDb());
+    ledgerMigration.up(getDb());
+    expect(getMonthlyUsage(keyId)).toEqual({ requests: 1, tokens: 150 });
+    recordSuccess(inThisMonth());
+    expect(getMonthlyUsage(keyId)).toEqual({ requests: 2, tokens: 300 });
+  });
+
+  it('reserves the last request slot and releases it after an unsuccessful attempt', () => {
+    insertKey({ monthlyRequestCap: 1 });
+    const first = reserveMonthlyBudget(keyId, 100);
+    expect(first.allowed).toBe(true);
+    expect(reserveMonthlyBudget(keyId, 100).allowed).toBe(false);
+    if (!first.allowed) throw new Error('expected a reservation');
+    first.release(); first.release();
+    expect(checkMonthlyBudget(keyId, 100).allowed).toBe(true);
+    const second = reserveMonthlyBudget(keyId, 100);
+    if (!second.allowed) throw new Error('expected a reservation');
+    recordSuccess(inThisMonth());
+    second.release();
+    expect(checkMonthlyBudget(keyId, 100).allowed).toBe(false);
+  });
+
+  it('keeps token reservations for long streams until explicit release', () => {
+    insertKey({ monthlyTokenCap: 1000 });
+    const first = reserveMonthlyBudget(keyId, 600);
+    if (!first.allowed) throw new Error('expected a reservation');
+    expect(checkMonthlyBudget(keyId, 500, Date.now() + 10 * 60_000).allowed).toBe(false);
+    const second = reserveMonthlyBudget(keyId, 400);
+    expect(second.allowed).toBe(true);
+    if (second.allowed) second.release();
+    first.release();
+    expect(checkMonthlyBudget(keyId, 1000).allowed).toBe(true);
+  });
+
+  it('resets completed usage at the next month while retaining active reservations', () => {
+    insertKey({ monthlyRequestCap: 2 });
+    recordSuccess(inThisMonth());
+    const first = reserveMonthlyBudget(keyId, 100);
+    if (!first.allowed) throw new Error('expected a reservation');
+    expect(checkMonthlyBudget(keyId, 0).allowed).toBe(false);
+    const nextMonth = Date.parse(nextMonthResetAt());
+    expect(getMonthlyUsage(keyId, nextMonth).requests).toBe(0);
+    expect(checkMonthlyBudget(keyId, 0, nextMonth).allowed).toBe(true);
+    first.release();
+  });
+
+  it('enforces reservations through real route selection and exposes the monthly retry header', () => {
+    insertKey({ monthlyRequestCap: 1 });
+    const db = getDb();
+    const model = db.prepare("SELECT id FROM models WHERE platform = 'groq' LIMIT 1").get() as { id: number };
+    db.prepare('UPDATE models SET enabled = 1, rpm_limit = NULL, rpd_limit = NULL, tpm_limit = NULL, tpd_limit = NULL WHERE id = ?').run(model.id);
+    const first = routePinnedModel(model.id, 100);
+    expect(first).not.toBeNull();
+    expect(routePinnedModel(model.id, 100)).toBeNull();
+    first?.release?.();
+    const second = routePinnedModel(model.id, 100);
+    expect(second).not.toBeNull();
+    second?.release?.();
+    recordSuccess(inThisMonth());
+    let error: unknown;
+    try { routeRequest(100); } catch (err) { error = err; }
+    expect(error).toBeDefined();
+    const body = routingExhaustionBody(error);
+    expect(body.status).toBe(429);
+    expect(body.code).toBe('quota_exceeded');
+    expect(body.retryAtMs).toBe(Date.parse(nextMonthResetAt()));
+    const headers: Record<string, string> = {};
+    setExhaustionHeaders({ setHeader: (name: string, value: string) => { headers[name] = value; } }, body);
+    expect(Number(headers['Retry-After'])).toBeGreaterThan(0);
   });
 
   it('secondsUntilNextMonth lands on the next UTC month boundary', () => {

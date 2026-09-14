@@ -5,11 +5,11 @@
  * next month" — the semantic GateLLM-style rejection so an agent knows when the
  * window resets instead of hammering a 429.
  *
- * Metering source is the `requests` table (status='success' rows only: failed
- * attempts burned nothing upstream worth billing against a monthly cap). The
- * month window is UTC — the same boundary freellmapi's daily quota windows use.
- * Caps are stored directly on api_keys (0 = unlimited, the pre-#1158 default),
- * so existing installs are unchanged until an operator sets a cap.
+ * Successful usage is retained in key_monthly_usage independently of analytics
+ * retention. Active requests reserve their estimated tokens until their route
+ * is released. Actual provider usage is settled by the request-log transaction;
+ * token estimates are an admission guard, not an exact upstream billing cap.
+ * Caps are opt-in (0 = unlimited) and reset on UTC month boundaries.
  */
 import { getDb } from '../db/index.js';
 
@@ -31,20 +31,23 @@ export type BudgetVerdict =
   | { allowed: true }
   | { allowed: false; reason: 'monthly_request_cap' | 'monthly_token_cap'; retryAfterSec: number };
 
-function utcMonthStartMs(now = Date.now()): number {
-  const d = new Date(now);
-  return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1);
-}
-
 function utcNextMonthStartMs(now = Date.now()): number {
   const d = new Date(now);
   const month = d.getUTCMonth() + 1;
   return Date.UTC(d.getUTCFullYear() + Math.floor(month / 12), month % 12, 1);
 }
 
-/** SQLite datetime('now') format of a UTC month start, for the >= filter. */
-function sqliteUtc(ms: number): string {
-  return new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+interface Reservation { keyId: number; tokens: number }
+// These requests belong to this process and remain reserved until completion,
+// even if a stream outlives the short rate-limit lease timeout. A restarted
+// process has no active requests; completed usage remains in SQLite.
+const reservations = new WeakMap<ReturnType<typeof getDb>, Set<Reservation>>();
+
+function activeReservations(): Set<Reservation> {
+  const db = getDb();
+  let active = reservations.get(db);
+  if (!active) { active = new Set(); reservations.set(db, active); }
+  return active;
 }
 
 export function getMonthlyBudgetCaps(keyId: number): MonthlyBudgetCaps {
@@ -75,18 +78,10 @@ export function setMonthlyBudgetCaps(
 }
 
 export function getMonthlyUsage(keyId: number, now = Date.now()): MonthlyUsage {
-  const monthStart = sqliteUtc(utcMonthStartMs(now));
   const row = getDb().prepare(`
-    SELECT COUNT(*) AS requests,
-           COALESCE(SUM(input_tokens + output_tokens), 0) AS tokens
-      FROM requests
-     WHERE key_id = ?
-       AND status = 'success'
-       AND created_at >= ?
-  `).get(keyId, monthStart) as { requests: number; tokens: number };
-  const requests = typeof row?.requests === 'number' ? row.requests : Number(row?.requests ?? 0);
-  const tokens = typeof row?.tokens === 'number' ? row.tokens : Number(row?.tokens ?? 0);
-  return { requests, tokens };
+    SELECT requests, tokens FROM key_monthly_usage WHERE key_id = ? AND month = ?
+  `).get(keyId, new Date(now).toISOString().slice(0, 7)) as MonthlyUsage | undefined;
+  return { requests: Number(row?.requests ?? 0), tokens: Number(row?.tokens ?? 0) };
 }
 
 /**
@@ -103,13 +98,31 @@ export function checkMonthlyBudget(
   if (caps.requestCap <= 0 && caps.tokenCap <= 0) return { allowed: true };
 
   const usage = getMonthlyUsage(keyId, now);
+  for (const reservation of activeReservations()) {
+    if (reservation.keyId !== keyId) continue;
+    usage.requests++;
+    usage.tokens += reservation.tokens;
+  }
   if (caps.requestCap > 0 && usage.requests >= caps.requestCap) {
     return { allowed: false, reason: 'monthly_request_cap', retryAfterSec: secondsUntilNextMonth(now) };
   }
-  if (caps.tokenCap > 0 && usage.tokens + estimatedTokens > caps.tokenCap) {
+  if (caps.tokenCap > 0 && usage.tokens + Math.max(0, estimatedTokens) > caps.tokenCap) {
     return { allowed: false, reason: 'monthly_token_cap', retryAfterSec: secondsUntilNextMonth(now) };
   }
   return { allowed: true };
+}
+
+/** Check and reserve synchronously before dispatch; release on every terminal path. */
+export function reserveMonthlyBudget(
+  keyId: number,
+  estimatedTokens: number,
+): { allowed: true; release: () => void } | Extract<BudgetVerdict, { allowed: false }> {
+  const verdict = checkMonthlyBudget(keyId, estimatedTokens);
+  if (!verdict.allowed) return verdict;
+  const active = activeReservations();
+  const reservation = { keyId, tokens: Math.max(0, estimatedTokens) };
+  active.add(reservation);
+  return { allowed: true, release: () => { active.delete(reservation); } };
 }
 
 /** Seconds from `now` until the next UTC month boundary — the Retry-After value. */

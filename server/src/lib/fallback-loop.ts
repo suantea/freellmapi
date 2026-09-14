@@ -1,3 +1,4 @@
+import { nextMonthResetAt } from '../services/key-budget.js';
 // One shared provider retry/fallback loop for every OpenAI-, Responses- and
 // Anthropic-shaped chat surface (routes/proxy.ts legacy /completions and
 // /chat/completions, routes/responses.ts, routes/anthropic.ts). Each surface
@@ -874,13 +875,15 @@ export function exhaustedRetryError(lastError: any, maxRetries?: number, ctx?: E
 //     expiry as retryAtMs.
 //   - anything else (capability filters like vision/tools, mixed reasons) →
 //     the router's status (429) with a generic routing_exhausted code.
-type RoutingDiagClass = 'config' | 'too_large' | 'time_bound' | 'other';
+type RoutingDiagClass = 'config' | 'too_large' | 'time_bound' | 'monthly_budget' | 'other';
 
 function classifyRoutingDiagLine(line: string): RoutingDiagClass {
   const l = line.toLowerCase();
   // "< estimated" first: the tpm_limit-too-small line also contains 'tpm',
   // which would otherwise misread as a transient window.
   if (l.includes('< estimated')) return 'too_large';
+  const monthlyReasons = l.match(/key\(s\) — (.*)$/)?.[1];
+  if (monthlyReasons?.split(', ').every(reason => /^monthly-budget-cap:\d+$/.test(reason))) return 'monthly_budget';
   if (/no provider registered|no enabled\+healthy key|no usable key|decrypt-error|no-resolved-provider|custom-key-mismatch/.test(l)) return 'config';
   if (/cooldown|rpm|rpd|tpm|tpd|provider-daily-cap|provider-minute-cap|provider-daily-token-cap|key-concurrency|monthly-budget-cap/.test(l)) return 'time_bound';
   return 'other';
@@ -911,6 +914,14 @@ export function routingExhaustionBody(routeErr: any): ExhaustionBody {
       code: 'context_length_exceeded',
       message: `The request is too large for every available candidate's context/token window. ` +
         `Reduce the prompt/history size or enable a larger-context model. ${message}`,
+    };
+  }
+
+  if (classes.includes('monthly_budget') && classes.every(c => c === 'monthly_budget' || c === 'config' || c === 'too_large')) {
+    return {
+      kind: 'rate_limit', status: 429, type: 'rate_limit_error', code: 'quota_exceeded',
+      retryAtMs: Date.parse(nextMonthResetAt()),
+      message: `Monthly key budget exhausted. Raise the cap or wait until the next UTC month. ${message}`,
     };
   }
 
