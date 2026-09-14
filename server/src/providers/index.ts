@@ -8,6 +8,14 @@ import { AIHordeProvider } from './aihorde.js';
 import { ModelScopeProvider } from './modelscope.js';
 import { PollinationsProvider } from './pollinations.js';
 import { ZhipuProvider } from './zhipu.js';
+import { SailProvider } from './sail.js';
+import { ElectronHubProvider } from './electronhub.js';
+import { ExperientialProvider } from './experiential.js';
+import { Router9Provider } from './router9.js';
+import { SeptorProvider } from './septor.js';
+import { ClodProvider } from './clod.js';
+import { SpeechifyProvider } from './speechify.js';
+import { BlazeProvider } from './blaze.js';
 
 const providers = new Map<Platform, BaseProvider>();
 
@@ -33,6 +41,27 @@ register(new OpenAICompatProvider({
   name: 'Cerebras',
   baseUrl: 'https://api.cerebras.ai/v1',
 }));
+
+// Sail Research — its stable API is /v1/responses and all calls are submitted
+// as background jobs, then polled. The dedicated adapter translates terminal
+// Responses objects back to Chat Completions and handles flex-only models.
+// Sail grants $5 in free credits every month when a payment method is attached;
+// usage beyond that grant is pay-as-you-go. Live-tested 2026-09-01. Model rows
+// stay in Oracle so the existing Premium-now / Free-after-30-days gate applies.
+register(new SailProvider());
+
+// Free-plan grants are shared wallets, not free credits per model. Eligibility
+// and tested model rows belong in Oracle, never in bundled DB migrations.
+register(new ElectronHubProvider());
+register(new ExperientialProvider());
+// Router9 has shared monthly credits; Septor's zero-price models share daily
+// quota (its signup credit is one-time). Model rows live only in Oracle so
+// the existing Premium-now / Free-after-30-days gate remains authoritative.
+register(new Router9Provider());
+register(new SeptorProvider());
+register(new ClodProvider());
+register(new SpeechifyProvider());
+register(new BlazeProvider());
 
 // B.AI — OpenAI-compatible gateway. Provider support is first-class, but the
 // only free catalog row currently published is a limited-time 0-credit promo;
@@ -61,6 +90,19 @@ register(new OpenAICompatProvider({
   platform: 'anyapi',
   name: 'AnyAPI',
   baseUrl: 'https://api.anyapi.ai/v1',
+}));
+
+// AMD Radeon Cloud TokenFactory — the shared Model API is OpenAI-compatible
+// and its current public roster is free without consuming GPU-instance
+// credits. Public models are experimental and may rotate, so their ids remain
+// in the hosted catalog rather than migrations. Both current models reject
+// parallel tool calls; long reasoning requests may run for up to ten minutes.
+register(new OpenAICompatProvider({
+  platform: 'radeon',
+  name: 'AMD Radeon Cloud',
+  baseUrl: 'https://developer.amd.com.cn/radeon/api/v1',
+  forceSingleToolCall: true,
+  timeoutMs: 600_000,
 }));
 
 // SambaNova was dropped in V23 (June 2026): the free tier is permanently gone.
@@ -374,6 +416,46 @@ register(new OpenAICompatProvider({
   platform: 'orcarouter',
   name: 'OrcaRouter',
   baseUrl: 'https://api.orcarouter.ai/v1',
+}));
+
+// UnoRouter (unorouter.com) — OpenAI-compatible aggregator. The web app is a
+// Next.js site at unorouter.com (which redirects /v1/* to the marketing app,
+// NOT the API); the real API is api.unorouter.com/v1. Free key from
+// unorouter.com (no card); free models carry a `:free` suffix and a per-minute
+// rate limit (429 on cap — "1 request(s) every 1 min per account on <model>").
+// Live-probed 2026-08-23: GET /v1/models is public (200 with no key) but
+// answers 401 "Invalid token" to a wrong key, and chat/completions is 401
+// without a key — so the default /v1/models key validation (which sends the
+// key) is a real check; no validateUrl override needed. A burst of parallel
+// requests trips an account-wide 429 on every :free model for several
+// minutes, which is why provider-quota pools the platform as one allowance.
+// Catalog rows live in the hosted catalog (premium now, free after the 30-day
+// model-age gate).
+register(new OpenAICompatProvider({
+  platform: 'unorouter',
+  name: 'UnoRouter',
+  baseUrl: 'https://api.unorouter.com/v1',
+}));
+
+// xKiro (xkiro.com) — OpenAI-compatible gateway at api.xkiro.com/v1 (the
+// apex serves the same API today, but the docs name api.). Free key from
+// xkiro.com (no card). Live-probed 2026-08-23 with a free-plan key: /v1/usage
+// reports free_tokens limit_per_day=5,000,000; paid models answer an instant
+// 403 "premium model"/"requires a paid account", free ones (Mistral, MiniMax,
+// DeepSeek families) answer normally, Qwen was 503 upstream.
+// GET /v1/models answers 200 with NO key (public
+// catalog), so the default /v1/models key validation would be a false
+// positive — validateUrl points at /v1/usage instead, which 401s on a missing
+// or invalid ClientApiKey ("Invalid or disabled ClientApiKey"). Accepts
+// Authorization: Bearer or x-api-key. Catalog rows live in the hosted catalog
+// (premium now, free after the 30-day model-age gate); the ids in #947 are
+// unverified against a live account and are candidates for catalog authoring,
+// where a bad id is caught by the health check instead of shipped as a default.
+register(new OpenAICompatProvider({
+  platform: 'xkiro',
+  name: 'xKiro',
+  baseUrl: 'https://api.xkiro.com/v1',
+  validateUrl: 'https://api.xkiro.com/v1/usage',
 }));
 
 // ModelScope (魔搭社区, Alibaba) — OpenAI-compatible inference API

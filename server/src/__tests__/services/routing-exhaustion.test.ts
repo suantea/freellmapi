@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { routeRequest, setRoutingStrategy } from '../../services/router.js';
 import * as ratelimit from '../../services/ratelimit.js';
 import { getDb, initDb } from '../../db/index.js';
-import * as crypto from '../../lib/crypto.js';
 
 // Mock ratelimit to control quota availability
 vi.mock('../../services/ratelimit.js', async () => {

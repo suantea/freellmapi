@@ -201,7 +201,11 @@ export async function runInboundChat(
   const attemptLog: AttemptRecord[] = [];
   const wantsTools = (input.tools?.length ?? 0) > 0;
   const imageRequest = hasImages(input.messages);
-  const estimatedTotal = estimatedInputTokens + routingReserveTokens(maxTokens);
+  // Capped reserve (#470); threaded to the router separately because it is an
+  // exact count and must not be inflated by the context-window safety margin
+  // (#956 review).
+  const outputReserve = routingReserveTokens(maxTokens);
+  const estimatedTotal = estimatedInputTokens + outputReserve;
   const schemas = toolSchemaMap(input.tools);
   let clientGone = false;
   const clientAbort = new AbortController();
@@ -229,6 +233,7 @@ export async function runInboundChat(
   await runFallbackLoop({
     state,
     attemptLog,
+    logIdentity: { surface: 'inbound chat', requestedModel: input.model ?? 'auto' },
     clientGone: () => clientGone,
     route: () => routeRequest(
       estimatedTotal,
@@ -240,6 +245,7 @@ export async function runInboundChat(
       pin.strictChain,
       input.responseFormat !== undefined,
       state.skipPlatforms.size ? state.skipPlatforms : undefined,
+      outputReserve,
     ),
     dispatch: async (route, attempt) => {
       if (!input.stream) {
@@ -253,7 +259,10 @@ export async function runInboundChat(
         let text = contentToString(message?.content ?? '');
         const reasoning = message?.reasoning_content ?? '';
         let toolCalls = message?.tool_calls ?? [];
-        if (!text && !reasoning && toolCalls.length === 0) {
+        // Reasoning-only is an empty turn to the caller — coding agents stall
+        // on a blank reply — so it fails over like an empty completion,
+        // mirroring the Anthropic surface's non-streaming check (#1184).
+        if (!text && toolCalls.length === 0) {
           throw Object.assign(
             new Error(`empty completion from ${route.displayName}`),
             result.choices?.[0]?.finish_reason === 'length' ? { skipBench: true } : {},
@@ -333,6 +342,8 @@ export async function runInboundChat(
           null,
           null,
           pin.pinnedLabel,
+          null,
+          'http',
         );
         wire.sendNonStream(res, normalized);
         return 'done';
@@ -346,12 +357,22 @@ export async function runInboundChat(
       const toolAcc = new Map<number, { id?: string; name: string; args: string; thoughtSignature?: string }>();
       let dialectMode: 'undecided' | 'passthrough' | 'dialect' = 'undecided';
       let heldText = '';
+      // Thinking deltas held until something commit-worthy arrives (#1184) —
+      // the same buffer the Anthropic surface keeps: a stream that produces
+      // ONLY reasoning stays uncommitted through to stream end and fails over
+      // invisibly, instead of locking the ladder on a blank reply. Flushed in
+      // order (before the text/tool output) the moment the stream commits.
+      let heldReasoning = '';
       const commit = () => {
         if (committed) return;
         res.setHeader('X-Routed-Via', routedViaValue(route.platform, route.modelId));
         setFallbackHeaders(res, attempt, attemptLog);
         wire.startStream(res, route);
         committed = true;
+        if (heldReasoning) {
+          wire.sendReasoningDelta?.(res, route, heldReasoning);
+          heldReasoning = '';
+        }
       };
 
       try {
@@ -392,10 +413,15 @@ export async function runInboundChat(
             }
           }
           if (typeof deltaReasoning === 'string' && deltaReasoning) {
-            commit();
             reasoning += deltaReasoning;
             outputTokens += Math.ceil(deltaReasoning.length / 4);
-            wire.sendReasoningDelta?.(res, route, deltaReasoning);
+            if (committed) {
+              wire.sendReasoningDelta?.(res, route, deltaReasoning);
+            } else {
+              // Hold rather than commit: thinking alone is not proof the turn
+              // will produce a usable answer (#1184).
+              heldReasoning += deltaReasoning;
+            }
           }
           for (const call of choice.delta?.tool_calls ?? []) {
             const index = call.index ?? 0;
@@ -466,7 +492,10 @@ export async function runInboundChat(
             0,
           ) / 4);
         }
-        if (!text && !reasoning && toolCalls.length === 0) {
+        // Reasoning-only is an empty turn to the caller (#1184) — same rule as
+        // the non-streaming path above; nothing was committed, so the failover
+        // hop is invisible to the client.
+        if (!text && toolCalls.length === 0) {
           if (clientGone) return 'committed';
           throw Object.assign(
             new Error(`empty completion from ${route.displayName}`),
@@ -507,6 +536,8 @@ export async function runInboundChat(
           null,
           null,
           pin.pinnedLabel,
+          null,
+          'http',
         );
         return 'done';
       } catch (error: any) {
@@ -524,6 +555,8 @@ export async function runInboundChat(
           sanitizeProviderErrorMessage(error.message),
           null,
           pin.pinnedLabel,
+          null,
+          'http',
         );
         return 'committed';
       }
@@ -540,6 +573,8 @@ export async function runInboundChat(
         sanitizeProviderErrorMessage(error.message),
         null,
         pin.pinnedLabel,
+        null,
+        'http',
       );
     },
     onFatal: (route, error, attempt) => {

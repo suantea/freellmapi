@@ -1,5 +1,9 @@
 // ---- Platform & Model Types ----
 
+/** How the global outbound proxy URL is interpreted. Per-key proxies always
+ * use the traditional forward-proxy transport. */
+export type ProxyMode = 'forward' | 'fetch-relay';
+
 /** A model declared beside a custom endpoint in an import file (#382). A
  *  capability flag is present only when the paste declared it via a trailing
  *  -TOOLS / -VISION suffix. */
@@ -60,6 +64,20 @@ export type Platform =
   | 'google'
   | 'groq'
   | 'cerebras'
+  // Sail Research — native Responses API provider. $5 in free credits refreshes
+  // monthly when a payment method is attached; usage beyond the grant is
+  // pay-as-you-go. Background polling is required for its flex-only models.
+  | 'sail'
+  // Hosted gateways; model rows are delivered by the signed catalog only.
+  // ElectronHub renews weekly credits; Experiential renews monthly credits.
+  | 'electronhub'
+  | 'experiential'
+  // Catalog-managed gateways: monthly shared credits vs daily free-model quota.
+  | 'router9'
+  | 'septor'
+  | 'clod'
+  | 'speechify'
+  | 'blaze'
   // B.AI — OpenAI-compatible gateway. Its catalog row is a live-tested,
   // limited-time 0-credit promotion, not a recurring free allowance.
   | 'bai'
@@ -68,6 +86,10 @@ export type Platform =
   // published. Catalog rows live in the hosted catalog (premium now, free after
   // 30 days).
   | 'anyapi'
+  // AMD Radeon Cloud TokenFactory — OpenAI-compatible shared inference. Its
+  // rotating public-model roster is free without consuming instance credits,
+  // with recurring account-level allowance and request/concurrency controls.
+  | 'radeon'
   | 'nvidia'
   | 'mistral'
   | 'sambanova'
@@ -132,6 +154,22 @@ export type Platform =
   // (never fall back to paid). Catalog rows live in the Oracle catalog
   // (premium now, free after the 30-day model-age gate).
   | 'orcarouter'
+  // UnoRouter (unorouter.com) — OpenAI-compatible aggregator. The web app is a
+  // Next.js site at unorouter.com; the API lives at api.unorouter.com/v1. Free
+  // key from unorouter.com (no card); free models carry a `:free` suffix and a
+  // per-minute rate limit (429 on cap, e.g. "1 request(s) every 1 min").
+  // Live-probed 2026-08-23: /v1/models is public without a key but 401s on a
+  // wrong key, and /v1/chat/completions 401s without a key, so default key
+  // validation works. Catalog rows live in the hosted catalog (premium now,
+  // free after the 30-day model-age gate).
+  | 'unorouter'
+  // xKiro (xkiro.com) — OpenAI-compatible gateway at api.xkiro.com/v1. Free key
+  // from xkiro.com (no card); free plan is 5M tokens/day on its free models,
+  // paid models 403 on a free key.
+  // /v1/models is public (200 with no key), so key validation must probe
+  // /v1/usage, which 401s on a missing/invalid ClientApiKey. Catalog rows live
+  // in the hosted catalog (premium now, free after the 30-day model-age gate).
+  | 'xkiro'
   // ModelScope (魔搭社区, Alibaba) — OpenAI-compatible inference API
   // (api-inference.modelscope.cn/v1). Free tier is 2000 requests/day
   // account-wide, but calls only work after the ModelScope account is bound to
@@ -233,7 +271,7 @@ export type KeyStatus = 'healthy' | 'rate_limited' | 'invalid' | 'error' | 'unkn
 
 export interface ApiKeyModel {
   id: number;
-  kind: 'chat' | 'embedding' | 'image' | 'audio';
+  kind: 'chat' | 'embedding' | 'image' | 'audio' | 'transcription';
   modelId: string;
   displayName: string;
   family?: string | null;
@@ -371,6 +409,11 @@ export interface ChatMessage {
   // (DeepSeek on OpenCode Zen) require it to be replayed verbatim on the next
   // turn or they 400; the proxy preserves and forwards it. See issue #255.
   reasoning_content?: string;
+  // Moonshot's "partial" prefill flag on an assistant turn: when true, the
+  // model continues the given text instead of starting a fresh turn. Only
+  // forwarded to models that understand it (Moonshot/Kimi); stripped for all
+  // other providers. See issue #1038.
+  partial?: boolean;
 }
 
 export interface ChatCompletionRequest {
@@ -407,6 +450,10 @@ export interface TokenUsage {
   // to its chars/4 estimate when absent. (#764)
   completion_tokens_details?: { reasoning_tokens?: number };
   prompt_tokens_details?: { cached_tokens?: number };
+  // Gateway-synthesized block (upstream never sent usage): flagged so a
+  // cost-accounting client can tell it apart from the upstream's real
+  // counts. (#1084)
+  estimated?: boolean;
 }
 
 export interface ChatCompletionResponse {

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -6,6 +6,7 @@ import {
 } from 'recharts'
 import {
   Activity,
+  Archive,
   ArrowDown,
   ArrowUp,
   Bot,
@@ -36,8 +37,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PageHeader } from '@/components/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tooltip as HoverTooltip } from '@/components/tooltip'
+import { SortableHeader } from '@/components/sortable-header'
 import { formatSqliteUtcToLocalTime } from '@/lib/utils'
+import { sortRows, useTableSort, type SortValueFn } from '@/lib/table-sort'
 import { platformColors } from '@/lib/routing'
+import { categoryAxisProps, verticalCategoryAxisProps } from '@/lib/chart-axis'
 import { useI18n } from '@/i18n'
 
 type TimeRange = '24h' | '7d' | '30d' | '90d'
@@ -54,6 +58,71 @@ function storedRange(): TimeRange {
     if (v && (TIME_RANGES as string[]).includes(v)) return v as TimeRange
   } catch { /* ignore */ }
   return '7d'
+}
+
+// Sortable columns of the three breakdown tables. Sorting is client-side over
+// the rows already loaded and remembered per table (same localStorage idiom as
+// the range). Recent calls are fetched newest-first with limit=100, so its
+// sort covers that window, not the whole filtered set — the table says so
+// whenever `total` exceeds the loaded rows.
+type RecentCallCol = 'time' | 'ip' | 'agent' | 'model' | 'provider' | 'status' | 'attempts' | 'inTokens' | 'outTokens' | 'latency'
+const RECENT_CALL_COLS: readonly RecentCallCol[] = ['time', 'ip', 'agent', 'model', 'provider', 'status', 'attempts', 'inTokens', 'outTokens', 'latency']
+const RECENT_CALLS_SORT_KEY = 'analytics.recentCallsSort'
+
+// success > canceled > error, so ascending puts the failures on top.
+function statusRank(status: string): number {
+  return status === 'success' ? 2 : status === 'canceled' ? 1 : 0
+}
+
+const recentCallValue: SortValueFn<RecentCallRow, RecentCallCol> = (r, col) => {
+  switch (col) {
+    case 'time': return r.createdAt
+    case 'ip': return r.clientIp
+    case 'agent': return r.clientUserAgent
+    case 'model': return r.modelId
+    // Same text the cell shows: a labelled custom endpoint sorts by its label.
+    case 'provider': return r.platform === 'custom' && r.keyLabel ? r.keyLabel : r.platform
+    case 'status': return statusRank(r.status)
+    case 'attempts': return r.attemptCount
+    case 'inTokens': return r.inputTokens
+    case 'outTokens': return r.outputTokens
+    case 'latency': return r.latencyMs
+  }
+}
+
+type ByModelCol = 'model' | 'provider' | 'requests' | 'pinned' | 'success' | 'latency' | 'inTokens' | 'outTokens' | 'saved'
+const BY_MODEL_COLS: readonly ByModelCol[] = ['model', 'provider', 'requests', 'pinned', 'success', 'latency', 'inTokens', 'outTokens', 'saved']
+const BY_MODEL_SORT_KEY = 'analytics.byModelSort'
+
+const byModelValue: SortValueFn<ByModelRow, ByModelCol> = (m, col) => {
+  switch (col) {
+    case 'model': return m.displayName
+    case 'provider': return m.endpoint ?? m.platform
+    case 'requests': return m.requests
+    case 'pinned': return m.pinnedRequests
+    case 'success': return m.successRate
+    case 'latency': return m.avgLatencyMs
+    case 'inTokens': return m.totalInputTokens
+    case 'outTokens': return m.totalOutputTokens
+    case 'saved': return m.estimatedCost ?? null
+  }
+}
+
+type ByKeyCol = 'label' | 'provider' | 'requests' | 'success' | 'latency' | 'inTokens' | 'outTokens'
+const BY_KEY_COLS: readonly ByKeyCol[] = ['label', 'provider', 'requests', 'success', 'latency', 'inTokens', 'outTokens']
+const BY_KEY_SORT_KEY = 'analytics.byKeySort'
+
+const byKeyValue: SortValueFn<ByKeyRow, ByKeyCol> = (k, col) => {
+  switch (col) {
+    // Unlabelled keys sort by id rather than bunching as one empty string.
+    case 'label': return k.label || `#${k.keyId}`
+    case 'provider': return k.platform
+    case 'requests': return k.requests
+    case 'success': return k.successRate
+    case 'latency': return k.avgLatencyMs
+    case 'inTokens': return k.totalInputTokens
+    case 'outTokens': return k.totalOutputTokens
+  }
 }
 
 // Response shapes mirror the JSON emitted by server/src/routes/analytics.ts.
@@ -75,8 +144,30 @@ interface SummaryResponse {
   lifetimeTotalRequests: number
 }
 
+interface CacheStatsResponse {
+  enabled: boolean
+  entries: number
+  // Hits carried by the entries currently held (restored from SQLite), and the
+  // provider round-trips / tokens they represent.
+  totalHits: number
+  estimatedRequestsSaved: number
+  savedTokens: number
+  // Lookups since the server started — the ratio's two halves. Kept separate
+  // from totalHits, which shrinks when entries are evicted.
+  lookupHits: number
+  lookupMisses: number
+  hitRate: number
+}
+
 interface ByPlatformRow {
   platform: string
+  // Stable identity for the filter dropdown. For a catalog platform it equals
+  // `platform`; for a custom endpoint it is `custom:<base_url>` (#889), so each
+  // relay is filterable on its own instead of collapsing into 'custom'.
+  providerId: string
+  // Human display name. Catalog: the platform id. Custom: the endpoint host
+  // (e.g. 'relay.example.com') so several relays are distinguishable.
+  endpoint?: string
   requests: number
   successRate: number
   avgLatencyMs: number
@@ -109,6 +200,11 @@ interface TimelineBucket {
 
 interface ByModelRow {
   platform: string
+  // Endpoint identity of the row (#889). The same model id served by two
+  // custom relays is two rows, one per relay, so the name has to say which.
+  // Same id/name pair /by-platform returns for that endpoint.
+  providerId?: string
+  endpoint?: string
   modelId: string
   displayName: string
   requests: number
@@ -133,13 +229,19 @@ interface ByKeyRow {
 
 interface ErrorDistribution {
   byCategory: Array<{ category: string; count: number }>
-  byPlatform: Array<{ platform: string; count: number }>
+  // One entry per provider — per custom ENDPOINT, not one pooled 'custom'
+  // entry (#889); `platform` is kept for the dot coloring.
+  byPlatform: Array<{ platform: string; providerId?: string; endpoint?: string; count: number }>
   detailed: Array<{ platform: string; model_id: string; error_category: string; count: number }>
 }
 
 interface RecentErrorRow {
   id: number
   platform: string
+  // Which endpoint produced the error: the platform slug for catalog
+  // providers, the custom endpoint's host/path for a relay (#889).
+  providerId?: string
+  endpoint?: string
   modelId: string
   error: string
   latencyMs: number
@@ -180,6 +282,10 @@ interface RequestAttempt {
   platform: string
   modelId: string
   keyOrdinal: number
+  // Operator-facing key label captured at attempt time (#869); null when the
+  // key had no label. Shown in a tooltip on the key badge so a multi-key
+  // provider's ladder says WHICH key was tried, not just key1/key2.
+  keyLabel: string | null
   outcome: string
   startOffsetMs: number
   durationMs: number
@@ -216,7 +322,7 @@ function formatTokens(n?: number): string {
   return String(n)
 }
 
-function Stat({ icon: Icon, label, value, hint, className }: { icon: LucideIcon; label: string; value: string | number; hint?: string; className?: string }) {
+function Stat({ icon: Icon, label, value, sub, hint, className }: { icon: LucideIcon; label: string; value: string | number; sub?: string; hint?: string; className?: string }) {
   const card = (
     <div className="rounded-3xl border bg-card px-4 py-3">
       <div className="flex items-center justify-between gap-3">
@@ -226,6 +332,9 @@ function Stat({ icon: Icon, label, value, hint, className }: { icon: LucideIcon;
         </span>
       </div>
       <p className={`text-xl font-semibold tabular-nums mt-1 ${className ?? ''}`}>{value}</p>
+      {/* Optional second figure, so one card can carry two related numbers
+          instead of spending another slot in the summary row. */}
+      {sub ? <p className="text-[11px] text-muted-foreground tabular-nums truncate">{sub}</p> : null}
     </div>
   )
   // Same portal tooltip as the routing strategy chips. Opens BELOW the card:
@@ -373,7 +482,9 @@ function RequestDetailDialog({ requestId, onClose }: { requestId: number | null;
                         <PlatformDot platform={a.platform} />
                         <span className="font-medium">{a.platform}</span>
                         <span className="text-muted-foreground truncate" title={a.modelId}>{a.modelId}</span>
-                        <Badge variant="outline">{t('analytics.keyOrdinal', { n: a.keyOrdinal })}</Badge>
+                        <HoverTooltip text={a.keyLabel ? `${t('analytics.keyBadge', { n: a.keyOrdinal })} · ${a.keyLabel}` : t('analytics.keyBadge', { n: a.keyOrdinal })}>
+                          <Badge variant="outline">{t('analytics.keyOrdinal', { n: a.keyOrdinal })}</Badge>
+                        </HoverTooltip>
                         {/* client_abort is the caller's doing, not a hop failure. */}
                         <Badge variant={a.outcome === 'ok' || a.outcome === 'committed' ? 'secondary' : a.outcome === 'client_abort' ? 'outline' : 'destructive'}>
                           {a.outcome}
@@ -450,10 +561,23 @@ export default function AnalyticsPage() {
     queryFn: () => apiFetch<SummaryResponse>(`/api/analytics/summary?range=${range}`),
   })
 
+  // Response-cache health: how often identical requests were served from memory
+  // (zero quota cost) vs. spending a free-tier slot. The cache is process-local,
+  // so these are lifetime-this-boot numbers, not range-filtered.
+  const { data: cacheStats } = useQuery({
+    queryKey: ['cache', 'stats'],
+    queryFn: () => apiFetch<CacheStatsResponse>('/api/cache/stats'),
+  })
+
   const { data: byPlatform = [] } = useQuery({
     queryKey: ['analytics', 'by-platform', range],
     queryFn: () => apiFetch<ByPlatformRow[]>(`/api/analytics/by-platform?range=${range}`),
   })
+
+  // Friendly display name per providerId: catalog → the platform id, custom →
+  // the endpoint host. Used by the filter dropdown so a selected custom relay
+  // shows 'relay.example.com', not 'custom:https://relay.example.com' (#889).
+  const providerDisplay = new Map(byPlatform.map((p) => [p.providerId, p.endpoint ?? p.platform]))
 
   const { data: byClient = [] } = useQuery({
     queryKey: ['analytics', 'by-client', range],
@@ -501,10 +625,29 @@ export default function AnalyticsPage() {
     queryFn: () => {
       const params = new URLSearchParams({ range, limit: '100' })
       if (statusFilter !== 'all') params.set('status', statusFilter)
-      if (platformFilter !== 'all') params.set('platform', platformFilter)
+      // provider (not platform) so a selected custom relay filters to itself
+      // instead of every custom endpoint (#889). Catalog ids equal the platform.
+      if (platformFilter !== 'all') params.set('provider', platformFilter)
       return apiFetch<RecentCallsResponse>(`/api/analytics/requests?${params}`)
     },
   })
+
+  // Per-table column sort (client-side, remembered per table). `null` keeps
+  // the API order, so the memoised arrays are the query data itself then.
+  const recentCallsSort = useTableSort(RECENT_CALLS_SORT_KEY, RECENT_CALL_COLS)
+  const byModelSort = useTableSort(BY_MODEL_SORT_KEY, BY_MODEL_COLS)
+  const byKeySort = useTableSort(BY_KEY_SORT_KEY, BY_KEY_COLS)
+  const recentCallRows = useMemo(
+    () => sortRows(recentCalls?.rows ?? [], recentCallsSort.sort, recentCallValue),
+    [recentCalls?.rows, recentCallsSort.sort],
+  )
+  const byModelRows = useMemo(() => sortRows(byModel, byModelSort.sort, byModelValue), [byModel, byModelSort.sort])
+  const byKeyRows = useMemo(() => sortRows(byKey, byKeySort.sort, byKeyValue), [byKey, byKeySort.sort])
+  // The list is capped at 100 rows while `total` counts the whole filtered
+  // set; say so while a sort is active and there is more than what's loaded.
+  const recentCallsSortHint = recentCallsSort.sort && recentCalls && recentCalls.total > recentCalls.rows.length
+    ? t('analytics.sortHint', { count: recentCalls.rows.length })
+    : null
 
   // Savings card shows ONE stable monthly figure regardless of the selected
   // range: the last-30-days data projected to a full month from its actual
@@ -587,7 +730,9 @@ export default function AnalyticsPage() {
         {/* Summary stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-3">
           {summaryLoading ? (
-            Array.from({ length: 8 }).map((_, i) => <Skeleton key={i} className="h-[74px] rounded-3xl" />)
+            // Same count as the cards below, cache card included, so the row
+            // does not reflow when the summary lands.
+            Array.from({ length: cacheStats?.enabled ? 9 : 8 }).map((_, i) => <Skeleton key={i} className="h-[74px] rounded-3xl" />)
           ) : (
             <>
               <Stat icon={Activity} label={t('analytics.requests')} value={summary?.totalRequests ?? 0} hint={requestsHint} />
@@ -602,6 +747,19 @@ export default function AnalyticsPage() {
                   The value is a 30-day projection; the hover hint tells the whole
                   story (actual period amount + whether it was extrapolated). */}
               <Stat icon={CircleDollarSign} label={t('analytics.estSavings')} value={`$${savings30d.toFixed(2)}`} hint={savingsHint} />
+              {/* Response-cache impact, as ONE card: hit rate with the tokens
+                  it gave back underneath. Rendered only when the cache is on,
+                  so installs that opted out neither lose a slot in this row nor
+                  see a misleading 0%. */}
+              {cacheStats?.enabled && (
+                <Stat
+                  icon={Archive}
+                  label={t('analytics.cacheHitRate')}
+                  value={`${Math.round(cacheStats.hitRate * 100)}%`}
+                  sub={t('analytics.cacheSavedTokens', { tokens: formatTokens(cacheStats.savedTokens) })}
+                  hint={t('analytics.cacheHitRateHint', { hits: cacheStats.lookupHits, misses: cacheStats.lookupMisses, requests: cacheStats.estimatedRequestsSaved })}
+                />
+              )}
             </>
           )}
         </div>
@@ -655,7 +813,7 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={byPlatform} margin={{ top: 6, right: 6, left: -12, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="2 4" stroke={gridStyle} />
-                  <XAxis dataKey="platform" tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} />
+                  <XAxis dataKey={(row: ByPlatformRow) => row.endpoint ?? row.platform} tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} {...categoryAxisProps(byPlatform.length)} />
                   <YAxis tick={axisStyle} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="requests" name={t('analytics.requests')} fill={primaryFill} radius={[3, 3, 0, 0]} maxBarSize={24} />
@@ -671,7 +829,7 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={byClient} margin={{ top: 6, right: 6, left: -12, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="2 4" stroke={gridStyle} />
-                  <XAxis dataKey="clientAgent" tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} />
+                  <XAxis dataKey="clientAgent" tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} {...categoryAxisProps(byClient.length)} />
                   <YAxis tick={axisStyle} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="requests" name={t('analytics.requests')} fill={seriesB} radius={[3, 3, 0, 0]} maxBarSize={24} />
@@ -688,7 +846,7 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={byPlatform} margin={{ top: 6, right: 6, left: -12, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="2 4" stroke={gridStyle} />
-                  <XAxis dataKey="platform" tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} />
+                  <XAxis dataKey={(row: ByPlatformRow) => row.endpoint ?? row.platform} tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} {...categoryAxisProps(byPlatform.length)} />
                   <YAxis unit="ms" tick={axisStyle} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Legend wrapperStyle={{ fontSize: 12 }} iconType="rect" />
@@ -709,7 +867,7 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={byPlatform} margin={{ top: 6, right: 6, left: -12, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="2 4" stroke={gridStyle} />
-                  <XAxis dataKey="platform" tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} />
+                  <XAxis dataKey={(row: ByPlatformRow) => row.endpoint ?? row.platform} tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} {...categoryAxisProps(byPlatform.length)} />
                   <YAxis unit="ms" tick={axisStyle} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="avgTtfbMs" name={t('analytics.avgTtft')} fill={seriesA} radius={[3, 3, 0, 0]} maxBarSize={24} />
@@ -727,7 +885,7 @@ export default function AnalyticsPage() {
                 <BarChart data={errorDist.byCategory} layout="vertical" margin={{ top: 6, right: 12, left: 8, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="2 4" stroke={gridStyle} horizontal={false} />
                   <XAxis type="number" tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} allowDecimals={false} />
-                  <YAxis type="category" dataKey="category" tick={axisStyle} tickLine={false} axisLine={false} width={128} />
+                  <YAxis type="category" dataKey="category" tick={axisStyle} tickLine={false} axisLine={false} {...verticalCategoryAxisProps()} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="count" name={t('analytics.errors')} fill="var(--destructive)" radius={[0, 3, 3, 0]} maxBarSize={24} />
                 </BarChart>
@@ -742,7 +900,7 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={errorDist.byPlatform} margin={{ top: 6, right: 6, left: -12, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="2 4" stroke={gridStyle} />
-                  <XAxis dataKey="platform" tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} />
+                  <XAxis dataKey={(row: ErrorDistribution['byPlatform'][number]) => row.endpoint ?? row.platform} tick={axisStyle} tickLine={false} axisLine={{ stroke: gridStyle }} {...categoryAxisProps(errorDist.byPlatform.length)} />
                   <YAxis tick={axisStyle} tickLine={false} axisLine={false} />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Bar dataKey="count" name={t('analytics.errors')} fill="var(--destructive)" radius={[3, 3, 0, 0]} maxBarSize={24} />
@@ -767,8 +925,12 @@ export default function AnalyticsPage() {
                   <TableBody>
                     {errors.slice(0, 20).map((e) => (
                       <TableRow key={e.id}>
-                        <TableCell className="pl-4 text-xs">{e.platform}</TableCell>
-                        <TableCell className="text-xs max-w-[200px] truncate">{e.error}</TableCell>
+                        <TableCell className="pl-4 text-xs">{e.endpoint ?? e.platform}</TableCell>
+                        <TableCell className="text-xs max-w-[200px]">
+                          {e.error
+                            ? <HoverTooltip text={e.error} side="top" className="block truncate">{e.error}</HoverTooltip>
+                            : null}
+                        </TableCell>
                         <TableCell className="text-right text-xs text-muted-foreground tabular-nums pr-4">
                           {formatSqliteUtcToLocalTime(e.createdAt, { hour: '2-digit', minute: '2-digit' })}
                         </TableCell>
@@ -805,16 +967,16 @@ export default function AnalyticsPage() {
                   <Select value={platformFilter} onValueChange={(v) => setPlatformFilter(v ?? 'all')}>
                     <SelectTrigger size="sm" aria-label={t('common.provider')}>
                       <SelectValue>
-                        {(v: string) => (!v || v === 'all' ? t('analytics.allProviders') : v)}
+                        {(v: string) => (!v || v === 'all' ? t('analytics.allProviders') : providerDisplay.get(v) ?? v)}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t('analytics.allProviders')}</SelectItem>
                       {byPlatform.map((p) => (
-                        <SelectItem key={p.platform} value={p.platform}>
+                        <SelectItem key={p.providerId} value={p.providerId}>
                           <span className="flex items-center gap-2">
                             <PlatformDot platform={p.platform} />
-                            <span>{p.platform}</span>
+                            <span>{p.endpoint ?? p.platform}</span>
                           </span>
                         </SelectItem>
                       ))}
@@ -823,6 +985,9 @@ export default function AnalyticsPage() {
                 </div>
               }
             >
+              {recentCallsSortHint && (
+                <p className="pb-2 text-xs text-muted-foreground">{recentCallsSortHint}</p>
+              )}
               {!recentCalls?.rows?.length ? (
                 <p className="text-sm text-muted-foreground text-center py-8">{t('common.noData')}</p>
               ) : (
@@ -830,20 +995,20 @@ export default function AnalyticsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="pl-4">{t('analytics.time')}</TableHead>
-                        <TableHead>{t('analytics.clientIp')}</TableHead>
-                        <TableHead>{t('analytics.clientAgent')}</TableHead>
-                        <TableHead>{t('common.model')}</TableHead>
-                        <TableHead>{t('common.provider')}</TableHead>
-                        <TableHead>{t('common.status')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.attempts')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.inTokens')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.outTokens')}</TableHead>
-                        <TableHead className="text-right pr-4">{t('analytics.latency')}</TableHead>
+                        <SortableHeader column="time" label={t('analytics.time')} className="pl-4" sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="ip" label={t('analytics.clientIp')} sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="agent" label={t('analytics.clientAgent')} sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="model" label={t('common.model')} sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="provider" label={t('common.provider')} sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="status" label={t('common.status')} sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="attempts" label={t('analytics.attempts')} align="right" sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="inTokens" label={t('analytics.inTokens')} align="right" sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="outTokens" label={t('analytics.outTokens')} align="right" sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
+                        <SortableHeader column="latency" label={t('analytics.latency')} align="right" className="pr-4" sort={recentCallsSort.sort} onToggle={recentCallsSort.toggle} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {recentCalls.rows.map((r) => (
+                      {recentCallRows.map((r) => (
                         <TableRow
                           key={r.id}
                           onClick={() => setDetailId(r.id)}
@@ -909,11 +1074,11 @@ export default function AnalyticsPage() {
                     </TableHeader>
                     <TableBody>
                       {byPlatform.map((p) => (
-                        <TableRow key={p.platform}>
+                        <TableRow key={p.providerId}>
                           <TableCell className="pl-4 text-sm font-medium">
                             <span className="flex items-center gap-2">
                               <PlatformDot platform={p.platform} />
-                              {p.platform}
+                              {p.endpoint ?? p.platform}
                             </span>
                           </TableCell>
                           <TableCell className="text-right tabular-nums">{p.requests}</TableCell>
@@ -945,22 +1110,22 @@ export default function AnalyticsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="pl-4">{t('common.model')}</TableHead>
-                        <TableHead>{t('common.provider')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.requests')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.pinned')}</TableHead>
-                        <TableHead className="text-right">{t('common.success')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.latency')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.inTokens')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.outTokens')}</TableHead>
-                        <TableHead className="text-right pr-4">{t('analytics.saved')}</TableHead>
+                        <SortableHeader column="model" label={t('common.model')} className="pl-4" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="provider" label={t('common.provider')} sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="requests" label={t('analytics.requests')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="pinned" label={t('analytics.pinned')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="success" label={t('common.success')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="latency" label={t('analytics.latency')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="inTokens" label={t('analytics.inTokens')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="outTokens" label={t('analytics.outTokens')} align="right" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
+                        <SortableHeader column="saved" label={t('analytics.saved')} align="right" className="pr-4" sort={byModelSort.sort} onToggle={byModelSort.toggle} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {byModel.map((m, i) => (
-                        <TableRow key={i}>
+                      {byModelRows.map((m) => (
+                        <TableRow key={`${m.providerId ?? m.platform}:${m.modelId}`}>
                           <TableCell className="pl-4 text-sm font-medium">{m.displayName}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{m.platform}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{m.endpoint ?? m.platform}</TableCell>
                           <TableCell className="text-right tabular-nums">{m.requests}</TableCell>
                           <TableCell className="text-right tabular-nums">{m.pinnedRequests > 0 ? m.pinnedRequests : '—'}</TableCell>
                           <TableCell className="text-right tabular-nums">{m.successRate}%</TableCell>
@@ -985,17 +1150,17 @@ export default function AnalyticsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="pl-4">{t('analytics.keyColumn')}</TableHead>
-                        <TableHead>{t('common.provider')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.requests')}</TableHead>
-                        <TableHead className="text-right">{t('common.success')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.latency')}</TableHead>
-                        <TableHead className="text-right">{t('analytics.inTokens')}</TableHead>
-                        <TableHead className="text-right pr-4">{t('analytics.outTokens')}</TableHead>
+                        <SortableHeader column="label" label={t('analytics.keyColumn')} className="pl-4" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="provider" label={t('common.provider')} sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="requests" label={t('analytics.requests')} align="right" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="success" label={t('common.success')} align="right" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="latency" label={t('analytics.latency')} align="right" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="inTokens" label={t('analytics.inTokens')} align="right" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
+                        <SortableHeader column="outTokens" label={t('analytics.outTokens')} align="right" className="pr-4" sort={byKeySort.sort} onToggle={byKeySort.toggle} />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {byKey.map((k) => (
+                      {byKeyRows.map((k) => (
                         <TableRow key={k.keyId}>
                           <TableCell className="pl-4 text-sm font-medium">
                             {k.label || t('analytics.keyLabelFallback', { id: k.keyId })}

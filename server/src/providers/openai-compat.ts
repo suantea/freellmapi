@@ -14,6 +14,29 @@ import { invalidToolCallReasons, isToolArgumentValidationEnabled } from '../lib/
 import { recordQuotaObservationsFromResponse, type QuotaObservationContext } from '../services/provider-quota.js';
 import { providerTimeoutMs } from '../lib/provider-timeout.js';
 import { isAbortLikeError } from '../lib/error-classify.js';
+import { contentToString } from '../lib/content.js';
+
+/** Hosts that ARE Moonshot's OpenAI-compatible API (api.moonshot.ai,
+ * api.moonshot.cn, api.kimi.com and their subdomains). */
+const MOONSHOT_HOST_SUFFIXES = ['moonshot.ai', 'moonshot.cn', 'kimi.com'];
+
+/**
+ * Whether a base URL points at Moonshot's own API. Moonshot documents an
+ * assistant-message `partial: true` prefill flag that no other OpenAI-compatible
+ * upstream understands, and there is no built-in moonshot platform — Kimi
+ * models are otherwise served by Groq, Cloudflare, OpenRouter, Hugging Face,
+ * Ollama, ... — so the flag is gated on the endpoint host, never on the model
+ * id. Returns false for anything that does not parse as a URL. (#1038)
+ */
+export function isMoonshotEndpoint(baseUrl: string): boolean {
+  let host: string;
+  try {
+    host = new URL(baseUrl).hostname.toLowerCase();
+  } catch {
+    return false;
+  }
+  return MOONSHOT_HOST_SUFFIXES.some((d) => host === d || host.endsWith(`.${d}`));
+}
 
 /**
  * Generic provider for platforms that use an OpenAI-compatible API.
@@ -34,6 +57,9 @@ export class OpenAICompatProvider extends BaseProvider {
    * `400 This model only supports single tool-calls at once!`. When set, pin
    * parallel_tool_calls to false whenever tools are in play. See issue #255. */
   private readonly forceSingleToolCall: boolean;
+  /** True only for a custom endpoint whose host is Moonshot's own API; see
+   * isMoonshotEndpoint(). Gates the assistant `partial` prefill flag (#1038). */
+  private readonly forwardsPartial: boolean;
 
   constructor(opts: {
     platform: Platform;
@@ -55,6 +81,7 @@ export class OpenAICompatProvider extends BaseProvider {
     this.timeoutMs = providerTimeoutMs(opts.platform, opts.timeoutMs ?? 60_000);
     this.keyless = opts.keyless ?? false;
     this.forceSingleToolCall = opts.forceSingleToolCall ?? false;
+    this.forwardsPartial = opts.platform === 'custom' && isMoonshotEndpoint(opts.baseUrl);
   }
 
   /** Resolve the parallel_tool_calls flag to send upstream. For providers that
@@ -124,7 +151,7 @@ export class OpenAICompatProvider extends BaseProvider {
   /** Requesty's Leanstral route rejects greedy sampling when temperature=0.
    * Omitting that value and supplying a neutral top_p keeps the caller's intent
    * deterministic enough while using the provider's supported sampling path. */
-  private samplingForModel(modelId: string, options?: CompletionOptions): {
+  protected samplingForModel(modelId: string, options?: CompletionOptions): {
     temperature: number | undefined;
     topP: number | undefined;
   } {
@@ -138,45 +165,83 @@ export class OpenAICompatProvider extends BaseProvider {
     return { temperature: options?.temperature, topP: options?.top_p };
   }
 
-  /** Mistral's OpenAI-compatible endpoint is strict about unknown nested fields
-   * and returns 422 for provider-private replay fields that other gateways
-   * ignore. Keep the OpenAI wire shape, but strip our internal reasoning /
-   * thought-signature extensions before sending to Mistral. */
-  private messagesForPlatform(messages: ChatMessage[]): ChatMessage[] {
-    if (this.platform !== 'mistral') return messages;
+  /**
+   * OpenAI-compatible endpoints that are strict about unknown nested fields:
+   * Mistral returns 422 for provider-private replay fields, Groq rejects
+   * assistant `reasoning_content` with 400 (verified in production, #1070),
+   * and Cerebras rejects it too — `property 'messages.N.assistant.
+   * reasoning_content' is unsupported` (confirmed via vercel/ai#15042 and
+   * opencode#26762, and by Cerebras' own docs, which use a `reasoning` field
+   * instead). Other gateways ignore the fields, so keep the OpenAI wire
+   * shape but strip our internal reasoning / thought-signature extensions
+   * before sending to these platforms.
+   */
+  private static readonly STRICT_PLATFORMS = new Set(['mistral', 'groq', 'cerebras']);
+  private messagesForPlatform(messages: ChatMessage[], modelId: string): ChatMessage[] {
+    if (OpenAICompatProvider.STRICT_PLATFORMS.has(this.platform)) {
+      // Rebuild every message from a whitelist of keys, so `partial` and the
+      // reasoning extensions never reach these platforms.
+      return messages.map((m) => {
+        if (m.role === 'assistant') {
+          return {
+            role: m.role,
+            content: m.content,
+            ...(m.name ? { name: m.name } : {}),
+            ...(m.tool_calls && m.tool_calls.length > 0 ? {
+              tool_calls: m.tool_calls.map((tc) => ({
+                id: tc.id,
+                type: tc.type,
+                function: {
+                  name: tc.function.name,
+                  arguments: tc.function.arguments,
+                },
+              })),
+            } : {}),
+          };
+        }
+        if (m.role === 'tool') {
+          return {
+            role: m.role,
+            content: m.content,
+            ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
+            ...(m.name ? { name: m.name } : {}),
+          };
+        }
+        return {
+          role: m.role,
+          content: m.content,
+          ...(m.name ? { name: m.name } : {}),
+        };
+      });
+    }
 
-    return messages.map((m) => {
-      if (m.role === 'assistant') {
-        return {
-          role: m.role,
-          content: m.content,
-          ...(m.name ? { name: m.name } : {}),
-          ...(m.tool_calls && m.tool_calls.length > 0 ? {
-            tool_calls: m.tool_calls.map((tc) => ({
-              id: tc.id,
-              type: tc.type,
-              function: {
-                name: tc.function.name,
-                arguments: tc.function.arguments,
-              },
-            })),
-          } : {}),
-        };
+    // Moonshot's assistant `partial` prefill flag only survives to the wire
+    // when this provider IS Moonshot's own API (a custom endpoint on a
+    // Moonshot/Kimi host). Every other OpenAI-compatible gateway — including
+    // the ones that serve Kimi models, like Groq, Cloudflare or OpenRouter —
+    // gets it stripped, since strict upstreams 400/422 on unknown message keys
+    // and the rest would ignore it anyway. (#1038)
+    const sanitized = this.forwardsPartial ? messages : messages.map((m) => {
+      if (m.role === 'assistant' && m.partial !== undefined) {
+        const { partial: _partial, ...rest } = m;
+        return rest;
       }
-      if (m.role === 'tool') {
-        return {
-          role: m.role,
-          content: m.content,
-          ...(m.tool_call_id ? { tool_call_id: m.tool_call_id } : {}),
-          ...(m.name ? { name: m.name } : {}),
-        };
-      }
-      return {
-        role: m.role,
-        content: m.content,
-        ...(m.name ? { name: m.name } : {}),
-      };
+      return m;
     });
+
+    // Qwen3.8-Flash-Next accepts exactly one system message, and only at index
+    // zero. Profiles can prepend a gateway system prompt to a client's own
+    // system message, so coalesce every system instruction before dispatch
+    // instead of letting an otherwise valid request fail upstream.
+    if (this.platform === 'radeon' && modelId === 'Qwen3.8-Flash-Next') {
+      const systems = sanitized.filter(m => m.role === 'system');
+      if (systems.length === 1 && sanitized[0]?.role === 'system') return sanitized;
+      const systemText = systems.map(m => contentToString(m.content)).filter(Boolean).join('\n\n');
+      const rest = sanitized.filter(m => m.role !== 'system');
+      return systemText ? [{ role: 'system', content: systemText }, ...rest] : rest;
+    }
+
+    return sanitized;
   }
 
   async chatCompletion(
@@ -196,7 +261,7 @@ export class OpenAICompatProvider extends BaseProvider {
       },
       body: JSON.stringify({
         model: modelId,
-        messages: this.messagesForPlatform(messages),
+        messages: this.messagesForPlatform(messages, modelId),
         temperature: sampling.temperature,
         max_tokens: resolveMaxTokens(this.platform, options?.max_tokens),
         top_p: sampling.topP,
@@ -315,7 +380,7 @@ export class OpenAICompatProvider extends BaseProvider {
       },
       body: JSON.stringify({
         model: modelId,
-        messages: this.messagesForPlatform(messages),
+        messages: this.messagesForPlatform(messages, modelId),
         temperature: sampling.temperature,
         max_tokens: resolveMaxTokens(this.platform, options?.max_tokens),
         top_p: sampling.topP,

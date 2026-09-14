@@ -27,6 +27,17 @@ const KEY_MODEL_SCOPE_FILENAME = '20260805_000001_key_model_scope.ts';
 const CLIENT_PROFILES_FILENAME = '20260805_000002_client_profiles.ts';
 const API_KEY_PROXY_FILENAME = '20260810_000001_api_key_proxy.ts';
 const PLAYGROUND_CONVERSATIONS_FILENAME = '20260820_000001_playground_conversations.ts';
+const CUSTOM_MODEL_TOMBSTONES_FILENAME = '20260819_000001_custom_model_tombstones.ts';
+const SERVER_LOGS_FILENAME = '20260823_000001_server_logs.ts';
+const BACKUPS_TABLE_FILENAME = '20260823_000002_backups_table.ts';
+const ATTEMPT_KEY_LABEL_FILENAME = '20260823_000003_attempt_key_label.ts';
+const PROFILE_AUTO_INCLUDE_FILENAME = '20260823_000004_profile_auto_include.ts';
+const IDEMPOTENCY_CLAIMS_FILENAME = '20260901_000001_idempotency_claims.ts';
+const QUOTA_OBSERVATION_LOOKUP_FILENAME = '20260901_000002_quota_observation_lookup.ts';
+const REQUEST_CALLER_FILENAME = '20260901_000003_request_caller.ts';
+const ANALYTICS_LATENCY_PERCENTILE_INDEX_FILENAME = '20260902_000001_analytics_latency_percentile_index.ts';
+const MCP_ENABLED_DEFAULT_FILENAME = '20260903_000001_mcp_enabled_default.ts';
+const RESPONSE_CACHE_FILENAME = '20260903_000002_response_cache.ts';
 
 interface SchemaRow {
   type: string;
@@ -99,7 +110,18 @@ describe('migration round trip', () => {
         KEY_MODEL_SCOPE_FILENAME,
         CLIENT_PROFILES_FILENAME,
         API_KEY_PROXY_FILENAME,
+        CUSTOM_MODEL_TOMBSTONES_FILENAME,
         PLAYGROUND_CONVERSATIONS_FILENAME,
+        SERVER_LOGS_FILENAME,
+        BACKUPS_TABLE_FILENAME,
+        ATTEMPT_KEY_LABEL_FILENAME,
+        PROFILE_AUTO_INCLUDE_FILENAME,
+        IDEMPOTENCY_CLAIMS_FILENAME,
+        QUOTA_OBSERVATION_LOOKUP_FILENAME,
+        REQUEST_CALLER_FILENAME,
+        ANALYTICS_LATENCY_PERCENTILE_INDEX_FILENAME,
+        MCP_ENABLED_DEFAULT_FILENAME,
+        RESPONSE_CACHE_FILENAME,
       ]);
     } finally {
       db.close();
@@ -128,6 +150,16 @@ describe('migration round trip', () => {
       db.prepare(`
         INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, base_url)
         VALUES ('custom', '127.0.0.1:11434', 'x', 'x', 'x', 'http://127.0.0.1:11434/v1')
+      `).run();
+
+      // Same again for the /mcp lifecycle seed (#925): it reads api_keys, and
+      // with the key above present its post-migration state is enabled ('1').
+      // The first up ran against an empty api_keys and wrote '0', so pin the
+      // post-seed value here for down (row removed) and up (row rewritten) to
+      // round trip.
+      db.prepare(`
+        INSERT INTO settings (key, value) VALUES ('enable_mcp', '1')
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value
       `).run();
 
       const fullState = snapshotAppState(db);

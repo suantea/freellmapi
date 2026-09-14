@@ -29,7 +29,16 @@ export const PLATFORMS: { value: Platform; label: string; url: string; keyless?:
   { value: 'google', label: 'Google AI Studio', url: 'https://aistudio.google.com/apikey' },
   { value: 'groq', label: 'Groq', url: 'https://console.groq.com/keys' },
   { value: 'cerebras', label: 'Cerebras', url: 'https://cloud.cerebras.ai' },
+  { value: 'sail', label: 'Sail Research ($5 monthly with payment method)', url: 'https://app.sailresearch.com' },
+  { value: 'electronhub', label: 'ElectronHub (shared weekly credits)', url: 'https://app.electronhub.ai' },
+  { value: 'experiential', label: 'Experiential Labs (shared monthly credits)', url: 'https://platform.experientiallabs.ai' },
+  { value: 'router9', label: 'Router9 (shared monthly credits)', url: 'https://www.router9.com' },
+  { value: 'septor', label: 'Septor Labs (daily free-model quota)', url: 'https://septorlabs.com/dashboard' },
+  { value: 'clod', label: 'CLōD (shared daily free requests)', url: 'https://newapp.clod.io' },
+  { value: 'speechify', label: 'Speechify (monthly free TTS characters)', url: 'https://platform.speechify.ai' },
+  { value: 'blaze', label: 'BlazeAPI (daily free tokens; Discord verification)', url: 'https://blazeapi.org/dashboard' },
   { value: 'bai', label: 'B.AI (promotional free model)', url: 'https://b.ai' },
+  { value: 'radeon', label: 'AMD Radeon Cloud (free shared models)', url: 'https://developer.amd.com.cn/radeon/tokenfactory' },
   { value: 'nvidia', label: 'NVIDIA NIM', url: 'https://build.nvidia.com/settings/api-keys' },
   { value: 'mistral', label: 'Mistral', url: 'https://console.mistral.ai/api-keys/' },
   { value: 'openrouter', label: 'OpenRouter', url: 'https://openrouter.ai/keys' },
@@ -56,6 +65,8 @@ export const PLATFORMS: { value: Platform; label: string; url: string; keyless?:
   { value: 'nara', label: 'NaraRouter (free key)', url: 'https://router.bynara.id' },
   { value: 'sealion', label: 'SEA-LION (free key)', url: 'https://sea-lion.ai' },
   { value: 'orcarouter', label: 'OrcaRouter (free key)', url: 'https://www.orcarouter.ai' },
+  { value: 'unorouter', label: 'UnoRouter (free key)', url: 'https://unorouter.com' },
+  { value: 'xkiro', label: 'xKiro (free key)', url: 'https://xkiro.com' },
   // AnyAPI advertises 100K tokens/day free, but live testing on 2026-08-10
   // could not get a single free-tier request served (see
   // CATALOG-ANYAPI-SMOKE-2026-08-10 in the ops repo). No quota claim until
@@ -86,6 +97,7 @@ export const CUSTOM_MODEL_KIND_LABEL: Record<ApiKeyModel['kind'], string> = {
   embedding: 'keys.customTypeEmbedding',
   image: 'keys.customTypeImage',
   audio: 'keys.customTypeAudio',
+  transcription: 'keys.customTypeTranscription',
 }
 
 export function customModelDeleteKey(model: ApiKeyModel): string {

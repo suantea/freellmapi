@@ -1,6 +1,6 @@
 {
   "name": "freellmapi",
-  "version": "0.4.0",
+  "version": "0.5.1",
   "description": "Set up coding agents to use a FreeLLMAPI gateway",
   "license": "MIT",
   "repository": {
@@ -51,17 +51,23 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
+    "lint": "eslint .",
     "prepublishOnly": "npm run build && npm test"
   },
   "engines": {
     "node": ">=20.18.0 <25.0.0"
   },
   "dependencies": {
-    "jsonc-parser": "^3.3.1"
+    "jsonc-parser": "^3.3.1",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
     "@types/node": "^24.12.2",
     "typescript": "~6.0.2",
-    "vitest": "^3.1.3"
+    "vitest": "^3.1.3",
+    "@eslint/js": "^9.39.4",
+    "eslint": "^9.39.4",
+    "globals": "^17.4.0",
+    "typescript-eslint": "^8.58.0"
   }
 }

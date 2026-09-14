@@ -1,11 +1,12 @@
 import { z } from 'zod';
 import { registerEngine } from '../registry.js';
-import { scanProtectedSpans } from '../preservation.js';
+import { hasProtectedSpan } from '../preservation.js';
 import { textContent, withTextContent } from '../helpers.js';
 import { BUILTIN_FILTERS, type ToolFilterRule } from './filter-definitions.js';
 import { loadCustomFilters } from './custom-filters.js';
 import type { CompressionEngine, ToolCallOrigin } from '../types.js';
 
+// eslint-disable-next-line no-control-regex -- matching ANSI escapes is the point.
 const ANSI_RE = /\u001b\[[0-?]*[ -/]*[@-~]/g;
 export const ERROR_GUARD_RE = /\b(?:error|exception|fatal|failed|failure|traceback|panic|assert(?:ion)?|not ok|✗|×)\b/i;
 
@@ -28,7 +29,7 @@ function matches(rule: ToolFilterRule, content: string, origin?: ToolCallOrigin)
 }
 
 function rawMustKeep(line: string): boolean {
-  return ERROR_GUARD_RE.test(line) || scanProtectedSpans(line).length > 0;
+  return ERROR_GUARD_RE.test(line) || hasProtectedSpan(line);
 }
 
 // One protected-span scan per distinct line per rule application; the same

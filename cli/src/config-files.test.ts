@@ -183,6 +183,81 @@ describe('safe config writes', () => {
     expect(first.match(/^GOOSE_MODEL:/gm)).toHaveLength(1);
   });
 
+  it('deep-merges structured YAML and retains sibling routes and comments', () => {
+    // DeepSeek Harness keeps every provider under one `llm-pi-ai.providers`
+    // dict. The marked-block YAML merge removes whole top-level keys it
+    // re-emits, which here would delete the user's other providers; the
+    // structured merge must touch only the path it sets.
+    const existing = [
+      '# my settings',
+      'llm-pi-ai:',
+      '  providers:',
+      '    anthropic:',
+      '      # keep me',
+      '      apiKeyEnv: ANTHROPIC_API_KEY',
+      '    freellmapi:',
+      '      baseURL: http://old:1/v1',
+      '      models:',
+      '        - id: stale',
+      'agent-default-model:',
+      '  provider: anthropic',
+      '  model: claude-sonnet-4-5',
+      '  reasoningEffort: high',
+      'other: { a: 1 }',
+      '',
+    ].join('\n');
+    const file = {
+      path: '/tmp/settings.yaml',
+      format: 'yaml' as const,
+      value: {
+        'llm-pi-ai': {
+          providers: {
+            freellmapi: {
+              baseURL: 'http://localhost:3001/v1',
+              models: [{ id: 'auto' }],
+            },
+          },
+        },
+        'agent-default-model': {
+          provider: 'freellmapi',
+          model: 'auto',
+          reasoningEffort: undefined,
+        },
+      },
+    };
+    const once = renderFile(file, existing);
+    expect(once).toContain('# my settings');
+    expect(once).toContain('# keep me');
+    expect(once).toContain('apiKeyEnv: ANTHROPIC_API_KEY');
+    expect(once).toContain('baseURL: http://localhost:3001/v1');
+    expect(once).not.toContain('http://old:1/v1');
+    expect(once).not.toContain('stale');
+    expect(once).toContain('provider: freellmapi');
+    expect(once).not.toContain('reasoningEffort');
+    expect(once).toContain('other: { a: 1 }');
+    expect(renderFile(file, once)).toBe(once);
+  });
+
+  it('renders structured YAML from an empty or comment-only document', () => {
+    const file = {
+      path: '/tmp/settings.yaml',
+      format: 'yaml' as const,
+      value: { a: { b: [1, 2] }, c: undefined },
+    };
+    expect(renderFile(file, '')).toBe('a:\n  b:\n    - 1\n    - 2\n');
+    expect(renderFile(file, '# only a comment\n')).toContain('a:\n  b:\n    - 1\n    - 2\n');
+  });
+
+  it('refuses to merge structured YAML into a document it cannot parse', () => {
+    const file = {
+      path: '/tmp/settings.yaml',
+      format: 'yaml' as const,
+      value: { a: 1 },
+    };
+    expect(() => renderFile(file, 'a: [1, 2\n')).toThrow(/cannot be parsed/);
+    expect(() => renderFile(file, '- just\n- a list\n')).toThrow(/not a mapping/);
+  });
+
   it('replaces conflicting Codex TOML settings and retains unrelated tables', () => {
     const existing = [
       '# personal config',
@@ -316,6 +391,48 @@ describe('safe config writes', () => {
     ], false)).toThrow('cannot be parsed safely');
     expect(fs.existsSync(good)).toBe(false);
     expect(fs.readFileSync(bad, 'utf8')).toBe('{ this is not json');
+  });
+
+  it('merges an AtomCode config: root key above existing tables, other providers kept', () => {
+    // A user with a DeepSeek provider already configured runs setup-atomcode:
+    // `default_provider` must land in the root region (a key appended after
+    // `[providers.deepseek]` would become that table's key), the deepseek
+    // table must survive, and a stale `[providers.freellmapi]` is replaced.
+    const existing = [
+      'default_provider = "deepseek"',
+      'auto_update = true',
+      '',
+      '[providers.deepseek]',
+      'type = "openai"',
+      'api_key = "sk-keep"',
+      'model = "deepseek-chat"',
+      '',
+      '[providers.freellmapi]',
+      'type = "openai"',
+      'model = "stale-model"',
+      '',
+    ].join('\n');
+    const generated = [
+      'default_provider = "freellmapi"',
+      '',
+      '[providers.freellmapi]',
+      'type = "openai"',
+      'base_url = "http://localhost:3000/v1"',
+      'api_key = "freellmapi-test-key"',
+      'model = "fast-coder"',
+      'context_window = 131072',
+    ].join('\n');
+    const merged = renderFile({ path: '/unused', format: 'toml', content: generated }, existing);
+    const lines = merged.split('\n');
+    const firstTable = lines.findIndex(line => line.startsWith('['));
+    expect(lines.slice(0, firstTable)).toContain('default_provider = "freellmapi"');
+    expect(lines.slice(0, firstTable)).toContain('auto_update = true');
+    expect(merged.match(/^default_provider =/gm)).toHaveLength(1);
+    expect(merged).toContain('[providers.deepseek]\ntype = "openai"\napi_key = "sk-keep"');
+    expect(merged.match(/^\[providers\.freellmapi\]$/gm)).toHaveLength(1);
+    expect(merged).not.toContain('stale-model');
+    expect(merged).toContain('context_window = 131072');
+    expect(renderFile({ path: '/unused', format: 'toml', content: generated }, merged)).toBe(merged);
   });
 
   it('creates a timestamped backup before replacing a real file', () => {

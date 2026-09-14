@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import type { Express } from 'express';
 import { createApp } from '../../app.js';
-import { initDb, getDb, getUnifiedApiKey } from '../../db/index.js';
+import { initDb, getDb, getUnifiedApiKey, setSetting } from '../../db/index.js';
 
 let app: Express;
 
@@ -34,6 +34,8 @@ describe('MCP server (/mcp, stateless Streamable HTTP)', () => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
     app = createApp();
+    // MCP is opt-in since #925 — these tests exercise the tool surface itself.
+    setSetting('enable_mcp', '1');
   });
 
   it('rejects requests without the unified key', async () => {

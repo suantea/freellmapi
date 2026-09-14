@@ -83,6 +83,44 @@ describe('POST /v1/responses (#96)', () => {
     expect(mockRouteRequest.mock.calls.at(-1)?.[3]).toBe(true);
   });
 
+  it('forwards a declared x-freellm-task-type to the router as the task arg (#1127)', async () => {
+    mockRouteRequest.mockClear();
+    mockRouteRequest.mockReturnValue(fakeRoute({
+      async chatCompletion() {
+        return {
+          id: 'c', object: 'chat.completion', created: 0, model: 'fake-model',
+          choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        };
+      },
+      async *streamChatCompletion() { /* unused */ },
+    }));
+
+    const { status } = await post(app, '/v1/responses', { input: 'refactor this function' }, key, { 'x-freellm-task-type': 'code' });
+    expect(status).toBe(200);
+    // routeRequest arg [10] is the task type.
+    expect(mockRouteRequest.mock.calls.at(-1)?.[10]).toBe('code');
+  });
+
+  it('leaves the task arg undefined when no task header is sent (#1127)', async () => {
+    mockRouteRequest.mockClear();
+    mockRouteRequest.mockReturnValue(fakeRoute({
+      async chatCompletion() {
+        return {
+          id: 'c', object: 'chat.completion', created: 0, model: 'fake-model',
+          choices: [{ index: 0, message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }],
+          usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+        };
+      },
+      async *streamChatCompletion() { /* unused */ },
+    }));
+
+    const { status } = await post(app, '/v1/responses', { input: 'hello there' }, key);
+    expect(status).toBe(200);
+    // routeRequest arg [10] is the task type; absent header ⇒ undefined ⇒ preset weights untouched.
+    expect(mockRouteRequest.mock.calls.at(-1)?.[10]).toBeUndefined();
+  });
+
   it('rejects a file_id-only input_image with 422 before routing (no Files backend)', async () => {
     mockRouteRequest.mockClear();
     const { status, text } = await post(app, '/v1/responses', {

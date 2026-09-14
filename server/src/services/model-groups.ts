@@ -166,13 +166,6 @@ export function qualifiedMemberId(row: GroupableRow): string | null {
   return qualifiedModelMemberId(row.platform, row.model_id, row.endpoint_scope);
 }
 
-// The grouping token for a row, after applying overrides. Split wins first
-// (forces a singleton/explicit key); then a merge redirects to its target;
-// otherwise the normalized display name.
-function tokenForRow(row: GroupableRow, ov: UnifyOverrides): string {
-  return tokenSourceForRow(row, ov).token;
-}
-
 /** The grouping token plus whether an operator override chose it. */
 function tokenSourceForRow(row: GroupableRow, ov: UnifyOverrides): { token: string; userDefined: boolean } {
   const mid = memberId(row);
@@ -360,6 +353,15 @@ export function resolveRequestedIdForDispatch(
 }
 
 // ── DB convenience ───────────────────────────────────────────────────────────
+
+// #1047: GET /api/fallback calls this on every request, and grouping the whole
+// catalog (regex + canonical-id assignment over hundreds of rows) dominated the
+// handler once the chain read went catalog-wide (#1023). The SELECT itself is a
+// cheap pk scan, so run it every time and memoize only the expensive grouping,
+// keyed on a fingerprint of the exact inputs — any row change, in place or not,
+// and any override change recomputes, so this can never serve stale groups.
+let groupsCache: { fingerprint: string; groups: ModelGroup[] } | null = null;
+
 /**
  * Group the whole catalog (enabled + disabled rows so availability can be shown
  * and resolution is complete), applying the persisted overrides.
@@ -372,5 +374,13 @@ export function getModelGroups(): ModelGroup[] {
     FROM models m
     ORDER BY m.id
   `).all() as GroupableRow[];
-  return groupRows(rows, getUnifyOverrides());
+  const overrides = getUnifyOverrides();
+  let fingerprint = JSON.stringify(overrides);
+  for (const r of rows) {
+    fingerprint += ` ${r.model_db_id}${r.platform}${r.model_id}${r.display_name}${r.intelligence_rank}${r.endpoint_scope ?? ''}`;
+  }
+  if (groupsCache?.fingerprint === fingerprint) return groupsCache.groups;
+  const groups = groupRows(rows, overrides);
+  groupsCache = { fingerprint, groups };
+  return groups;
 }

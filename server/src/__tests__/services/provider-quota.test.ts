@@ -6,6 +6,7 @@ import {
   parseQuotaObservationsFromResponse,
   inferQuotaPoolKey,
 } from '../../services/provider-quota.js';
+import { pruneQuotaObservations } from '../../services/request-retention.js';
 
 function insertState(row: {
   platform: string;
@@ -39,12 +40,28 @@ describe('provider-quota: pool inference', () => {
 
   it('buckets shared-pool providers per account and openrouter free vs account', () => {
     expect(inferQuotaPoolKey('groq')).toBe('groq::account');
+    expect(inferQuotaPoolKey('electronhub', 'qwen3.8-flash')).toBe('electronhub::weekly-credit');
+    expect(inferQuotaPoolKey('electronhub', 'gpt-oss-120b')).toBe('electronhub::weekly-credit');
+    expect(inferQuotaPoolKey('electronhub', 'some-model:free')).toBe('electronhub::daily-free');
+    expect(inferQuotaPoolKey('experiential', 'glm-5.3')).toBe('experiential::monthly-credit');
+    expect(inferQuotaPoolKey('experiential', 'gpt-5.6-sol')).toBe('experiential::monthly-credit');
+    expect(inferQuotaPoolKey('router9', 'minimax/minimax-m3')).toBe('router9::monthly-credit');
+    expect(inferQuotaPoolKey('router9', 'another-model')).toBe('router9::monthly-credit');
+    expect(inferQuotaPoolKey('septor', 'qwen3-coder-free')).toBe('septor::daily-free');
+    expect(inferQuotaPoolKey('septor', 'minimax-m2.5-free')).toBe('septor::daily-free');
+    for (const model of ['first-model', 'another-model']) {
+      expect(inferQuotaPoolKey('clod', model)).toBe('clod::daily-free');
+      expect(inferQuotaPoolKey('blaze', model)).toBe('blaze::daily-free');
+      expect(inferQuotaPoolKey('speechify', model)).toBe('speechify::monthly-characters');
+    }
     expect(inferQuotaPoolKey('openrouter', 'meta-llama/llama-3.1-8b-instruct:free')).toBe('openrouter::free');
     expect(inferQuotaPoolKey('openrouter', 'openai/gpt-4o')).toBe('openrouter::account');
     // AnyAPI's 100K tokens/day is one account-wide budget, so every model on
     // the platform shares a single pool.
     expect(inferQuotaPoolKey('anyapi')).toBe('anyapi::free');
     expect(inferQuotaPoolKey('anyapi', 'qwen/qwen3-coder:free')).toBe('anyapi::free');
+    expect(inferQuotaPoolKey('radeon', 'DeepSeek-V4-Flash')).toBe('radeon::daily-free');
+    expect(inferQuotaPoolKey('radeon', 'Qwen3.8-Flash-Next')).toBe('radeon::daily-free');
     // Unknown platform falls back to platform::model or platform::account.
     expect(inferQuotaPoolKey('acme' as any, 'x')).toBe('acme::x');
     expect(inferQuotaPoolKey('acme' as any)).toBe('acme::account');
@@ -60,6 +77,83 @@ describe('provider-quota: record + read round-trip', () => {
   beforeEach(() => {
     getDb().prepare('DELETE FROM provider_quota_state').run();
     getDb().prepare('DELETE FROM provider_quota_observations').run();
+  });
+
+  it('surfaces the newest observation per pool when the log holds many', () => {
+    // Older rows for the same pool must never win, and rows for a sibling pool
+    // must never bleed across. Mirrors the dashboard poll on a long-lived
+    // install whose log holds hundreds of thousands of rows per pool.
+    for (let i = 0; i < 25; i++) {
+      recordQuotaObservation({
+        platform: 'groq', keyId: 7, quotaPoolKey: 'groq::account', metric: 'tokens',
+        limit: 1000, remaining: 1000 - i, modelId: `old-${i}`, source: 'header',
+        observedAt: new Date(Date.UTC(2026, 0, 1, 0, i)).toISOString(),
+      });
+    }
+    recordQuotaObservation({
+      platform: 'groq', keyId: 7, quotaPoolKey: 'groq::account', metric: 'tokens',
+      limit: 1000, remaining: 5, modelId: 'newest', source: 'header',
+      observedAt: new Date(Date.UTC(2026, 0, 2)).toISOString(),
+    });
+    recordQuotaObservation({
+      platform: 'groq', keyId: 7, quotaPoolKey: 'groq::account', metric: 'requests',
+      limit: 30, remaining: 1, modelId: 'other-metric', source: 'header',
+      observedAt: new Date(Date.UTC(2026, 0, 3)).toISOString(),
+    });
+    const rows = getQuotaStateForKeys().filter(r => r.platform === 'groq' && r.keyId === 7);
+    expect(rows).toHaveLength(2);
+    expect(rows.find(r => r.metric === 'tokens')?.modelId).toBe('newest');
+    expect(rows.find(r => r.metric === 'tokens')?.remaining).toBe(5);
+    expect(rows.find(r => r.metric === 'requests')?.modelId).toBe('other-metric');
+  });
+
+  it('prunes the observation log by age and count without touching state', () => {
+    const db = getDb();
+    const insert = db.prepare(`
+      INSERT INTO provider_quota_observations
+        (id, platform, key_id, quota_pool_key, metric, observed_at, created_at)
+      VALUES (?, 'groq', 7, 'groq::account', 'tokens', ?, ?)
+    `);
+    const now = Date.UTC(2026, 8, 1);
+    const stamp = (ms: number) => new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+    for (let i = 0; i < 10; i++) {
+      // 5 rows older than 30 days, 5 fresh ones.
+      const at = stamp(now - (i < 5 ? 40 : 1) * 86_400_000 - i * 1000);
+      insert.run(`obs-${i}`, at, at);
+    }
+    insertState({ platform: 'groq', keyId: 7, pool: 'groq::account', metric: 'tokens', limit: 1000, remaining: 10, resetAt: null });
+
+    expect(pruneQuotaObservations(db, now)).toEqual({ deleted: 5, done: true });
+    expect(db.prepare('SELECT COUNT(*) AS n FROM provider_quota_observations').get()).toEqual({ n: 5 });
+
+    process.env.QUOTA_OBSERVATIONS_MAX_ROWS = '2';
+    try {
+      expect(pruneQuotaObservations(db, now)).toEqual({ deleted: 3, done: true });
+    } finally {
+      delete process.env.QUOTA_OBSERVATIONS_MAX_ROWS;
+    }
+    const left = db.prepare('SELECT id FROM provider_quota_observations ORDER BY created_at DESC').all() as { id: string }[];
+    expect(left.map(r => r.id)).toEqual(['obs-5', 'obs-6']);
+    expect(readState('groq', 7, 'groq::account', 'tokens')?.remaining).toBe(10);
+  });
+
+  it('stops a large sweep at its time budget and reports it unfinished', () => {
+    const db = getDb();
+    const insert = db.prepare(`
+      INSERT INTO provider_quota_observations
+        (id, platform, key_id, quota_pool_key, metric, observed_at, created_at)
+      VALUES (?, 'groq', 7, 'groq::account', 'tokens', ?, ?)
+    `);
+    const now = Date.UTC(2026, 8, 1);
+    const old = new Date(now - 60 * 86_400_000).toISOString().slice(0, 19).replace('T', ' ');
+    const tx = db.transaction(() => { for (let i = 0; i < 45_000; i++) insert.run(`o-${i}`, old, old); });
+    tx();
+    // A zero budget allows exactly one chunk before the check trips.
+    const first = pruneQuotaObservations(db, now, 0);
+    expect(first.done).toBe(false);
+    expect(first.deleted).toBe(5_000);
+    const rest = pruneQuotaObservations(db, now, 60_000);
+    expect(rest).toEqual({ deleted: 40_000, done: true });
   });
 
   it('records an observation and surfaces it via getQuotaStateForKeys', () => {
@@ -111,6 +205,23 @@ describe('provider-quota: record + read round-trip', () => {
 });
 
 describe('provider-quota: parse from response headers (shared parseRetryAfterMs)', () => {
+  it('records Blaze token headers without fabricating a reset or per-model grant', () => {
+    const obs = parseQuotaObservationsFromResponse(new Response(null, { headers: {
+      'x-ratelimit-limit-tokens': '200000', 'x-ratelimit-remaining-tokens': '199499',
+    } }), { platform: 'blaze', modelId: 'test-model' });
+    expect(obs).toHaveLength(1);
+    expect(obs[0]).toMatchObject({ metric: 'tokens', limit: 200000, remaining: 199499, resetAt: null, quotaPoolKey: 'blaze::daily-free' });
+  });
+
+  it('records only CLōD\'s observed request window, not an invented daily token quota', () => {
+    const obs = parseQuotaObservationsFromResponse(new Response(null, { headers: {
+      'x-ratelimit-limit': '5', 'x-ratelimit-remaining': '4', 'x-ratelimit-reset': '1789230900',
+    } }), { platform: 'clod', modelId: 'test-model' });
+    expect(obs).toHaveLength(1);
+    expect(obs[0]).toMatchObject({ metric: 'requests', limit: 5, remaining: 4, quotaPoolKey: 'clod::daily-free' });
+    const speech = parseQuotaObservationsFromResponse(new Response(null), { platform: 'speechify' });
+    expect(speech.every(o => o.limit == null && o.remaining == null)).toBe(true);
+  });
   beforeAll(() => {
     process.env.ENCRYPTION_KEY = '0'.repeat(64);
     initDb(':memory:');
@@ -139,6 +250,59 @@ describe('provider-quota: parse from response headers (shared parseRetryAfterMs)
     expect(obs.some(o => o.retryAfterMs === 30_000)).toBe(true);
     // A 429 always marks the pool as remaining 0.
     expect(obs.some(o => o.remaining === 0)).toBe(true);
+  });
+
+  it('parses Radeon Cloud RPM and recurring daily allowance headers', () => {
+    const resp = new Response(null, {
+      status: 200,
+      headers: {
+        'x-ratelimit-limit-user-rpm': '30',
+        'x-ratelimit-remaining-user-rpm': '29',
+        'x-ratelimit-reset': '60',
+        'x-ratelimit-limit-user-daily-usd': '10',
+        'x-ratelimit-used-user-daily-usd': '2.5',
+        'x-ratelimit-remaining-user-daily-usd': '7.5',
+        'x-ratelimit-reset-user-daily-usd': '86400',
+      },
+    });
+    const obs = parseQuotaObservationsFromResponse(resp, { platform: 'radeon', keyId: 9 });
+    expect(obs.find(o => o.metric === 'requests')).toMatchObject({
+      quotaPoolKey: 'radeon::daily-free', limit: 30, remaining: 29,
+    });
+    expect(obs.find(o => o.metric === 'credits')).toMatchObject({
+      quotaPoolKey: 'radeon::daily-free', limit: 10, remaining: 7.5,
+    });
+  });
+
+  it('uses ElectronHub account headers without inventing per-model credit limits', () => {
+    const response = new Response(null, { headers: {
+      'x-ratelimit-limit': '5', 'x-ratelimit-remaining': '4', 'x-ratelimit-reset': '1788690000',
+    } });
+    const observations = parseQuotaObservationsFromResponse(response, {
+      platform: 'electronhub', keyId: 9, modelId: 'qwen3.8-flash',
+    });
+    expect(observations.find(o => o.metric === 'requests')).toMatchObject({
+      quotaPoolKey: 'electronhub::weekly-credit', limit: 5, remaining: 4,
+      resetAt: new Date(1788690000000).toISOString(),
+    });
+    expect(observations.some(o => o.metric === 'credits')).toBe(false);
+  });
+
+  it('keeps Router9 decimal credit observations separate from tokens and undocumented request windows', () => {
+    const obs = parseQuotaObservationsFromResponse(new Response(null, { headers: {
+      'x-credits-limit': '50000', 'x-credits-remaining': '49998.4484',
+      'x-ratelimit-limit-4h': '1000', 'x-ratelimit-limit-weekly': '100',
+    } }), { platform: 'router9', modelId: 'minimax/minimax-m3' });
+    expect(obs).toHaveLength(1);
+    expect(obs[0]).toMatchObject({ metric: 'credits', quotaPoolKey: 'router9::monthly-credit', limit: 50000, remaining: 49998.4484, resetAt: null });
+  });
+
+  it('observes Septor reported limits without treating signup credits as a monthly grant', () => {
+    const obs = parseQuotaObservationsFromResponse(new Response(null, { headers: {
+      'x-ratelimit-limit': '60', 'x-ratelimit-remaining': '53', 'x-ratelimit-reset': '1789074787',
+    } }), { platform: 'septor', modelId: 'qwen3-coder-free' });
+    expect(obs[0]).toMatchObject({ metric: 'requests', quotaPoolKey: 'septor::daily-free', limit: 60, remaining: 53 });
+    expect(obs.some(o => o.metric === 'credits')).toBe(false);
   });
 });
 

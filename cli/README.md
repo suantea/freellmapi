@@ -26,6 +26,8 @@ dashboard (or the tray popover in the desktop app).
 | `setup-roo` | Roo Code |
 | `setup-kilo` | Kilo Code |
 | `setup-crush` | Crush |
+| `setup-dsh` | DeepSeek Harness (`dsh`) |
+| `setup-mimo` | MiMo Code (`mimo`) |
 | `setup-cursor` | Cursor |
 | `setup-generic` | Any OpenAI-compatible client |
 | `launch` | Run Claude Code with credentials injected into the child process |
@@ -56,11 +58,11 @@ them into the child process environment for that run only.
 ## Requirements
 
 Node.js >= 20.18. A running FreeLLMAPI gateway
-([install guide](https://github.com/tashfeenahmed/freellmapi/blob/main/docs/install.md)).
+([install guide](https://github.com/tashfeenahmed/freellmapi/blob/main/docs/en/install/01-install.md)).
 
 ## Links
 
-- [Clients & coding agents guide](https://github.com/tashfeenahmed/freellmapi/blob/main/docs/clients.md)
+- [Clients & coding agents guide](https://github.com/tashfeenahmed/freellmapi/blob/main/docs/en/clients/01-agent-clients.md)
 - [Issue tracker](https://github.com/tashfeenahmed/freellmapi/issues)
 
 MIT © Tashfeen Ahmed
