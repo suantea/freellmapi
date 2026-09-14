@@ -470,8 +470,9 @@ limit. Media requests count toward the request cap; the current media adapters
 do not report token usage. Reservations coordinate requests within one gateway
 process, not across multiple gateway replicas.
 
-When all otherwise eligible keys have exhausted their monthly budget, inference
-returns HTTP `429` with a `Retry-After` header pointing to the next UTC month.
-OpenAI-compatible endpoints also return `error.code: "quota_exceeded"`; other
-protocol adapters preserve their native error format. If another key has capacity,
-normal fallback can use it.
+When all otherwise eligible keys have exhausted their monthly budget, standard
+chat, embeddings, and media routing returns HTTP `429` with a `Retry-After` header
+pointing to the next UTC month. OpenAI-compatible endpoints also return
+`error.code: "quota_exceeded"`; other protocol adapters preserve their native
+error format. Fusion subcalls obey the caps but retain Fusion's aggregate error
+format. If another key has capacity, normal fallback can use it.
