@@ -137,7 +137,7 @@ export function noteEndpointFailure(
 }
 
 /** A served request is the strongest evidence an endpoint is alive — reset. */
-export function noteEndpointSuccess(platform: string, endpointScope: string, now: number = Date.now()): void {
+export function noteEndpointSuccess(platform: string, endpointScope: string, _now: number = Date.now()): void {
   if (disabled()) return;
   const key = endpointHealthKey(platform, endpointScope);
   const rec = endpoints.get(key);
