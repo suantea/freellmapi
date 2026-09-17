@@ -25,25 +25,36 @@ import {
   HEDGE_BENCH_MIN_SILENT_FRACTION,
   type FallbackHooks,
 } from '../../lib/fallback-loop.js';
-import { isOnCooldown, clearCooldownsForKey } from '../../services/ratelimit.js';
+import { isOnCooldown, clearCooldownsForKey, resetKeyLocalityCache } from '../../services/ratelimit.js';
 import type { RouteResult } from '../../services/router.js';
 
 const PLATFORM = 'groq';
+let keyA = 0;
+let keyB = 0;
 
 const inBandError = () => new Error('in-band provider error from Nvidia: Service temporarily overloaded');
 const fastInBandError = () => new Error('in-band provider error from Groq: tool_use_failed');
 
+function insertKey(label: string): number {
+  const { encrypted, iv, authTag } = encrypt(`test-${label}`);
+  const info = getDb().prepare(`
+    INSERT INTO api_keys (platform, label, encrypted_key, iv, auth_tag, status, enabled)
+    VALUES (?, ?, ?, ?, ?, 'healthy', 1)
+  `).run(PLATFORM, label, encrypted, iv, authTag);
+  return Number(info.lastInsertRowid);
+}
+
 function routeFor(keyId: number, modelId = 'llama-3.3-70b'): RouteResult {
   return {
-    provider: {} as RouteResult['provider'],
+    provider: {} as any,
     modelId,
     modelDbId: 1,
     apiKey: 'k',
     keyId,
-    keyLabel: null,
     platform: PLATFORM,
-    displayName: PLATFORM,
-    endpointScope: '',
+    displayName: modelId,
+    rpdLimit: null,
+    tpdLimit: null,
   };
 }
 
@@ -62,19 +73,19 @@ function hooks(overrides: Partial<FallbackHooks>): FallbackHooks {
 }
 
 beforeAll(() => {
+  process.env.ENCRYPTION_KEY = '0'.repeat(64);
   process.env.NODE_ENV = 'test';
   initDb(':memory:');
   const db = getDb();
-  db.prepare(`INSERT INTO api_keys (id, api_key, api_key_hash, enabled) VALUES (1, 'k', 'h1', 1)`).run();
-  db.prepare(`INSERT INTO api_keys (id, api_key, api_key_hash, enabled) VALUES (2, 'k', 'h2', 1)`).run();
-  const enc = encrypt('k');
-  db.prepare(`UPDATE api_keys SET api_key = ?, api_key_hash = ? WHERE id = ?`).run(enc.encrypted, enc.hash, 1);
-  db.prepare(`UPDATE api_keys SET api_key = ?, api_key_hash = ? WHERE id = ?`).run(enc.encrypted, enc.hash, 2);
+  db.prepare('DELETE FROM api_keys').run();
+  keyA = insertKey('key-a');
+  keyB = insertKey('key-b');
+  resetKeyLocalityCache();
 });
 
 beforeEach(() => {
-  clearCooldownsForKey(PLATFORM, 1);
-  clearCooldownsForKey(PLATFORM, 2);
+  clearCooldownsForKey(PLATFORM, keyA);
+  clearCooldownsForKey(PLATFORM, keyB);
 });
 
 // The wall clock is what decides "late" — these tests use a tiny budget and a
@@ -84,14 +95,14 @@ const BUDGET_MS = 400;
 describe('late in-band provider error benches the route (#1218 Gap 3)', () => {
   it('an in-band error after most of the budget benches the route for the truncation window', async () => {
     const onExhausted = vi.fn();
-    const candidates = [routeFor(1), routeFor(2)];
+    const candidates = [routeFor(keyA), routeFor(keyB)];
     let calls = 0;
     await runFallbackLoop(hooks({
       timeBudgetMs: BUDGET_MS,
       maxRetries: 2,
       route: () => candidates[calls++] ?? (() => { throw Object.assign(new Error('empty'), { status: 429 }); })(),
       dispatch: async (r) => {
-        if (r.keyId === 1) {
+        if (r.keyId === keyA) {
           await new Promise(res => setTimeout(res, BUDGET_MS * HEDGE_BENCH_MIN_SILENT_FRACTION + 50));
           throw inBandError();
         }
@@ -110,14 +121,14 @@ describe('late in-band provider error benches the route (#1218 Gap 3)', () => {
 
   it('an in-band error that arrives EARLY does not bench the route', async () => {
     const onExhausted = vi.fn();
-    const candidates = [routeFor(1), routeFor(2)];
+    const candidates = [routeFor(keyA), routeFor(keyB)];
     let calls = 0;
     await runFallbackLoop(hooks({
       timeBudgetMs: BUDGET_MS,
       maxRetries: 2,
       route: () => candidates[calls++] ?? (() => { throw Object.assign(new Error('empty'), { status: 429 }); })(),
       dispatch: async (r) => {
-        if (r.keyId === 1) throw fastInBandError();
+        if (r.keyId === keyA) throw fastInBandError();
         return 'done' as const;
       },
       onExhausted,
