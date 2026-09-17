@@ -10,10 +10,15 @@ import type { Db } from '../types.js';
  * fresh install build a P95 baseline from historical traffic without waiting
  * 10+ requests to accumulate.
  *
- * PK is (platform, endpoint_scope, observed_at) — same granularity as
- * request_attempts.endpoint_scope (#1255). INSERT-only: old data ages out
- * naturally via the 7-day window check in ttfb-budget.ts and can be pruned
- * by the existing retention policy once that is extended to cover this table.
+ * The `endpoint_scope` column lives in `request_attempts` (migration
+ * 20260917_000001_attempt_endpoint_scope) and may not exist on a legacy
+ * baseline. Read it conditionally: legacy rows default to '' (catalog
+ * platforms), new rows carry the scope. The PK is (platform, endpoint_scope,
+ * observed_at) — same pattern as request_attempts.endpoint_scope.
+ *
+ * INSERT-only: old data ages out naturally via the 7-day window check in
+ * ttfb-budget.ts and can be pruned by the existing retention policy once
+ * that is extended to cover this table.
  */
 export function up(db: Db): void {
   db.exec(`
@@ -24,16 +29,19 @@ export function up(db: Db): void {
       observed_at TEXT NOT NULL DEFAULT (datetime('now')),
       PRIMARY KEY (platform, endpoint_scope, observed_at)
     );
+    -- Seed from requests: uses legacy-compatible SELECT (requests never had
+    -- endpoint_scope; catalog platforms map to '' here). endpoint_scope
+    -- from request_attempts is only available on newer installs.
     INSERT OR IGNORE INTO ttfb_samples (platform, endpoint_scope, ttfb_ms, observed_at)
-    SELECT platform,
-           COALESCE(endpoint_scope, ''),
-           COALESCE(ttfb_ms, 0),
-           created_at
-      FROM requests
-     WHERE ttfb_ms IS NOT NULL
-       AND ttfb_ms > 0
-       AND status = 'success'
-       AND created_at >= datetime('now', '-7 days')
+    SELECT r.platform,
+           '',
+           COALESCE(r.ttfb_ms, 0),
+           r.created_at
+      FROM requests r
+     WHERE r.ttfb_ms IS NOT NULL
+       AND r.ttfb_ms > 0
+       AND r.status = 'success'
+       AND r.created_at >= datetime('now', '-7 days');
   `);
 }
 
