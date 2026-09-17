@@ -198,6 +198,19 @@ describe('distinct model_not_found hops short-circuit the platform within one re
     expect(state.skipPlatforms.has(PLATFORM)).toBe(false);
   });
 
+  it('never rules out the shared custom platform: each relay has its own catalog', () => {
+    const state = newFallbackState();
+    // Three different relays, one stale model each. They all carry the platform
+    // id 'custom', so a platform-wide skip would take healthy relays with it.
+    models.slice(0, 3).forEach((model, i) => {
+      const route = { ...routeFor(model, keyA), platform: 'custom', endpointScope: `https://relay-${i}.example/v1` };
+      recordRetryableFailure(route, notFoundErr(), state);
+    });
+    expect(state.skipPlatforms.has('custom')).toBe(false);
+    // The per-model skip still applies.
+    expect(state.skipModels.size).toBe(3);
+  });
+
   it('misses on sibling keys of the same platform tally together (the catalog is shared)', () => {
     const state = newFallbackState();
     recordRetryableFailure(routeFor(models[0], keyA), notFoundErr(), state);

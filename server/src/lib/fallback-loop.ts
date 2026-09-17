@@ -419,7 +419,10 @@ export function recordRetryableFailure(route: RouteResult, err: any, state: Fall
   // rule the whole platform out for the rest of the request: the catalog (or
   // the key's access to it) is broken, and the next PROVIDER is the better
   // hop. Same request-scoped lifetime as skipModels (#111/#256 semantics).
-  if (isModelNotFoundError(err)) {
+  // Custom relays are exempt: every relay shares the one platform id 'custom'
+  // (#651), so three misses spread over three different relays would rule out
+  // every healthy relay too. Their misses stay per-model.
+  if (isModelNotFoundError(err) && !route.endpointScope) {
     const seen = state.modelNotFoundPlatforms.get(route.platform) ?? new Set<number>();
     seen.add(route.modelDbId);
     state.modelNotFoundPlatforms.set(route.platform, seen);
