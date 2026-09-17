@@ -1303,9 +1303,10 @@ async function runFallbackLoopAttempts(hooks: FallbackHooks, trace: RequestTrace
   // Per-endpoint TTFB-aware budget (#1262 / #1218 Gap 2): the base budget is
   // the existing global setting, but slow endpoints (P95 TTFB > base) get a
   // wider budget = max(base, p95 + buffer). Fast endpoints keep their base.
-  const route0 = hooks.route(0);
-  const budgetFn = () => effectiveBudgetMs(route0.platform, route0.endpointScope ?? '');
-  const budgetMs = hooks.timeBudgetMs ?? budgetFn();
+  // Resolved lazily from the FIRST routed attempt — route() belongs to the
+  // loop (test stubs assert its call pattern), never called ahead of it.
+  let budgetMs = hooks.timeBudgetMs ?? getFallbackTimeBudgetMs();
+  let budgetResolved = hooks.timeBudgetMs !== undefined;
   const startedAt = Date.now();
   const attempts: AttemptRecord[] = hooks.attemptLog ?? [];
   const keyOrdinals = new Map<string, number>();
@@ -1379,6 +1380,11 @@ async function runFallbackLoopAttempts(hooks: FallbackHooks, trace: RequestTrace
       if (!lastError) logRoutingExhaustion(routeErr, hooks.logIdentity);
       hooks.onRoutingExhausted(lastError, routeErr, exhaustion, { attempts, timedOut: false });
       return;
+    }
+
+    if (!budgetResolved) {
+      budgetMs = effectiveBudgetMs(route.platform, route.endpointScope);
+      budgetResolved = true;
     }
 
     // Per-attempt trace record: pushed exactly once per dispatched attempt, on
