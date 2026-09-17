@@ -86,6 +86,10 @@ function getBucket(key: string): BucketState {
 }
 
 function disabled(): boolean {
+  // Tests drive the budget via hooks.timeBudgetMs / getFallbackTimeBudgetMs
+  // mocks and fake timers; sample leakage across tests through the module-level
+  // bucket map would silently stretch the budget and break those contracts.
+  if (process.env.NODE_ENV === 'test' || process.env.VITEST === 'true') return true;
   return process.env.TTFB_BUDGET_DISABLED === '1';
 }
 
