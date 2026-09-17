@@ -207,10 +207,16 @@ export function effectiveBudgetMs(platform: string, endpointScope: string, nowMs
   const rec = getBucket(key);
   pruneSamples(rec, nowMs);
   if (Date.now() - rec.lastUpdatedMs > CACHE_TTL_MS || rec.cachedBudgetMs === 0) {
-    const p95 = rec.samples.length > 0 ? estimateBudgetMs(key, rec, nowMs) : 0;
+    const base = baseBudgetMs();
     const buffer = slowBufferMs();
     const cap = p95CapMs();
-    rec.cachedBudgetMs = Math.min(baseBudgetMs() + p95 + buffer, cap);
+    // Effective budget = min(max(base, p95 + buffer), cap). With no samples
+    // (or a fast endpoint, p95 < base) this is exactly the base budget —
+    // zero behavior change; only evidence-backed slow endpoints stretch.
+    const p95 = rec.samples.length > 0 ? estimateBudgetMs(key, rec, nowMs) : 0;
+    rec.cachedBudgetMs = p95 > 0
+      ? Math.min(Math.max(base, p95 + buffer), cap)
+      : base;
     rec.lastUpdatedMs = Date.now();
   }
   return rec.cachedBudgetMs;
