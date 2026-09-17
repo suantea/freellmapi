@@ -415,8 +415,9 @@ export function recordRetryableFailure(route: RouteResult, err: any, state: Fall
   // endpoint health state machine accumulates it across requests — the one
   // memory the per-request skip sets and the timer-based cooldown ladder
   // cannot provide. Periodic failures (429/402) are deliberately filtered
-  // inside noteEndpointFailure.
-  noteEndpointFailure(route.platform, route.endpointScope ?? '', classifyAttemptError(err), now);
+  // inside noteEndpointFailure. The raw error rides along so definitive
+  // model-gone wording (410/EOL) can escalate the endpoint faster (#1254 PR 3).
+  noteEndpointFailure(route.platform, route.endpointScope ?? '', classifyAttemptError(err), now, err);
   // `skipModelForRequest: true` = the failure is MODEL behavior, not key
   // state (ignored response_format, JSON truncated at max_tokens): a sibling
   // key would reproduce it exactly, so rule out the whole model for this
