@@ -16,7 +16,7 @@ vi.mock('../../services/health.js', () => ({
   markKeyHealthyFromRequest: vi.fn(),
 }));
 
-import { initDb } from '../../db/index.js';
+import { initDb, getDb } from '../../db/index.js';
 import { encrypt } from '../../lib/crypto.js';
 import {
   newFallbackState,
@@ -64,11 +64,7 @@ function hooks(overrides: Partial<FallbackHooks>): FallbackHooks {
 beforeAll(() => {
   process.env.NODE_ENV = 'test';
   initDb(':memory:');
-  const db = (() => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getDb } = require('../../db/index.js') as typeof import('../../db/index.js');
-    return getDb();
-  })();
+  const db = getDb();
   db.prepare(`INSERT INTO api_keys (id, api_key, api_key_hash, enabled) VALUES (1, 'k', 'h1', 1)`).run();
   db.prepare(`INSERT INTO api_keys (id, api_key, api_key_hash, enabled) VALUES (2, 'k', 'h2', 1)`).run();
   const enc = encrypt('k');
