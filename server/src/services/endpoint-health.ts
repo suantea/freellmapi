@@ -40,6 +40,7 @@
 
 import type { Scheduler } from '../lib/scheduler.js';
 import { providerLog } from '../lib/server-logs.js';
+import { modelRetirementSignal } from '../lib/error-classify.js';
 import type { AttemptErrorClass } from '../lib/fallback-loop.js';
 
 // Structural failures inside SUSPECT_WINDOW_MS escalate to suspect at N=2.
@@ -112,27 +113,42 @@ function pruneFailures(rec: EndpointRecord, now: number): void {
 }
 
 /** Record one failed attempt against an endpoint. Called from the fallback
- *  loop's failure bookkeeping — off the response path, same as the ladder. */
+ *  loop's failure bookkeeping — off the response path, same as the ladder.
+ *
+ *  Escalation is confidence-weighted (#1254 PR 3): a definitive model-gone
+ *  signal (410 Gone / end-of-life wording, the same classifier
+ *  model-retirement.ts trusts for model disabling) counts as TWO structural
+ *  failures — one request's worth of evidence is enough to prefer away from
+ *  the endpoint, because the relay told us in so many words the model is not
+ *  coming back. Plain 5xx/timeouts stay at the base thresholds: one flaky
+ *  blip must never quarantine a healthy endpoint.
+ *
+ *  Periodic failures (quota/rate/auth) and request-shape failures were
+ *  already filtered by STRUCTURAL_CLASSES above. */
 export function noteEndpointFailure(
   platform: string,
   endpointScope: string,
   errorClass: AttemptErrorClass,
   now: number = Date.now(),
+  err?: any,
 ): void {
   if (disabled()) return;
   if (!STRUCTURAL_CLASSES.has(errorClass)) return;
+  const weight = errorClass === 'model_not_found' && modelRetirementSignal(err) === 'definitive' ? 2 : 1;
   const key = endpointHealthKey(platform, endpointScope);
   const rec = getRecord(key);
-  rec.failures.push({ atMs: now, errorClass });
+  for (let i = 0; i < weight; i++) {
+    rec.failures.push({ atMs: now, errorClass });
+  }
   pruneFailures(rec, now);
   if (rec.failures.length >= QUARANTINE_THRESHOLD) {
     if (rec.quarantinedAtMs == null) {
       rec.quarantinedAtMs = now;
       rec.nextProbeAtMs = now + FIRST_PROBE_STAGGER_MS;
-      providerLog('warn', `endpoint quarantined (${errorClass} x${rec.failures.length}): ${key} — probe recovery in ~${Math.round(FIRST_PROBE_STAGGER_MS / 1000)}s`);
+      providerLog('warn', `endpoint quarantined (${errorClass}${weight > 1 ? ' definitive' : ''} w${weight}): ${key} — probe recovery in ~${Math.round(FIRST_PROBE_STAGGER_MS / 1000)}s`);
     }
   } else if (rec.failures.length >= SUSPECT_THRESHOLD) {
-    providerLog('info', `endpoint suspect (${errorClass} x${rec.failures.length}): ${key}`);
+    providerLog('info', `endpoint suspect (${errorClass}${weight > 1 ? ' definitive' : ''} w${weight}): ${key}`);
   }
 }
 
