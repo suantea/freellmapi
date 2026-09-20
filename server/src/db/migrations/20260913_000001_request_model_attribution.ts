@@ -36,30 +36,30 @@ export function up(db: Db): void {
 
   // Backfill catalog requests: (platform, model_id) → models.id
   // These are unambiguous — catalog rows are unique on (platform, model_id).
-  const catalogBackfill = db.prepare(`
-    UPDATE requests r
+  // SQLite UPDATE has no table alias; correlate via the full table name.
+  db.prepare(`
+    UPDATE requests
     SET model_db_id = (
       SELECT m.id FROM models m
-      WHERE m.platform = r.platform AND m.model_id = r.model_id
+      WHERE m.platform = requests.platform AND m.model_id = requests.model_id
       LIMIT 1
     )
-    WHERE r.key_id IS NULL  -- catalog requests have no key binding
-       OR r.platform != 'custom'
+    WHERE requests.platform != 'custom'
   `).run();
 
   // Backfill custom requests: key_id → api_keys.base_url → models.endpoint_scope
   // Only while the saved key still resolves to a matching row.
-  const customBackfill = db.prepare(`
-    UPDATE requests r
+  db.prepare(`
+    UPDATE requests
     SET model_db_id = (
       SELECT m.id FROM models m
-      JOIN api_keys k ON k.id = r.key_id AND k.platform = 'custom'
+      JOIN api_keys k ON k.id = requests.key_id AND k.platform = 'custom'
       WHERE m.platform = 'custom'
-        AND m.model_id = r.model_id
+        AND m.model_id = requests.model_id
         AND m.endpoint_scope = rtrim(trim(k.base_url), '/')
       LIMIT 1
     )
-    WHERE r.platform = 'custom' AND r.key_id IS NOT NULL
+    WHERE requests.platform = 'custom' AND requests.key_id IS NOT NULL
   `).run();
 
   // Orphaned custom history stays NULL — better than being attributed to the
