@@ -384,7 +384,10 @@ function scheduleRowDelete(cacheKey: string): void {
 
 // Batched hit-count persistence: hits dirtied since the last flush, written in
 // one debounced pass. The flush rides the same drain as other queued writes.
-const dirtyHitCounts = new Map<string, number>();
+// A pending count belongs to the entry that earned it: clearCache() and a
+// re-store both drop it, so a stale count is never flushed onto a fresh row.
+const HIT_FLUSH_DELAY_MS = 2_000;
+const dirtyHitCounts = new Map<string, { hitCount: number; lastHitAtMs: number }>();
 let hitFlushTimer: NodeJS.Timeout | undefined;
 function scheduleHitCountFlush(): void {
   if (hitFlushTimer) return;
@@ -395,10 +398,16 @@ function scheduleHitCountFlush(): void {
     dirtyHitCounts.clear();
     schedulePersist(() => {
       const stmt = getDb().prepare('UPDATE response_cache SET hit_count = ?, last_hit_at_ms = ? WHERE cache_key = ?');
-      for (const [cacheKey, hitCount] of batch) stmt.run(hitCount, Date.now(), cacheKey);
+      for (const [cacheKey, hit] of batch) stmt.run(hit.hitCount, hit.lastHitAtMs, cacheKey);
     });
-  }, 2_000);
+  }, HIT_FLUSH_DELAY_MS);
   hitFlushTimer.unref();
+}
+
+function dropPendingHitCounts(): void {
+  dirtyHitCounts.clear();
+  if (hitFlushTimer) clearTimeout(hitFlushTimer);
+  hitFlushTimer = undefined;
 }
 
 /**
@@ -455,7 +464,7 @@ export function getCachedResponse(cacheKey: string, now = Date.now()): CachedRes
   // restart instead of resetting to whatever the last store wrote. Hits are
   // batched: one debounced UPDATE for all keys dirtied in the window, instead
   // of one queued UPDATE per hit (a hot entry used to write on every hit).
-  dirtyHitCounts.set(cacheKey, entry.hitCount);
+  dirtyHitCounts.set(cacheKey, { hitCount: entry.hitCount, lastHitAtMs: now });
   scheduleHitCountFlush();
 
   return {
@@ -490,8 +499,10 @@ export function storeCachedResponse(cacheKey: string, input: StoreInput, now = D
     return;
   }
 
-  // Delete-then-set so an overwrite also refreshes recency order.
+  // Delete-then-set so an overwrite also refreshes recency order. Any hits
+  // still waiting to be flushed counted the old answer, not this one.
   store.delete(cacheKey);
+  dirtyHitCounts.delete(cacheKey);
   store.set(cacheKey, {
     body: input.body,
     platform: input.platform,
@@ -773,6 +784,7 @@ export function clearCache(): number {
   store.clear();
   streamStore.clear();
   pendingWrites.length = 0;
+  dropPendingHitCounts();
   // The lookup tallies describe the cache that just went away; keeping them
   // would show a 90% hit rate next to zero entries right after a flush.
   lookupHits = 0;
