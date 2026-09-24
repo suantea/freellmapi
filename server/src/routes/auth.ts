@@ -11,6 +11,7 @@ import {
   updateEmail,
   updatePassword,
   resetUserPassword,
+  normalizeEmail,
 } from '../services/auth.js';
 import { setupCodeMatches, clearSetupCode } from '../lib/setup-code.js';
 import { generateResetCode, resetCodeMatches, clearResetCode } from '../lib/reset-code.js';
@@ -23,9 +24,23 @@ const failedPasswordAttempts = new Map<number, number>();
 // /status, /setup and /login are reachable without a session (bootstrap);
 // /logout and /me validate the token themselves.
 
-const credentialsSchema = z.object({
+// Signing up is the one place the address has to look like an address.
+const signupSchema = z.object({
   email: z.string().email('A valid email is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+// Logging in is a lookup, not a registration, so the address is matched rather
+// than validated. The desktop app seeds its hidden account as
+// `desktop@localhost` (server-host.ts), which has no TLD and so could never
+// satisfy z.email() — every login attempt on a desktop install failed with
+// "A valid email is required" before the password was even checked, including
+// the reset-then-sign-in-from-a-browser route suggested in #807. Length rules
+// belong to signup too: an account created under an older policy must still be
+// able to get in.
+const loginSchema = z.object({
+  email: z.string().min(1, 'Email is required'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 // ── Brute-force throttle ──────────────────────────────────────────────────
@@ -33,14 +48,26 @@ const credentialsSchema = z.object({
 // distributed store; this just blunts online password guessing.
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
+// Bound the map so a flood of distinct addresses cannot grow it without limit;
+// expired buckets are pruned opportunistically, mirroring the per-IP limiter in
+// middleware/rateLimit.ts.
+const MAX_TRACKED_EMAILS = 10_000;
 const attempts = new Map<string, { count: number; lockedUntil: number }>();
 
+// The bucket key MUST be the same spelling verifyCredentials looks the user up
+// by. Keying on `.toLowerCase()` alone while the lookup also trimmed meant
+// " admin@example.com" authenticated against the admin row but landed in its
+// own bucket, so every whitespace variant handed the guesser another five
+// tries and the lockout never engaged.
+function throttleKey(email: string): string {
+  return normalizeEmail(email);
+}
 function isLockedOut(email: string): boolean {
-  const a = attempts.get(email.toLowerCase());
+  const a = attempts.get(throttleKey(email));
   return !!a && a.lockedUntil > Date.now();
 }
 function recordFailure(email: string): void {
-  const key = email.toLowerCase();
+  const key = throttleKey(email);
   const a = attempts.get(key) ?? { count: 0, lockedUntil: 0 };
   a.count++;
   if (a.count >= MAX_ATTEMPTS) {
@@ -48,9 +75,15 @@ function recordFailure(email: string): void {
     a.count = 0;
   }
   attempts.set(key, a);
+  if (attempts.size > MAX_TRACKED_EMAILS) {
+    const now = Date.now();
+    for (const [tracked, state] of attempts) {
+      if (tracked !== key && state.lockedUntil <= now) attempts.delete(tracked);
+    }
+  }
 }
 function clearFailures(email: string): void {
-  attempts.delete(email.toLowerCase());
+  attempts.delete(throttleKey(email));
 }
 
 function bearer(req: Request): string | undefined {
@@ -58,16 +91,35 @@ function bearer(req: Request): string | undefined {
     ?? (req.headers['x-dashboard-token'] as string | undefined);
 }
 
-// Is the caller connecting from the local machine? We check the actual socket
-// peer address, NOT req.ip or X-Forwarded-For: those are attacker-controlled
-// behind a proxy (and trust proxy is off by default anyway), so trusting them
-// here would let a remote caller pretend to be local and skip the setup code.
-function isLoopbackRemote(req: Request): boolean {
-  let addr = req.socket.remoteAddress ?? '';
+function isLoopbackAddress(value: string | undefined): boolean {
+  let addr = (value ?? '').trim();
   // Node reports IPv4 loopback over a dual-stack socket as "::ffff:127.0.0.1".
   if (addr.startsWith('::ffff:')) addr = addr.slice(7);
   if (addr === '::1') return true;
   return /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(addr);
+}
+
+// Is the caller connecting from the local machine? The socket peer address is
+// the authority, NOT req.ip: forwarded headers are attacker-controlled, so
+// letting one of them ASSERT locality would hand a remote caller the setup
+// code exemption outright.
+//
+// But the socket peer alone is not sufficient either, because the reverse-proxy
+// deployment this project documents (docs/en/proxy/OVERVIEW.md, and
+// docs/en/troubleshooting/01-common-issues.md on TRUST_PROXY) puts Caddy/nginx/
+// Traefik on the SAME host: every request then arrives from 127.0.0.1 and the
+// socket test is true for the entire internet. So a forwarded hop can never
+// grant locality, but it can withdraw it — exactly the treatment the Ollama
+// open-loopback mode already applies in routes/ollama.ts:25-38.
+function isLoopbackRemote(req: Request): boolean {
+  if (!isLoopbackAddress(req.socket.remoteAddress)) return false;
+  const forwarded = req.headers['x-forwarded-for'];
+  const firstForwarded = (Array.isArray(forwarded) ? forwarded[0] : forwarded)
+    ?.split(',')[0];
+  // A local reverse proxy is itself a loopback socket, but its first forwarded
+  // hop may be remote. Refuse that request rather than silently widening the
+  // no-code first-run path through the proxy.
+  return !firstForwarded || isLoopbackAddress(firstForwarded);
 }
 
 // Has the dashboard been set up yet, and is this caller authenticated?
@@ -104,7 +156,7 @@ authRouter.post('/setup', (req: Request, res: Response) => {
     return;
   }
 
-  const parsed = credentialsSchema.safeParse(req.body);
+  const parsed = signupSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { message: parsed.error.errors.map(e => e.message).join(', ') } });
     return;
@@ -116,7 +168,7 @@ authRouter.post('/setup', (req: Request, res: Response) => {
 });
 
 authRouter.post('/login', (req: Request, res: Response) => {
-  const parsed = credentialsSchema.safeParse(req.body);
+  const parsed = loginSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: { message: parsed.error.errors.map(e => e.message).join(', ') } });
     return;
@@ -124,7 +176,7 @@ authRouter.post('/login', (req: Request, res: Response) => {
   const { email, password } = parsed.data;
 
   if (isLockedOut(email)) {
-    res.status(429).json({ error: { message: 'Too many failed attempts. Try again later.', type: 'rate_limit_error' } });
+    res.status(429).json({ error: { message: 'Too many attempts. Wait 15 minutes or restart the app.', type: 'rate_limit_error' } });
     return;
   }
 

@@ -14,6 +14,7 @@ import { invalidToolCallReasons, isToolArgumentValidationEnabled } from '../lib/
 import { recordQuotaObservationsFromResponse, type QuotaObservationContext } from '../services/provider-quota.js';
 import { providerTimeoutMs } from '../lib/provider-timeout.js';
 import { isAbortLikeError } from '../lib/error-classify.js';
+import { contentToString } from '../lib/content.js';
 
 /** Hosts that ARE Moonshot's OpenAI-compatible API (api.moonshot.ai,
  * api.moonshot.cn, api.kimi.com and their subdomains). */
@@ -35,6 +36,27 @@ export function isMoonshotEndpoint(baseUrl: string): boolean {
     return false;
   }
   return MOONSHOT_HOST_SUFFIXES.some((d) => host === d || host.endsWith(`.${d}`));
+}
+
+/**
+ * Some free-tier upstreams (notably Pollinations) answer HTTP 200 but put an
+ * out-of-credits / top-up notice in the assistant message instead of returning
+ * a 402. That reads as a successful completion, so the fallback loop never
+ * rotates off the dead key (#pollinations-inband). Detect the notice so callers
+ * can throw a payment-required error and fail over. Kept deliberately tight —
+ * requires the credits phrase AND a top-up/quest/Pollinations marker — so a
+ * genuine reply that merely discusses credits does not trip it.
+ */
+export function inBandCreditsError(text: string | null | undefined): string | null {
+  if (!text) return null;
+  const t = text.toLowerCase();
+  const mentionsCredits = t.includes('enough credits') || t.includes('insufficient credit');
+  if (!mentionsCredits) return null;
+  const topUpMarker =
+    t.includes('top up') || t.includes('top-up') ||
+    t.includes('complete a quest') || t.includes('pollinations');
+  if (!topUpMarker) return null;
+  return text.trim().slice(0, 200);
 }
 
 /**
@@ -150,7 +172,7 @@ export class OpenAICompatProvider extends BaseProvider {
   /** Requesty's Leanstral route rejects greedy sampling when temperature=0.
    * Omitting that value and supplying a neutral top_p keeps the caller's intent
    * deterministic enough while using the provider's supported sampling path. */
-  private samplingForModel(modelId: string, options?: CompletionOptions): {
+  protected samplingForModel(modelId: string, options?: CompletionOptions): {
     temperature: number | undefined;
     topP: number | undefined;
   } {
@@ -176,7 +198,7 @@ export class OpenAICompatProvider extends BaseProvider {
    * before sending to these platforms.
    */
   private static readonly STRICT_PLATFORMS = new Set(['mistral', 'groq', 'cerebras']);
-  private messagesForPlatform(messages: ChatMessage[]): ChatMessage[] {
+  private messagesForPlatform(messages: ChatMessage[], modelId: string): ChatMessage[] {
     if (OpenAICompatProvider.STRICT_PLATFORMS.has(this.platform)) {
       // Rebuild every message from a whitelist of keys, so `partial` and the
       // reasoning extensions never reach these platforms.
@@ -220,14 +242,27 @@ export class OpenAICompatProvider extends BaseProvider {
     // the ones that serve Kimi models, like Groq, Cloudflare or OpenRouter —
     // gets it stripped, since strict upstreams 400/422 on unknown message keys
     // and the rest would ignore it anyway. (#1038)
-    if (this.forwardsPartial) return messages;
-    return messages.map((m) => {
+    const sanitized = this.forwardsPartial ? messages : messages.map((m) => {
       if (m.role === 'assistant' && m.partial !== undefined) {
         const { partial: _partial, ...rest } = m;
         return rest;
       }
       return m;
     });
+
+    // Qwen3.8-Flash-Next accepts exactly one system message, and only at index
+    // zero. Profiles can prepend a gateway system prompt to a client's own
+    // system message, so coalesce every system instruction before dispatch
+    // instead of letting an otherwise valid request fail upstream.
+    if (this.platform === 'radeon' && modelId === 'Qwen3.8-Flash-Next') {
+      const systems = sanitized.filter(m => m.role === 'system');
+      if (systems.length === 1 && sanitized[0]?.role === 'system') return sanitized;
+      const systemText = systems.map(m => contentToString(m.content)).filter(Boolean).join('\n\n');
+      const rest = sanitized.filter(m => m.role !== 'system');
+      return systemText ? [{ role: 'system', content: systemText }, ...rest] : rest;
+    }
+
+    return sanitized;
   }
 
   async chatCompletion(
@@ -247,7 +282,7 @@ export class OpenAICompatProvider extends BaseProvider {
       },
       body: JSON.stringify({
         model: modelId,
-        messages: this.messagesForPlatform(messages),
+        messages: this.messagesForPlatform(messages, modelId),
         temperature: sampling.temperature,
         max_tokens: resolveMaxTokens(this.platform, options?.max_tokens),
         top_p: sampling.topP,
@@ -345,6 +380,16 @@ export class OpenAICompatProvider extends BaseProvider {
       );
     }
     normalizeChoices(data);
+    // #pollinations-inband: a 200 whose body is really an out-of-credits notice
+    // must fail over, not be returned as the answer. The "402 ... insufficient
+    // credit" wording makes isPaymentRequiredError classify it as retryable and
+    // bench the key with the day-long payment-required cooldown.
+    const creditsNotice = inBandCreditsError(
+      (data.choices ?? []).map(c => contentToString((c.message as ChatMessage)?.content)).join('\n'),
+    );
+    if (creditsNotice) {
+      throw new Error(`${this.name} API error 402: insufficient credit (upstream returned 200 with an out-of-credits notice): ${creditsNotice}`);
+    }
     data._routed_via = { platform: this.platform, model: modelId };
     return data;
   }
@@ -366,7 +411,7 @@ export class OpenAICompatProvider extends BaseProvider {
       },
       body: JSON.stringify({
         model: modelId,
-        messages: this.messagesForPlatform(messages),
+        messages: this.messagesForPlatform(messages, modelId),
         temperature: sampling.temperature,
         max_tokens: resolveMaxTokens(this.platform, options?.max_tokens),
         top_p: sampling.topP,
@@ -408,7 +453,41 @@ export class OpenAICompatProvider extends BaseProvider {
     // First-byte grace (#584): the same chat timeout that bounded the headers
     // also budgets the first stream read — NIM-style providers send SSE
     // headers instantly, then prefill long prompts for minutes.
-    yield* this.readSseStream(res, { firstByteTimeoutMs: options?.timeoutMs ?? this.timeoutMs });
+    yield* this.guardInBandCreditsError(
+      this.readSseStream(res, { firstByteTimeoutMs: options?.timeoutMs ?? this.timeoutMs }),
+    );
+  }
+
+  /**
+   * #pollinations-inband: wrap a chat stream so an in-band out-of-credits notice
+   * (a 200 that streams the top-up message as content) fails over instead of
+   * being shown as the answer. Only the FIRST content-bearing chunk is inspected
+   * — a Pollinations credits notice arrives as a single canned message — so the
+   * stream is otherwise byte-for-byte unchanged: reasoning/role chunks pass
+   * straight through (first-token ttfb intact) and every chunk after the first
+   * content one is untouched. Throwing on that first content chunk happens before
+   * it reaches the proxy's commit point, so the fallback loop can still rotate.
+   */
+  private async *guardInBandCreditsError(
+    src: AsyncGenerator<ChatCompletionChunk>,
+  ): AsyncGenerator<ChatCompletionChunk> {
+    let sawContent = false;
+    for await (const chunk of src) {
+      if (!sawContent) {
+        const content = (chunk.choices ?? [])
+          .map(c => (c.delta as { content?: unknown } | undefined)?.content)
+          .filter((c): c is string => typeof c === 'string')
+          .join('');
+        if (content) {
+          sawContent = true;
+          const notice = inBandCreditsError(content);
+          if (notice) {
+            throw new Error(`${this.name} API error 402: insufficient credit (upstream streamed an out-of-credits notice): ${notice}`);
+          }
+        }
+      }
+      yield chunk;
+    }
   }
 
   /** This provider's OpenAI-style model catalog URL. */
