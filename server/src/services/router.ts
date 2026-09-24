@@ -27,6 +27,7 @@ import {
   type HeadroomThresholds,
 } from './scoring.js';
 import { TIMEOUT_ERROR_MARKERS } from '../lib/error-classify.js';
+import { checkMonthlyBudget, reserveMonthlyBudget } from './key-budget.js';
 import { applyModelWeightOverride, getModelWeightOverrides } from './model-weight-overrides.js';
 import { modelsWithOverriddenField } from './model-state.js';
 import { parseBudget } from '../lib/budget.js';
@@ -36,6 +37,7 @@ import { getActiveProfileId } from './profile-models.js';
 import { customEndpointKeyIds } from './custom-endpoint.js';
 import { isDegraded } from './degradation.js';
 import { modelStatsKey, endpointScopeForBaseUrl } from '../lib/endpoint-scope.js';
+import { isToolBenched } from '../lib/tool-capability.js';
 import { parseModelScope, scopeAllows } from '../lib/model-scope.js';
 import { getKeyQuotaHeadroom, inferQuotaPoolKey } from './provider-quota.js';
 import type { BaseProvider } from '../providers/base.js';
@@ -81,11 +83,18 @@ export function summarizeExhaustion(
   diag: string[] | undefined,
   soonestResetMs?: number | null,
   now = Date.now(),
+  keylessSkipped = 0,
 ): string {
   const eta = formatResetEta(soonestResetMs, now);
   const etaSuffix = eta ? ` Soonest reset ${eta}.` : '';
+  // Models dropped before the walk (#423 follow-up) are reported separately and
+  // never counted as "routes checked": they were never candidates, and folding
+  // them into the total inflates the pool the caller thinks it has.
+  const keylessSuffix = keylessSkipped > 0
+    ? ` ${keylessSkipped} model${keylessSkipped === 1 ? '' : 's'} skipped: no key configured for their platform.`
+    : '';
   if (!diag || diag.length === 0) {
-    return `All models exhausted. ${EXHAUSTION_ADVICE}${etaSuffix}`;
+    return `All models exhausted. ${EXHAUSTION_ADVICE}${etaSuffix}${keylessSuffix}`;
   }
 
   const counts: Record<string, number> = {};
@@ -116,7 +125,7 @@ export function summarizeExhaustion(
   ];
   const parts = order.filter(b => counts[b]).map(b => `${counts[b]} ${b}`);
   const total = diag.length;
-  return `All models exhausted: ${total} route${total === 1 ? '' : 's'} checked (${parts.join(', ')}). ${EXHAUSTION_ADVICE}${etaSuffix}`;
+  return `All models exhausted: ${total} route${total === 1 ? '' : 's'} checked (${parts.join(', ')}). ${EXHAUSTION_ADVICE}${etaSuffix}${keylessSuffix}`;
 }
 
 interface KeyRow {
@@ -337,6 +346,18 @@ export function getAllPenalties(): Array<{ modelDbId: number; count: number; pen
     }
   }
   return result.sort((a, b) => b.penalty - a.penalty);
+}
+
+/**
+ * Operator clear (#952): forget every model's penalty at once and report how
+ * many models were carrying one. Pairs with clearAllCooldowns — a pool stuck
+ * behind day-long benches also has its models sunk by penalties, and lifting
+ * one without the other leaves the router still avoiding them.
+ */
+export function clearAllPenalties(): number {
+  const count = getAllPenalties().length;
+  rateLimitPenalties.clear();
+  return count;
 }
 
 // ── Routing strategy (persisted) ────────────────────────────────────────────
@@ -961,11 +982,22 @@ interface ScoredEntry {
 // must scale to match or the headroom guardrail damps a multi-key model to the
 // floor after just one account's worth of tokens.
 function usableKeyCountsByPlatform(db: Db): Map<string, number> {
+  // Per-request GROUP BY on api_keys; only changes on key writes. Real-time
+  // correctness is backed by selectKeyForModel's live per-key checks — a stale
+  // count can at worst walk one extra candidate, never route to a dead key.
+  // ponytail: 5s TTL instead of write-point invalidation; per-write hooks if that ever matters.
+  if (cachesEnabled() && keyCountsCache && keyCountsCache.db === db && Date.now() - keyCountsCache.at < KEY_COUNTS_TTL_MS) {
+    return keyCountsCache.map;
+  }
   const rows = db.prepare(
     "SELECT platform, COUNT(*) AS count FROM api_keys WHERE enabled = 1 AND status IN ('healthy', 'unknown') GROUP BY platform"
   ).all() as { platform: string; count: number }[];
-  return new Map(rows.map(r => [r.platform, r.count]));
+  const map = new Map(rows.map(r => [r.platform, r.count]));
+  keyCountsCache = { db, at: Date.now(), map };
+  return map;
 }
+const KEY_COUNTS_TTL_MS = 5_000;
+let keyCountsCache: { db: Db; at: number; map: Map<string, number> } | null = null;
 
 function scoreChainEntry(
   entry: ChainRow,
@@ -1156,10 +1188,29 @@ const GLOBAL_SORT_ALIASES: Record<string, string> = {
  * (`auto:<name>`) correctly refused. `fallback_config` is the chain only for an
  * install with no profile at all.
  */
+// Chain cache: the active chain only changes on admin writes (models/profiles/
+// fallback_config), not per request — but routeRequest used to re-run the JOIN
+// on every request (synchronously, on the event loop). Cache by db+profileId
+// with a 1s TTL safety net; a profile switch changes profileId so it takes
+// effect immediately. Copy on return: callers like routeRequest splice/unshift.
+// Bypassed under NODE_ENV=test: suites write chain tables via raw SQL and route
+// immediately afterwards.
+let chainCache: { db: Db; profileId: number | null; rows: ChainRow[]; at: number } | null = null;
+const CHAIN_CACHE_TTL_MS = 1_000;
+
+function cachesEnabled(): boolean {
+  return process.env.NODE_ENV !== 'test';
+}
+
 function getActiveChain(db: Db): ChainRow[] {
   const profileId = getActiveProfileId(db);
+  if (cachesEnabled() && chainCache && chainCache.db === db && chainCache.profileId === profileId
+      && Date.now() - chainCache.at < CHAIN_CACHE_TTL_MS) {
+    return chainCache.rows.slice();
+  }
+  let rows: ChainRow[];
   if (profileId != null) {
-    return db.prepare(`
+    rows = db.prepare(`
       SELECT pm.model_db_id, pm.priority, pm.enabled,
              m.platform, m.model_id, m.display_name, m.intelligence_rank,
              m.size_label, m.monthly_token_budget,
@@ -1170,18 +1221,20 @@ function getActiveChain(db: Db): ChainRow[] {
       WHERE pm.profile_id = ?
       ORDER BY pm.priority ASC
     `).all(profileId) as ChainRow[];
+  } else {
+    rows = db.prepare(`
+      SELECT fc.model_db_id, fc.priority, fc.enabled,
+             m.platform, m.model_id, m.display_name, m.intelligence_rank,
+             m.size_label, m.monthly_token_budget,
+             m.rpm_limit, m.rpd_limit, m.tpm_limit, m.tpd_limit, m.supports_vision,
+             m.supports_tools, m.context_window, m.key_id, m.endpoint_scope
+      FROM fallback_config fc
+      JOIN models m ON m.id = fc.model_db_id AND m.enabled = 1
+      ORDER BY fc.priority ASC
+    `).all() as ChainRow[];
   }
-
-  return db.prepare(`
-    SELECT fc.model_db_id, fc.priority, fc.enabled,
-           m.platform, m.model_id, m.display_name, m.intelligence_rank,
-           m.size_label, m.monthly_token_budget,
-           m.rpm_limit, m.rpd_limit, m.tpm_limit, m.tpd_limit, m.supports_vision,
-           m.supports_tools, m.context_window, m.key_id, m.endpoint_scope
-    FROM fallback_config fc
-    JOIN models m ON m.id = fc.model_db_id AND m.enabled = 1
-    ORDER BY fc.priority ASC
-  `).all() as ChainRow[];
+  chainCache = { db, profileId, rows, at: Date.now() };
+  return rows.slice();
 }
 
 function getChainByProfileName(db: Db, name: string): ChainRow[] | null {
@@ -1389,6 +1442,20 @@ function orderKeysByRemainingQuota(entry: ChainRow, ordered: KeyRow[]): KeyRow[]
  * Request-level filters (vision/tools/context window) stay in the caller; this
  * only does key selection + accounting pre-checks.
  */
+// Key decryption cache: AES-GCM decrypt of every candidate key used to run on
+// each routing pass. Keyed by ciphertext — a rotated/updated key changes its
+// encrypted_key, so stale entries can never be served and there is no hook to
+// wire. ponytail: unbounded Map; a keys page refresh prunes nothing, but one
+// entry is ~64 bytes and key counts are human-scale.
+const decryptCache = new Map<number, { ct: string; plain: string }>();
+function cachedDecrypt(keyId: number, ct: string, iv: string, authTag: string): string {
+  const hit = decryptCache.get(keyId);
+  if (hit && hit.ct === ct) return hit.plain;
+  const plain = decrypt(ct, iv, authTag);
+  decryptCache.set(keyId, { ct, plain });
+  return plain;
+}
+
 function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: Set<string>, diag?: string[]): RouteResult | null {
   const db = getDb();
   const label = `${entry.platform}/${entry.model_id}`;
@@ -1480,10 +1547,15 @@ function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: 
     if (!canMakeRequest(entry.platform, entry.model_id, key.id, limits)) { note('rpm/rpd-limit'); continue; }
     if (!canUseTokens(entry.platform, entry.model_id, key.id, estimatedTokens, limits)) { note('tpm/tpd-limit'); continue; }
     if (!canUseProviderTokens(entry.platform, key.id, entry.model_id, estimatedTokens)) { note('provider-daily-token-cap'); continue; }
+    // Monthly budget (#1158): a key whose request/token caps are spent for the
+    // current UTC month is not a candidate — same skip semantics as the daily
+    // gates above. The Retry-After (next-month boundary) surfaces through the
+    // fallback exhaustion path rather than blocking here.
+    if (!checkMonthlyBudget(key.id, estimatedTokens).allowed) { note('monthly-budget-cap'); continue; }
 
     let decryptedKey: string;
     try {
-      decryptedKey = decrypt(key.encrypted_key, key.iv, key.auth_tag);
+      decryptedKey = cachedDecrypt(key.id, key.encrypted_key, key.iv, key.auth_tag);
     } catch {
       db.prepare("UPDATE api_keys SET status = 'error', last_checked_at = datetime('now') WHERE id = ?")
         .run(key.id);
@@ -1499,6 +1571,9 @@ function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: 
     roundRobinIndex.set(rrKey, idx);
     // Taken only once the key has cleared every gate and is definitely being
     // returned, so a rejected candidate never consumes concurrency budget.
+    const proxyUrl = decryptProxyUrl(key);
+    const budget = reserveMonthlyBudget(key.id, estimatedTokens);
+    if (!budget.allowed) { note('monthly-budget-cap'); continue; }
     const leaseId = acquireLease(entry.platform, entry.model_id, key.id, estimatedTokens);
     return {
       provider: resolvedProvider,
@@ -1508,13 +1583,13 @@ function selectKeyForModel(entry: ChainRow, estimatedTokens: number, skipKeys?: 
       keyId: key.id,
       keyLabel: key.label || null,
       // Decrypted once here, at the point the row is already in hand (#590).
-      proxyUrl: decryptProxyUrl(key),
+      proxyUrl,
       platform: entry.platform,
       displayName: entry.display_name,
       endpointScope: entry.endpoint_scope ?? '',
       rpdLimit: limits.rpd,
       tpdLimit: limits.tpd,
-      release: () => releaseLease(leaseId),
+      release: () => { releaseLease(leaseId); budget.release(); },
     };
   }
 
@@ -1881,18 +1956,23 @@ export function getOrderedFusionChain(estimatedTokens: number, exactOutputReserv
  */
 export function resolveFusionCandidate(modelId: string): FusionCandidate | null {
   const db = getDb();
-  const row = db.prepare(`
+  const rows = db.prepare(`
     SELECT m.id as model_db_id, m.platform, m.model_id, m.display_name,
            m.size_label, m.supports_vision, m.supports_tools
     FROM models m
     WHERE m.model_id = ? AND m.enabled = 1
     ORDER BY m.intelligence_rank ASC, m.id ASC
-    LIMIT 1
-  `).get(modelId) as {
+  `).all(modelId) as {
     model_db_id: number; platform: string; model_id: string; display_name: string;
     size_label: string; supports_vision: number; supports_tools: number;
-  } | undefined;
-  if (row) {
+  }[];
+  if (rows.length > 0) {
+    // A logical model can have several enabled provider rows. Prefer one with
+    // an enabled, healthy/unknown key before falling back to the deterministic
+    // ranking. Without this check a duplicate alias can pin fusion to a
+    // keyless provider (for example a free relay) while a configured provider
+    // for the same model is available.
+    const row = rows.find(candidate => routableKeyIdsForModel(candidate.model_db_id).length > 0) ?? rows[0];
     return {
       modelDbId: row.model_db_id,
       platform: row.platform,
@@ -1911,7 +1991,11 @@ export function resolveFusionCandidate(modelId: string): FusionCandidate | null 
   if (isUnifyEnabled()) {
     const resolved = resolveRequestedIdForDispatch(modelId, getModelGroups());
     if (resolved && resolved.memberDbIds.length > 0) {
-      const top = resolveModelGroupCandidates(resolved.memberDbIds, resolved.demotedDbIds)[0];
+      const candidates = resolveModelGroupCandidates(resolved.memberDbIds, resolved.demotedDbIds);
+      // Bare unified aliases may resolve to a provider row that is enabled in
+      // the catalog but has no usable key. Select the first routable member so
+      // an explicit fusion panel does not waste a slot on that dead end.
+      const top = candidates.find(candidate => routableKeyIdsForModel(candidate.model_db_id).length > 0) ?? candidates[0];
       if (top) {
         return {
           modelDbId: top.model_db_id,
@@ -1969,6 +2053,9 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
       if (skipPlatforms?.has(e.platform)) return false;
       if (requireVision && !e.supports_vision) return false;
       if (requireTools && !e.supports_tools) return false;
+      // Never spend the exploration slot on a model that keeps rejecting tool
+      // requests (#1230); it stays reachable at the back of the main walk.
+      if (requireTools && isToolBenched(e.platform, e.model_id, e.endpoint_scope)) return false;
       if (requireStructured && platformDropsResponseFormat(e.platform)) return false;
       if (!fitsContextWindow(e.platform, e.context_window, estimatedTokens, exactOutputReserve)) return false;
       if (e.tpm_limit != null && estimatedTokens > e.tpm_limit) return false;
@@ -2012,6 +2099,31 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
     }
   }
 
+  // Drop models whose platform has NO enabled+healthy key before the walk. Such
+  // a row can never produce a route (selectKeyForModel's first query returns
+  // empty for it), so walking it is pure overhead on every request, and its diag
+  // line pads the exhaustion summary with a constant that has nothing to do with
+  // why THIS request failed. On the clean tier that was 14 of 36 rows, reported
+  // as "37 routes checked" when only 22 were ever candidates.
+  //
+  // An explicit pin is exempt: the client named that model, so it still gets
+  // walked and still reports "no enabled+healthy key for platform" against its
+  // own label rather than vanishing into an aggregate.
+  const keyCounts = usableKeyCountsByPlatform(db);
+  const isRoutable = (e: ChainRow) =>
+    e.model_db_id === preferredModelDbId || (keyCounts.get(e.platform) ?? 0) > 0;
+  const routableChain = sortedChain.filter(isRoutable);
+  const keylessSkipped = sortedChain.length - routableChain.length;
+  // One aggregate line, not one per model: the platforms stay visible to anyone
+  // reading RouteError.diagnostics (and keep routingExhaustionBody classifying a
+  // fully-unconfigured pool as 503 config, not a 429 rate limit), without N
+  // near-identical rows drowning the request's real reasons.
+  const keylessLine = keylessSkipped > 0
+    ? `${keylessSkipped} model(s) skipped: no enabled+healthy key for platform (${
+        [...new Set(sortedChain.filter(e => !isRoutable(e)).map(e => e.platform))].sort().join(', ')
+      })`
+    : null;
+
   // Per-model disposition, attached to the exhaustion error when the loop falls
   // through with no route — the only record of WHY the pool was empty on the
   // synchronous "all exhausted" path (nothing downstream logs it). See issue _1.
@@ -2024,12 +2136,22 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
   // sweep margin-fitting models first; ones that only fit the advertised window
   // stay eligible behind them. Worst case is one classified context_too_large
   // hop instead of no route at all.
+  //
+  // Same soft treatment for models that keep answering tool requests with a 400
+  // (#1230, lib/tool-capability.ts): on a tool request they go to the very back
+  // instead of being excluded, so the worst case is the old order, never an
+  // empty pool. An explicit pin keeps its place: the client named that model.
   const servingChain: ChainRow[] = [];
   const marginDeferred: ChainRow[] = [];
-  for (const e of sortedChain) {
+  const toolDeferred: ChainRow[] = [];
+  for (const e of routableChain) {
+    if (requireTools && e.model_db_id !== preferredModelDbId && isToolBenched(e.platform, e.model_id, e.endpoint_scope)) {
+      toolDeferred.push(e);
+      continue;
+    }
     (fitsContextWindow(e.platform, e.context_window, estimatedTokens, exactOutputReserve) ? servingChain : marginDeferred).push(e);
   }
-  servingChain.push(...marginDeferred);
+  servingChain.push(...marginDeferred, ...toolDeferred);
 
   for (const entry of servingChain) {
     const label = `${entry.platform}/${entry.model_id}`;
@@ -2103,7 +2225,13 @@ export function routeRequest(estimatedTokens = 1000, skipKeys?: Set<string>, pre
     if (route) return route;
   }
 
-  throw new RouteError(summarizeExhaustion(diag, getSoonestCooldownExpiry()), 429, diag);
+  // The aggregate keyless line rides in diagnostics but NOT in the summary's
+  // route count: those models were never candidates for this request.
+  throw new RouteError(
+    summarizeExhaustion(diag, getSoonestCooldownExpiry(), Date.now(), keylessSkipped),
+    429,
+    keylessLine ? [...diag, keylessLine] : diag,
+  );
 }
 
 /**
