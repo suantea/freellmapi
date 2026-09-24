@@ -4,7 +4,7 @@ import {
   getCustomWeights, setCustomWeights, getExploreEnabled, setExploreEnabled,
   getCommunityPrior, setCommunityPriors, getCommunityPriorEnabled, setCommunityPriorEnabled,
   getPeakHoursConfig, setPeakHoursConfig,
-  getMinReliabilityFloor, setMinReliabilityFloor, applyReliabilityFloor,
+  setMinReliabilityFloor, applyReliabilityFloor,
 } from '../../services/router.js';
 import { BANDIT_PRESETS, DEFAULT_PEAK_HOURS } from '../../services/scoring.js';
 import { resetModelWeightOverrides } from '../../services/model-weight-overrides.js';
