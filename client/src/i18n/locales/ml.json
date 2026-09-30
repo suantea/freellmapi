@@ -688,6 +688,10 @@
     "monthlyUsageLine": "ഈ മാസം {requests} അഭ്യർത്ഥനകൾ, {tokens} ടോക്കണുകൾ",
     "quotaBalanceHint": "{limit} {metric}-ൽ {remaining} ശേഷിക്കുന്നു",
     "quotaBalanceLeft": "{remaining} ശേഷിക്കുന്നു"
+,
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints sharing a group label are listed together on the Keys page. Leave blank for the default Custom group."
   },
   "backups": {
     "title": "Backups",

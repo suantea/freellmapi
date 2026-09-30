@@ -688,6 +688,10 @@
     "monthlyUsageLine": "Buƙatotu {requests}, token {tokens} wannan wata",
     "quotaBalanceHint": "Saura {remaining} daga {limit} {metric}",
     "quotaBalanceLeft": "Saura {remaining}"
+,
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints sharing a group label are listed together on the Keys page. Leave blank for the default Custom group."
   },
   "backups": {
     "title": "Backups",

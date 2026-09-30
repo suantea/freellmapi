@@ -688,6 +688,10 @@
     "monthlyUsageLine": "Maombi {requests}, tokeni {tokens} mwezi huu",
     "quotaBalanceHint": "Zimebaki {remaining} kati ya {limit} {metric}",
     "quotaBalanceLeft": "Zimebaki {remaining}"
+,
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints sharing a group label are listed together on the Keys page. Leave blank for the default Custom group."
   },
   "backups": {
     "title": "Backups",

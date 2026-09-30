@@ -688,6 +688,10 @@
     "monthlyUsageLine": "{requests} żądań, {tokens} tokenów w tym miesiącu",
     "quotaBalanceHint": "Pozostało {remaining} z {limit} {metric}",
     "quotaBalanceLeft": "Pozostało {remaining}"
+,
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints sharing a group label are listed together on the Keys page. Leave blank for the default Custom group."
   },
   "backups": {
     "title": "Backups",

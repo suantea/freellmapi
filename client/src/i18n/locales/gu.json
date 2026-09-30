@@ -688,6 +688,10 @@
     "monthlyUsageLine": "આ મહિને {requests} વિનંતીઓ, {tokens} ટોકન",
     "quotaBalanceHint": "{limit} {metric}માંથી {remaining} બાકી",
     "quotaBalanceLeft": "{remaining} બાકી"
+,
+    "groupLabel": "Group",
+    "groupLabelPlaceholder": "e.g. Relays, Work…",
+    "groupLabelHint": "Optional: endpoints sharing a group label are listed together on the Keys page. Leave blank for the default Custom group."
   },
   "backups": {
     "title": "Backups",
