@@ -56,8 +56,15 @@ interface GeneratedFile {
   path: string;
   [key: string]: unknown;
 }
-function normalizeGenerationPaths<T extends { files: GeneratedFile[] }>(generation: T): T {
-  return { ...generation, files: generation.files.map(f => ({ ...f, path: asPosix(f.path) })) };
+function normalizeGenerationPaths<T extends { files: GeneratedFile[]; notes?: string[] }>(generation: T): T {
+  return {
+    ...generation,
+    files: generation.files.map(f => ({ ...f, path: asPosix(f.path) })),
+    // Generators also interpolate host-joined paths into their note text — Roo's
+    // `autoImportSettingsPath` instructions quote the import file by full path —
+    // so the notes are golden input as well (#1392).
+    ...(generation.notes ? { notes: generation.notes.map(asPosix) } : {}),
+  };
 }
 
 describe('tool generators', () => {
