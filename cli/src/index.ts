@@ -246,7 +246,7 @@ function help(): string {
     '  doctor [tool…]    Check whether a tool\'s requests actually reach this gateway',
     '                    (--timeout MS raises the probe wait on a slow link)',
     '  launch            Run Claude Code with credentials injected into the child environment',
-    '  launch-codex      Run Codex with provider overrides and injected credentials',
+    '  launch-codex      Run ChatGPT (Codex) CLI with provider overrides and injected credentials',
     '  list              List supported coding agents',
     '',
     'Environment:',
