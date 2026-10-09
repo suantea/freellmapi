@@ -8,6 +8,7 @@ import { spawn } from 'node:child_process';
 import { Writable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { applyGeneratedFiles, printDryRunDiff } from './config-files.js';
+import { detectChatGptClient } from './detect.js';
 import { getTool, tools } from './tools.js';
 import { resolveLaunchModel, type ResolvedModel } from './models.js';
 import { DOCTOR_TOOLS, diagnose, exitCodeFor, formatReport, type ToolReport } from './doctor.js';
@@ -271,6 +272,7 @@ async function setup(command: string, options: CliOptions): Promise<void> {
     models: rosters.available,
     homeDir: os.homedir(),
     requestedModelId,
+    detectedClient: detectChatGptClient(),
   };
   const generation = tool.generate(context);
 

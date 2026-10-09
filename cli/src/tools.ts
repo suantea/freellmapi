@@ -126,7 +126,7 @@ function codex(ctx: GenerateContext): Generation {
       content: content.join('\n'),
     }],
     notes: [
-      ...clientNotes(detectChatGptClient()),
+      ...clientNotes(ctx.detectedClient ?? detectChatGptClient()),
       'Export FREELLMAPI_API_KEY before running codex; the key is not written to config.toml.',
       ...(ctx.profile === 'default'
         ? []
