@@ -152,21 +152,24 @@
     "compressionRunPreview": "Pokreni pregled",
     "updatesTitle": "Ažuriranja",
     "checkForUpdates": "Provjerite ima li novosti",
-    "lastChecked": "Zadnja provjera: {when}",
-    "currentVersion": "Trenutačna verzija:",
     "updateAvailable": "Dostupno je ažuriranje",
-    "changelog": "Što se promijenilo",
     "upToDate": "Ažurno",
     "buildAhead": "Ova je verzija ispred službene grane main.",
     "buildDiverged": "Ova se verzija odvojila od službene grane main.",
     "buildUnknown": "Ovu prilagođenu verziju nije moguće usporediti sa službenom granom main.",
     "notGitInstall": "Ova instalacija ne sadrži informacije o commitovima.",
     "checkFailed": "Nije moguće provjeriti ažuriranja.",
-    "contactsGithub": "Provjere se pokreću ručno i kontaktiraju GitHub.",
     "autoUpdateCheck": "Automatska provjera ažuriranja",
-    "autoUpdateCheckHelp": "Jednom dnevno provjerava GitHub za novo izdanje i prikazuje podsjetnik. Prema zadanome isključeno.",
-    "openReleases": "Otvori izdanja na GitHubu",
-    "restartAfterUpdate": "Ponovno pokrenite FreeLLMAPI nakon dovršetka izgradnje."
+    "restartAfterUpdate": "Ponovno pokrenite FreeLLMAPI nakon dovršetka izgradnje.",
+    "downloadUpdate": "Preuzmi ažuriranje",
+    "downloadingUpdate": "Preuzimanje… {percent} %",
+    "restartToUpdate": "Ponovno pokreni za ažuriranje",
+    "updateReadyHint": "Preuzeto. FreeLLMAPI sigurnosno kopira vaše podatke, ponovno se pokreće i otvara novu verziju.",
+    "updateInstallFailed": "Ažuriranje se nije moglo instalirati.",
+    "updateNow": "Ažuriraj sada",
+    "updatingContainer": "Preuzimanje nove slike i ponovno pokretanje. Stranica će se ponovno učitati kad se FreeLLMAPI vrati.",
+    "updateNowFailed": "Ažurirač nije prihvatio zahtjev. Provjerite radi li kontejner watchtower.",
+    "updateNowTimeout": "FreeLLMAPI se nije ponovno pokrenuo nakon 5 minuta. Provjerite zapise kontejnera watchtower."
   },
   "models": {
     "title": "Modeli",
@@ -341,7 +344,10 @@
     "weightSpeed": "Brzina",
     "weightIntelligence": "Obavještajna služba",
     "weightRequired": "Najmanje jedna težina mora biti iznad nule.",
-    "scoreColumn": "Glazba"
+    "scoreColumn": "Glazba",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Tlak glodalice",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Prije ažuriranja"
   },
   "status": {
     "healthy": "Zdravo",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "Uvijek dostupan osobni asistent koji s vašeg računala odgovara u aplikacijama WhatsApp, Telegram, Discord i drugima.",
       "hermes": "Samopoboljšavajući agent tvrtke Nous Research s trajnom memorijom i vještinama, u terminalu ili u chat aplikacijama.",
-      "pi": "Minimalistički terminalski agent koji oblikujete vlastitim proširenjima, vještinama i predlošcima upita."
+      "pi": "Minimalistički terminalski agent koji oblikujete vlastitim proširenjima, vještinama i predlošcima upita.",
+      "reasonix": "Terminalski agent za programiranje izrađen za DeepSeek, oko predmemoriranja prefiksa, kako bi duge sesije ostale jeftine."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Instalirana je novija verzija FreeLLMAPI-ja.",
+    "reload": "Ponovno učitaj"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Preimenovati lanac \"{oldName}\" u \"{name}\"? Klijenti koji zovu auto:{oldName} moraju prijeći na auto:{name}.",
     "renamePlaceholder": "Novi naziv lanca",
     "renameFailed": "Nije moguće preimenovati lanac."
+  },
+  "updates": {
+    "versionAvailable": "Dostupna je verzija {version}",
+    "versionReady": "Verzija {version} spremna je za instalaciju",
+    "releaseNotes": "Bilješke o izdanju",
+    "tryAgain": "Pokušaj ponovno",
+    "offline": "Provjerite internetsku vezu i pokušajte ponovno."
   }
 }

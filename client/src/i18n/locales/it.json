@@ -152,21 +152,24 @@
     "compressionRunPreview": "Esegui anteprima",
     "updatesTitle": "Aggiornamenti",
     "checkForUpdates": "Controlla aggiornamenti",
-    "lastChecked": "Ultimo controllo: {when}",
-    "currentVersion": "Build corrente:",
     "updateAvailable": "Aggiornamento disponibile",
-    "changelog": "Novità",
     "upToDate": "Aggiornato",
     "buildAhead": "Questa build è più avanti del ramo main ufficiale.",
     "buildDiverged": "Questa build si è discostata dal ramo main ufficiale.",
     "buildUnknown": "Questa build personalizzata non può essere confrontata con il ramo main ufficiale.",
     "notGitInstall": "Questa installazione non include informazioni sui commit.",
     "checkFailed": "Impossibile verificare la disponibilità di aggiornamenti.",
-    "contactsGithub": "I controlli sono manuali e contattano GitHub.",
     "autoUpdateCheck": "Controllo automatico degli aggiornamenti",
-    "autoUpdateCheckHelp": "Controlla GitHub una volta al giorno per una nuova versione e mostra un promemoria. Disattivato per impostazione predefinita.",
-    "openReleases": "Apri le release di GitHub",
-    "restartAfterUpdate": "Riavvia FreeLLMAPI al termine della build."
+    "restartAfterUpdate": "Riavvia FreeLLMAPI al termine della build.",
+    "downloadUpdate": "Scarica aggiornamento",
+    "downloadingUpdate": "Download in corso… {percent}%",
+    "restartToUpdate": "Riavvia per aggiornare",
+    "updateReadyHint": "Scaricato. FreeLLMAPI esegue il backup dei tuoi dati, si riavvia e apre la nuova versione.",
+    "updateInstallFailed": "Impossibile installare l’aggiornamento.",
+    "updateNow": "Aggiorna ora",
+    "updatingContainer": "Download della nuova immagine e riavvio in corso. La pagina si ricarica quando FreeLLMAPI torna disponibile.",
+    "updateNowFailed": "Il servizio di aggiornamento non ha accettato la richiesta. Verifica che il container watchtower sia in esecuzione.",
+    "updateNowTimeout": "FreeLLMAPI non si è riavviato dopo 5 minuti. Controlla i log del container watchtower."
   },
   "models": {
     "title": "Modelli",
@@ -341,7 +344,10 @@
     "weightSpeed": "Velocità",
     "weightIntelligence": "Intelligenza",
     "weightRequired": "Almeno un peso deve essere maggiore di zero.",
-    "scoreColumn": "Punteggio"
+    "scoreColumn": "Punteggio",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Pressione del router",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Pre-aggiornamento"
   },
   "status": {
     "healthy": "funzionante",
@@ -1148,17 +1155,15 @@
       "atomcode": "L'agente da terminale di AtomGit, scritto in Rust, che accetta qualsiasi endpoint compatibile OpenAI.",
       "openclaw": "Un assistente personale sempre attivo che risponde su WhatsApp, Telegram, Discord e altro dalla tua macchina.",
       "hermes": "L'agente auto-migliorante di Nous Research, con memoria persistente e skill, nel terminale o nelle app di chat.",
-      "pi": "Un agente da terminale minimale che modelli con le tue estensioni, skill e modelli di prompt."
+      "pi": "Un agente da terminale minimale che modelli con le tue estensioni, skill e modelli di prompt.",
+      "reasonix": "Un agente di programmazione da terminale nativo per DeepSeek, costruito attorno alla cache dei prefissi perché le sessioni lunghe restino economiche."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "È installata una versione più recente di FreeLLMAPI.",
+    "reload": "Ricarica"
   },
   "freeTier": {
     "poolsToggle": "Pool del piano gratuito ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Rinominare la catena \"{oldName}\" in \"{name}\"? I client che chiamano auto:{oldName} devono passare a auto:{name}.",
     "renamePlaceholder": "Nuovo nome della catena",
     "renameFailed": "Impossibile rinominare la catena."
+  },
+  "updates": {
+    "versionAvailable": "È disponibile la versione {version}",
+    "versionReady": "La versione {version} è pronta per l’installazione",
+    "releaseNotes": "Note di rilascio",
+    "tryAgain": "Riprova",
+    "offline": "Controlla la connessione a internet e riprova."
   }
 }

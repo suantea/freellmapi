@@ -152,21 +152,24 @@
     "compressionRunPreview": "Mee nlele",
     "updatesTitle": "Mmelite",
     "checkForUpdates": "Lelee maka mmelite",
-    "lastChecked": "Nyocha ikpeazụ: {when}",
-    "currentVersion": "Build dị ugbu a:",
     "updateAvailable": "Mmelite dị",
-    "changelog": "Ihe gbanwere",
     "upToDate": "Ọ dị ọhụrụ",
     "buildAhead": "Build a dị n'ihu alaka main nke iwu kwadoro.",
     "buildDiverged": "Build a esiwo na alaka main nke iwu kwadoro kewapụ.",
     "buildUnknown": "Enweghị ike iji build omenala a tụnyere alaka main nke iwu kwadoro.",
     "notGitInstall": "Nwụnye a enweghị ozi commit.",
     "checkFailed": "Enweghị ike ịlele mmelite.",
-    "contactsGithub": "A na-eji aka eme nyocha ndị a, ha na-akpọtụrụ GitHub.",
     "autoUpdateCheck": "Nyocha mmelite akpaaka",
-    "autoUpdateCheckHelp": "Ọ na-enyocha GitHub otu ugboro n'ụbọchị maka ntọhapụ ọhụrụ ma gosi ncheta. A gbanyụrụ ya na ndabara.",
-    "openReleases": "Mepee GitHub Releases",
-    "restartAfterUpdate": "Malitegharịa FreeLLMAPI mgbe build ahụ gwụchara."
+    "restartAfterUpdate": "Malitegharịa FreeLLMAPI mgbe build ahụ gwụchara.",
+    "downloadUpdate": "Budata mmelite",
+    "downloadingUpdate": "Na-ebudata… {percent}%",
+    "restartToUpdate": "Malitegharịa ka imelite",
+    "updateReadyHint": "Ebudatala. FreeLLMAPI na-echekwa data gị, malitegharịa ma mepee ụdị ọhụrụ.",
+    "updateInstallFailed": "Enweghị ike itinye mmelite ahụ.",
+    "updateNow": "Melite ugbu a",
+    "updatingContainer": "Na-adọta onyonyo ọhụrụ ma na-amalitegharị. Ibe a ga-ebugharị mgbe FreeLLMAPI lọghachiri.",
+    "updateNowFailed": "Onye mmelite anabataghị arịrịọ ahụ. Lelee ma akpa watchtower na-arụ ọrụ.",
+    "updateNowTimeout": "FreeLLMAPI amalitegharịbeghị mgbe nkeji 5 gachara. Lelee ndekọ akpa watchtower."
   },
   "models": {
     "title": "Ụdị",
@@ -341,7 +344,10 @@
     "weightSpeed": "Ọsọ",
     "weightIntelligence": "ọgụgụ isi",
     "weightRequired": "Opekempe otu arọ ga-adị n'elu efu.",
-    "scoreColumn": "Akara"
+    "scoreColumn": "Akara",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Nrụgide rawụta",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Tupu mmelite"
   },
   "status": {
     "healthy": "ahụike",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "Onye enyemaka nkeonwe na-arụ ọrụ mgbe niile, nke na-aza na WhatsApp, Telegram, Discord na ndị ọzọ site na igwe nke gị.",
       "hermes": "Onye ọrụ Nous Research na-emeziwanye onwe ya, nwere ebe nchekwa na-adịgide na nkà, na terminal ma ọ bụ na ngwa mkparịta ụka.",
-      "pi": "Obere onye ọrụ terminal ị na-akpụ site na ndọtị, nkà na ndebiri ajụjụ nke gị."
+      "pi": "Obere onye ọrụ terminal ị na-akpụ site na ndọtị, nkà na ndebiri ajụjụ nke gị.",
+      "reasonix": "Onye nnọchite ide koodu na terminal emere maka DeepSeek, wuru gburugburu prefix caching ka ogologo nnọkọ wee dị ọnụ ala."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Etinyela ụdị FreeLLMAPI ọhụrụ.",
+    "reload": "Bugharịa"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Gbanwee aha chain \"{oldName}\" ka ọ bụrụ \"{name}\"? Ndị ahịa na-akpọ auto:{oldName} ga-agbanwe gaa auto:{name}.",
     "renamePlaceholder": "Aha chain ọhụrụ",
     "renameFailed": "Enweghị ike ịgbanwe aha chain ahụ."
+  },
+  "updates": {
+    "versionAvailable": "Ụdị {version} dị",
+    "versionReady": "Ụdị {version} dị njikere maka itinye",
+    "releaseNotes": "Ndetu mwepụta",
+    "tryAgain": "Nwaa ọzọ",
+    "offline": "Lelee njikọ ịntanetị gị ma nwaa ọzọ."
   }
 }

@@ -152,21 +152,24 @@
     "compressionRunPreview": "ಪೂರ್ವವೀಕ್ಷಣೆ ರನ್ ಮಾಡಿ",
     "updatesTitle": "ನವೀಕರಣಗಳು",
     "checkForUpdates": "ನವೀಕರಣಗಳಿಗಾಗಿ ಪರಿಶೀಲಿಸಿ",
-    "lastChecked": "ಕೊನೆಯದಾಗಿ ಪರಿಶೀಲಿಸಲಾಗಿದೆ: {when}",
-    "currentVersion": "ಪ್ರಸ್ತುತ ಬಿಲ್ಡ್:",
     "updateAvailable": "ನವೀಕರಣ ಲಭ್ಯವಿದೆ",
-    "changelog": "ಏನು ಬದಲಾಗಿದೆ",
     "upToDate": "ನವೀಕೃತವಾಗಿದೆ",
     "buildAhead": "ಈ ಬಿಲ್ಡ್ ಅಧಿಕೃತ main ಶಾಖೆಗಿಂತ ಮುಂದಿದೆ.",
     "buildDiverged": "ಈ ಬಿಲ್ಡ್ ಅಧಿಕೃತ main ಶಾಖೆಯಿಂದ ಬೇರೆಯಾಗಿದೆ.",
     "buildUnknown": "ಈ ಕಸ್ಟಮ್ ಬಿಲ್ಡ್ ಅನ್ನು ಅಧಿಕೃತ main ಶಾಖೆಯೊಂದಿಗೆ ಹೋಲಿಸಲಾಗುವುದಿಲ್ಲ.",
     "notGitInstall": "ಈ ಸ್ಥಾಪನೆಯು ಕಮಿಟ್ ಮಾಹಿತಿಯನ್ನು ಒಳಗೊಂಡಿಲ್ಲ.",
     "checkFailed": "ನವೀಕರಣಗಳಿಗಾಗಿ ಪರಿಶೀಲಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.",
-    "contactsGithub": "ಪರಿಶೀಲನೆಗಳನ್ನು ಹಸ್ತಚಾಲಿತವಾಗಿ ಮಾಡಲಾಗುತ್ತದೆ ಮತ್ತು ಅವು GitHub ಅನ್ನು ಸಂಪರ್ಕಿಸುತ್ತವೆ.",
     "autoUpdateCheck": "ಸ್ವಯಂಚಾಲಿತ ನವೀಕರಣ ಪರಿಶೀಲನೆ",
-    "autoUpdateCheckHelp": "ದಿನಕ್ಕೊಮ್ಮೆ ಹೊಸ ಬಿಡುಗಡೆಗಾಗಿ GitHub ಅನ್ನು ಪರಿಶೀಲಿಸುತ್ತದೆ ಮತ್ತು ಜ್ಞಾಪನೆ ತೋರಿಸುತ್ತದೆ. ಪೂರ್ವನಿಯೋಜಿತವಾಗಿ ಆಫ್ ಆಗಿದೆ.",
-    "openReleases": "GitHub ಬಿಡುಗಡೆಗಳನ್ನು ತೆರೆಯಿರಿ",
-    "restartAfterUpdate": "ಬಿಲ್ಡ್ ಪೂರ್ಣಗೊಂಡ ನಂತರ FreeLLMAPI ಅನ್ನು ಮರುಪ್ರಾರಂಭಿಸಿ."
+    "restartAfterUpdate": "ಬಿಲ್ಡ್ ಪೂರ್ಣಗೊಂಡ ನಂತರ FreeLLMAPI ಅನ್ನು ಮರುಪ್ರಾರಂಭಿಸಿ.",
+    "downloadUpdate": "ಅಪ್‌ಡೇಟ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿ",
+    "downloadingUpdate": "ಡೌನ್‌ಲೋಡ್ ಆಗುತ್ತಿದೆ… {percent}%",
+    "restartToUpdate": "ಅಪ್‌ಡೇಟ್ ಮಾಡಲು ಮರುಪ್ರಾರಂಭಿಸಿ",
+    "updateReadyHint": "ಡೌನ್‌ಲೋಡ್ ಆಗಿದೆ. FreeLLMAPI ನಿಮ್ಮ ಡೇಟಾದ ಬ್ಯಾಕಪ್ ತೆಗೆದು, ಮರುಪ್ರಾರಂಭಿಸಿ ಹೊಸ ಆವೃತ್ತಿಯನ್ನು ತೆರೆಯುತ್ತದೆ.",
+    "updateInstallFailed": "ಅಪ್‌ಡೇಟ್ ಅನ್ನು ಸ್ಥಾಪಿಸಲಾಗಲಿಲ್ಲ.",
+    "updateNow": "ಈಗಲೇ ಅಪ್‌ಡೇಟ್ ಮಾಡಿ",
+    "updatingContainer": "ಹೊಸ ಇಮೇಜ್ ಎಳೆಯಲಾಗುತ್ತಿದೆ ಮತ್ತು ಮರುಪ್ರಾರಂಭಿಸಲಾಗುತ್ತಿದೆ. FreeLLMAPI ಮರಳಿದಾಗ ಈ ಪುಟ ಮರುಲೋಡ್ ಆಗುತ್ತದೆ.",
+    "updateNowFailed": "ಅಪ್‌ಡೇಟರ್ ವಿನಂತಿಯನ್ನು ಸ್ವೀಕರಿಸಲಿಲ್ಲ. watchtower ಕಂಟೇನರ್ ಚಾಲನೆಯಲ್ಲಿದೆಯೇ ಎಂದು ಪರಿಶೀಲಿಸಿ.",
+    "updateNowTimeout": "5 ನಿಮಿಷಗಳ ನಂತರವೂ FreeLLMAPI ಮರುಪ್ರಾರಂಭವಾಗಿಲ್ಲ. watchtower ಕಂಟೇನರ್ ಲಾಗ್‌ಗಳನ್ನು ಪರಿಶೀಲಿಸಿ."
   },
   "models": {
     "title": "ಮಾದರಿಗಳು",
@@ -341,7 +344,10 @@
     "weightSpeed": "ವೇಗ",
     "weightIntelligence": "ಗುಪ್ತಚರ",
     "weightRequired": "ಕನಿಷ್ಠ ಒಂದು ತೂಕವು ಶೂನ್ಯಕ್ಕಿಂತ ಹೆಚ್ಚಿರಬೇಕು.",
-    "scoreColumn": "ಸ್ಕೋರ್"
+    "scoreColumn": "ಸ್ಕೋರ್",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "ರೂಟರ್ ಒತ್ತಡ",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "ಅಪ್‌ಡೇಟ್‌ಗೆ ಮುನ್ನ"
   },
   "status": {
     "healthy": "ಆರೋಗ್ಯಕರ",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "ನಿಮ್ಮ ಸ್ವಂತ ಯಂತ್ರದಿಂದ WhatsApp, Telegram, Discord ಮತ್ತು ಇನ್ನಷ್ಟು ಕಡೆ ಉತ್ತರಿಸುವ, ಸದಾ ಚಾಲ್ತಿಯಲ್ಲಿರುವ ವೈಯಕ್ತಿಕ ಸಹಾಯಕ.",
       "hermes": "Nous Research ನ ಸ್ವಯಂ-ಸುಧಾರಣಾ ಏಜೆಂಟ್, ಶಾಶ್ವತ ಮೆಮೊರಿ ಮತ್ತು ಕೌಶಲ್ಯಗಳೊಂದಿಗೆ, ಟರ್ಮಿನಲ್‌ನಲ್ಲಿ ಅಥವಾ ಚಾಟ್ ಆ್ಯಪ್‌ಗಳಲ್ಲಿ.",
-      "pi": "ನಿಮ್ಮದೇ ಎಕ್ಸ್‌ಟೆನ್ಶನ್‌ಗಳು, ಕೌಶಲ್ಯಗಳು ಮತ್ತು ಪ್ರಾಂಪ್ಟ್ ಟೆಂಪ್ಲೇಟ್‌ಗಳಿಂದ ರೂಪಿಸುವ ಕನಿಷ್ಠ ಟರ್ಮಿನಲ್ ಏಜೆಂಟ್."
+      "pi": "ನಿಮ್ಮದೇ ಎಕ್ಸ್‌ಟೆನ್ಶನ್‌ಗಳು, ಕೌಶಲ್ಯಗಳು ಮತ್ತು ಪ್ರಾಂಪ್ಟ್ ಟೆಂಪ್ಲೇಟ್‌ಗಳಿಂದ ರೂಪಿಸುವ ಕನಿಷ್ಠ ಟರ್ಮಿನಲ್ ಏಜೆಂಟ್.",
+      "reasonix": "DeepSeekಗಾಗಿ ನಿರ್ಮಿಸಿದ ಟರ್ಮಿನಲ್ ಕೋಡಿಂಗ್ ಏಜೆಂಟ್, ದೀರ್ಘ ಸೆಷನ್‌ಗಳೂ ಅಗ್ಗವಾಗಿರಲು ಪ್ರಿಫಿಕ್ಸ್ ಕ್ಯಾಶಿಂಗ್ ಸುತ್ತ ರೂಪಿಸಲಾಗಿದೆ."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "FreeLLMAPI ನ ಹೊಸ ಆವೃತ್ತಿ ಸ್ಥಾಪಿಸಲಾಗಿದೆ.",
+    "reload": "ಮರುಲೋಡ್"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "ಚೈನ್ \"{oldName}\" ಹೆಸರನ್ನು \"{name}\" ಗೆ ಬದಲಾಯಿಸುವುದೇ? auto:{oldName} ಕರೆ ಮಾಡುವ ಕ್ಲೈಂಟ್‌ಗಳು auto:{name} ಗೆ ಬದಲಾಗಬೇಕು.",
     "renamePlaceholder": "ಹೊಸ ಚೈನ್ ಹೆಸರು",
     "renameFailed": "ಚೈನ್ ಹೆಸರನ್ನು ಮರುಹೆಸರಿಸಲಾಗಲಿಲ್ಲ."
+  },
+  "updates": {
+    "versionAvailable": "ಆವೃತ್ತಿ {version} ಲಭ್ಯವಿದೆ",
+    "versionReady": "ಆವೃತ್ತಿ {version} ಸ್ಥಾಪನೆಗೆ ಸಿದ್ಧವಾಗಿದೆ",
+    "releaseNotes": "ಬಿಡುಗಡೆ ಟಿಪ್ಪಣಿಗಳು",
+    "tryAgain": "ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ",
+    "offline": "ನಿಮ್ಮ ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಪರಿಶೀಲಿಸಿ ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ."
   }
 }

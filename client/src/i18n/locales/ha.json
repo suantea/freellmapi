@@ -152,21 +152,24 @@
     "compressionRunPreview": "Gudanar da samfoti",
     "updatesTitle": "Sabuntawa",
     "checkForUpdates": "Bincika don sabuntawa",
-    "lastChecked": "An duba ƙarshe: {when}",
-    "currentVersion": "Build na yanzu:",
     "updateAvailable": "Akwai sabuntawa",
-    "changelog": "Abin da ya canza",
     "upToDate": "An sabunta",
     "buildAhead": "Wannan build ɗin yana gaba da main na hukuma.",
     "buildDiverged": "Wannan build ɗin ya rabu da main na hukuma.",
     "buildUnknown": "Ba za a iya kwatanta wannan build na musamman da main na hukuma ba.",
     "notGitInstall": "Wannan shigarwar ba ta ƙunshi bayanan commit ba.",
     "checkFailed": "Ba a iya bincika sabuntawa ba.",
-    "contactsGithub": "Ana yin dubawa da hannu kuma ana tuntuɓar GitHub.",
     "autoUpdateCheck": "Duba sabuntawa ta atomatik",
-    "autoUpdateCheckHelp": "Yana duba GitHub sau ɗaya a rana don sabon fitowa kuma yana nuna tunatarwa. A kashe ta tsohuwa.",
-    "openReleases": "Buɗe sakin GitHub",
-    "restartAfterUpdate": "Sake kunna FreeLLMAPI bayan an gama build ɗin."
+    "restartAfterUpdate": "Sake kunna FreeLLMAPI bayan an gama build ɗin.",
+    "downloadUpdate": "Sauke sabuntawa",
+    "downloadingUpdate": "Ana saukewa… {percent}%",
+    "restartToUpdate": "Sake farawa don sabuntawa",
+    "updateReadyHint": "An sauke. FreeLLMAPI yana adana bayananka, sai ya sake farawa ya buɗe sabon sigar.",
+    "updateInstallFailed": "Ba a iya shigar da sabuntawar ba.",
+    "updateNow": "Sabunta yanzu",
+    "updatingContainer": "Ana jan sabon hoto ana sake farawa. Wannan shafin zai sake lodawa idan FreeLLMAPI ya dawo.",
+    "updateNowFailed": "Mai sabuntawa bai karɓi buƙatar ba. Duba ko kwantena watchtower yana aiki.",
+    "updateNowTimeout": "FreeLLMAPI bai sake farawa ba bayan minti 5. Duba bayanan log na kwantena watchtower."
   },
   "models": {
     "title": "Samfura",
@@ -341,7 +344,10 @@
     "weightSpeed": "Gudu",
     "weightIntelligence": "Hankali",
     "weightRequired": "Aƙalla nauyi ɗaya dole ne ya kasance sama da sifili.",
-    "scoreColumn": "Maki"
+    "scoreColumn": "Maki",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Matsin na'ura mai ba da hanya tsakanin hanyoyin sadarwa",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Kafin sabuntawa"
   },
   "status": {
     "healthy": "lafiya",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "Mataimaki na kai da ke aiki koyaushe, yana amsawa a WhatsApp, Telegram, Discord da sauransu daga na'urarka.",
       "hermes": "Wakilin Nous Research mai inganta kansa, da ƙwaƙwalwa mai dorewa da ƙwarewa, a cikin terminal ko a manhajojin hira.",
-      "pi": "Ƙaramin wakilin terminal da kuke tsara shi da naku ƙarin abubuwa, ƙwarewa da samfuran umarni."
+      "pi": "Ƙaramin wakilin terminal da kuke tsara shi da naku ƙarin abubuwa, ƙwarewa da samfuran umarni.",
+      "reasonix": "Wakilin rubuta lamba a tasha da aka gina don DeepSeek, bisa ajiyar prefix domin dogayen zama su kasance masu arha."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "An shigar da sabon sigar FreeLLMAPI.",
+    "reload": "Sake lodawa"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Sauya sunan sarƙa \"{oldName}\" zuwa \"{name}\"? Abokan cinikin da ke kira auto:{oldName} dole su koma auto:{name}.",
     "renamePlaceholder": "Sabon sunan sarƙa",
     "renameFailed": "Ba a iya sauya sunan sarƙar ba."
+  },
+  "updates": {
+    "versionAvailable": "Sigar {version} tana nan",
+    "versionReady": "Sigar {version} a shirye take don shigarwa",
+    "releaseNotes": "Bayanan fitarwa",
+    "tryAgain": "Sake gwadawa",
+    "offline": "Duba haɗin intanet ɗinka sannan ka sake gwadawa."
   }
 }

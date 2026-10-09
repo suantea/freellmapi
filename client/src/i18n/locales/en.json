@@ -152,21 +152,24 @@
     "compressionRunPreview": "Run preview",
     "updatesTitle": "Updates",
     "checkForUpdates": "Check for updates",
-    "lastChecked": "Last checked: {when}",
-    "currentVersion": "Current build:",
     "updateAvailable": "Update available",
-    "changelog": "What's changed",
     "upToDate": "Up to date",
     "buildAhead": "This build is ahead of official main.",
     "buildDiverged": "This build has diverged from official main.",
     "buildUnknown": "This custom build cannot be compared with official main.",
     "notGitInstall": "This installation does not include commit information.",
     "checkFailed": "Could not check for updates.",
-    "contactsGithub": "Checks are manual and contact GitHub.",
     "autoUpdateCheck": "Automatic update check",
-    "autoUpdateCheckHelp": "Checks GitHub once a day for a new release and shows a reminder. Off by default.",
-    "openReleases": "Open GitHub Releases",
-    "restartAfterUpdate": "Restart FreeLLMAPI after the build completes."
+    "restartAfterUpdate": "Restart FreeLLMAPI after the build completes.",
+    "downloadUpdate": "Download update",
+    "downloadingUpdate": "Downloading… {percent}%",
+    "restartToUpdate": "Restart to update",
+    "updateReadyHint": "Downloaded. FreeLLMAPI backs up your data, restarts and opens the new version.",
+    "updateInstallFailed": "The update could not be installed.",
+    "updateNow": "Update now",
+    "updatingContainer": "Pulling the new image and restarting. This page reloads when FreeLLMAPI is back.",
+    "updateNowFailed": "The updater did not accept the request. Check that the watchtower container is running.",
+    "updateNowTimeout": "FreeLLMAPI has not restarted after 5 minutes. Check the watchtower container's logs."
   },
   "models": {
     "title": "Models",
@@ -317,6 +320,9 @@
     "title": "Routing strategy",
     "description": "Pick a routing strategy. In Manual mode you drag to set the order; the other strategies route by live score across reliability, speed and intelligence.",
     "weightsSummary": "reliability {reliability}% · speed {speed}% · intelligence {intelligence}%",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled",
     "guardrails": "Guardrails",
     "guardrailsTooltip": "Always-on guardrails: free-quota headroom × live rate-limit penalty. Below 1.0 means the model is being held back.",
     "scoreTooltip": "Final routing score = weighted average of the three axes, multiplied by the guardrails. Higher routes first.",
@@ -724,7 +730,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Pre-update"
   },
   "status": {
     "healthy": "healthy",
@@ -767,7 +774,8 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "An always-on personal assistant that answers on WhatsApp, Telegram, Discord and more from your own machine.",
       "hermes": "Nous Research's self-improving agent with persistent memory and skills, in the terminal or on chat apps.",
-      "pi": "A minimal terminal harness you shape with your own extensions, skills and prompt templates."
+      "pi": "A minimal terminal harness you shape with your own extensions, skills and prompt templates.",
+      "reasonix": "A DeepSeek-native terminal coding agent, built around prefix caching so long sessions stay cheap."
     }
   },
   "analytics": {
@@ -1152,12 +1160,9 @@
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "A newer version of FreeLLMAPI is installed.",
+    "reload": "Reload"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1210,5 +1215,12 @@
     "renameConfirm": "Rename chain \"{oldName}\" to \"{name}\"? Clients calling auto:{oldName} must switch to auto:{name}.",
     "renamePlaceholder": "New chain name",
     "renameFailed": "Couldn't rename the chain."
+  },
+  "updates": {
+    "versionAvailable": "Version {version} is available",
+    "versionReady": "Version {version} is ready to install",
+    "releaseNotes": "Release notes",
+    "tryAgain": "Try again",
+    "offline": "Check your internet connection and try again."
   }
 }

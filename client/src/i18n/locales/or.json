@@ -152,21 +152,24 @@
     "compressionRunPreview": "ପୂର୍ବାବଲୋକନ ଚଲାନ୍ତୁ",
     "updatesTitle": "ଅପଡେଟ୍‌ଗୁଡ଼ିକ",
     "checkForUpdates": "ଅପଡେଟସ୍ ପାଇଁ ଯାଞ୍ଚ କରନ୍ତୁ",
-    "lastChecked": "ଶେଷ ଥର ଯାଞ୍ଚ ହୋଇଛି: {when}",
-    "currentVersion": "ବର୍ତ୍ତମାନର ବିଲ୍ଡ:",
     "updateAvailable": "ଅପଡେଟ୍ ଉପଲବ୍ଧ",
-    "changelog": "କ’ଣ ପରିବର୍ତ୍ତନ ହୋଇଛି",
     "upToDate": "ଅଦ୍ୟତନ ଅଛି",
     "buildAhead": "ଏହି ବିଲ୍ଡଟି ଅଧିକାରିକ main ଶାଖାଠାରୁ ଆଗରେ ଅଛି।",
     "buildDiverged": "ଏହି ବିଲ୍ଡଟି ଅଧିକାରିକ main ଶାଖାଠାରୁ ଅଲଗା ହୋଇଯାଇଛି।",
     "buildUnknown": "ଏହି କଷ୍ଟମ୍ ବିଲ୍ଡକୁ ଅଧିକାରିକ main ଶାଖା ସହିତ ତୁଳନା କରାଯାଇପାରିବ ନାହିଁ।",
     "notGitInstall": "ଏହି ଇନ୍‌ଷ୍ଟଲେସନ୍‌ରେ commit ସୂଚନା ନାହିଁ।",
     "checkFailed": "ଅପଡେଟ୍ ଯାଞ୍ଚ କରାଯାଇପାରିଲା ନାହିଁ।",
-    "contactsGithub": "ଯାଞ୍ଚଗୁଡ଼ିକ ମାନୁଆଲ୍ ଭାବେ କରାଯାଏ ଏବଂ GitHub ସହିତ ସଂଯୋଗ କରେ।",
     "autoUpdateCheck": "ସ୍ୱୟଂଚାଳିତ ଅପଡେଟ୍ ଯାଞ୍ଚ",
-    "autoUpdateCheckHelp": "ଦିନକୁ ଥରେ ନୂଆ ରିଲିଜ୍ ପାଇଁ GitHub ଯାଞ୍ଚ କରେ ଏବଂ ଏକ ସ୍ମାରକ ଦେଖାଏ। ଡିଫଲ୍ଟ ଭାବେ ବନ୍ଦ।",
-    "openReleases": "GitHub Releases ଖୋଲନ୍ତୁ",
-    "restartAfterUpdate": "ବିଲ୍ଡ ସମ୍ପୂର୍ଣ୍ଣ ହେବା ପରେ FreeLLMAPI ପୁନଃ ଚାଲୁ କରନ୍ତୁ।"
+    "restartAfterUpdate": "ବିଲ୍ଡ ସମ୍ପୂର୍ଣ୍ଣ ହେବା ପରେ FreeLLMAPI ପୁନଃ ଚାଲୁ କରନ୍ତୁ।",
+    "downloadUpdate": "ଅପଡେଟ୍ ଡାଉନଲୋଡ୍ କରନ୍ତୁ",
+    "downloadingUpdate": "ଡାଉନଲୋଡ୍ ହେଉଛି… {percent}%",
+    "restartToUpdate": "ଅପଡେଟ୍ ପାଇଁ ପୁନଃ ଆରମ୍ଭ କରନ୍ତୁ",
+    "updateReadyHint": "ଡାଉନଲୋଡ୍ ହୋଇଗଲା। FreeLLMAPI ଆପଣଙ୍କ ଡାଟାର ବ୍ୟାକଅପ୍ ନେଇ, ପୁନଃ ଆରମ୍ଭ ହୋଇ ନୂଆ ସଂସ୍କରଣ ଖୋଲେ।",
+    "updateInstallFailed": "ଅପଡେଟ୍ ଇନଷ୍ଟଲ୍ ହୋଇପାରିଲା ନାହିଁ।",
+    "updateNow": "ବର୍ତ୍ତମାନ ଅପଡେଟ୍ କରନ୍ତୁ",
+    "updatingContainer": "ନୂଆ ଇମେଜ୍ ଟାଣାଯାଉଛି ଏବଂ ପୁନଃ ଆରମ୍ଭ ହେଉଛି। FreeLLMAPI ଫେରିଲେ ଏହି ପୃଷ୍ଠା ପୁନଃ ଲୋଡ୍ ହେବ।",
+    "updateNowFailed": "ଅପଡେଟର ଅନୁରୋଧ ଗ୍ରହଣ କଲା ନାହିଁ। watchtower କଣ୍ଟେନର ଚାଲୁଛି କି ନାହିଁ ଯାଞ୍ଚ କରନ୍ତୁ।",
+    "updateNowTimeout": "୫ ମିନିଟ ପରେ ମଧ୍ୟ FreeLLMAPI ପୁନଃ ଆରମ୍ଭ ହୋଇନାହିଁ। watchtower କଣ୍ଟେନରର ଲଗ୍ ଦେଖନ୍ତୁ।"
   },
   "models": {
     "title": "ମଡେଲଗୁଡିକ",
@@ -341,7 +344,10 @@
     "weightSpeed": "ବେଗ",
     "weightIntelligence": "ବୁଦ୍ଧିମତା",
     "weightRequired": "ଅତିକମରେ ଗୋଟିଏ ଓଜନ ଶୂନ୍ୟରୁ ଅଧିକ ହେବା ଆବଶ୍ୟକ।",
-    "scoreColumn": "ସ୍କୋର"
+    "scoreColumn": "ସ୍କୋର",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "ରାଉଟର ଚାପ",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "ଅପଡେଟ୍ ପୂର୍ବରୁ"
   },
   "status": {
     "healthy": "ସୁସ୍ଥ",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "ଆପଣଙ୍କ ନିଜ ମେସିନରୁ WhatsApp, Telegram, Discord ଓ ଆହୁରି ଅନେକ ସ୍ଥାନରେ ଉତ୍ତର ଦେଉଥିବା, ସବୁବେଳେ ଚାଲୁ ରହୁଥିବା ବ୍ୟକ୍ତିଗତ ସହାୟକ।",
       "hermes": "Nous Research ର ନିଜକୁ ଉନ୍ନତ କରୁଥିବା ଏଜେଣ୍ଟ, ସ୍ଥାୟୀ ମେମୋରୀ ଓ ଦକ୍ଷତା ସହିତ, ଟର୍ମିନାଲରେ କିମ୍ବା ଚାଟ୍ ଆପ୍‌ରେ।",
-      "pi": "ଏକ ସର୍ବନିମ୍ନ ଟର୍ମିନାଲ ଏଜେଣ୍ଟ, ଯାହାକୁ ଆପଣ ନିଜର ଏକ୍ସଟେନସନ, ଦକ୍ଷତା ଓ ପ୍ରମ୍ପ୍ଟ ଟେମ୍ପଲେଟରେ ଗଢ଼ନ୍ତି।"
+      "pi": "ଏକ ସର୍ବନିମ୍ନ ଟର୍ମିନାଲ ଏଜେଣ୍ଟ, ଯାହାକୁ ଆପଣ ନିଜର ଏକ୍ସଟେନସନ, ଦକ୍ଷତା ଓ ପ୍ରମ୍ପ୍ଟ ଟେମ୍ପଲେଟରେ ଗଢ଼ନ୍ତି।",
+      "reasonix": "DeepSeek ପାଇଁ ତିଆରି ଟର୍ମିନାଲ କୋଡିଂ ଏଜେଣ୍ଟ, ଲମ୍ବା ସେସନ ଶସ୍ତା ରହିବା ପାଇଁ ପ୍ରିଫିକ୍ସ କ୍ୟାଶିଂ ଉପରେ ଗଢ଼ାଯାଇଛି।"
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "FreeLLMAPI ର ନୂଆ ସଂସ୍କରଣ ଇନଷ୍ଟଲ୍ ହୋଇଛି।",
+    "reload": "ପୁନଃ ଲୋଡ୍"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "ଚେନ୍ \"{oldName}\" ର ନାମ \"{name}\" କରନ୍ତୁ? auto:{oldName} କଲ୍ କରୁଥିବା କ୍ଲାଏଣ୍ଟମାନେ auto:{name} କୁ ଯିବା ଉଚିତ୍‌।",
     "renamePlaceholder": "ନୂଆ ଚେନ୍ ନାମ",
     "renameFailed": "ଚେନ୍‌ର ନାମ ବଦଳାଯାଇପାରିଲା ନାହିଁ।"
+  },
+  "updates": {
+    "versionAvailable": "ସଂସ୍କରଣ {version} ଉପଲବ୍ଧ",
+    "versionReady": "ସଂସ୍କରଣ {version} ଇନଷ୍ଟଲ୍ ପାଇଁ ପ୍ରସ୍ତୁତ",
+    "releaseNotes": "ରିଲିଜ୍ ନୋଟ୍",
+    "tryAgain": "ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ",
+    "offline": "ଆପଣଙ୍କ ଇଣ୍ଟରନେଟ୍ ସଂଯୋଗ ଯାଞ୍ଚ କରି ପୁଣି ଚେଷ୍ଟା କରନ୍ତୁ।"
   }
 }

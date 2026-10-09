@@ -152,21 +152,24 @@
     "compressionRunPreview": "Rulează previzualizarea",
     "updatesTitle": "Actualizări",
     "checkForUpdates": "Verifică actualizările",
-    "lastChecked": "Ultima verificare: {when}",
-    "currentVersion": "Versiunea curentă:",
     "updateAvailable": "Actualizare disponibilă",
-    "changelog": "Ce s-a schimbat",
     "upToDate": "La zi",
     "buildAhead": "Această versiune este înaintea ramurii main oficiale.",
     "buildDiverged": "Această versiune a deviat de la ramura main oficială.",
     "buildUnknown": "Această versiune personalizată nu poate fi comparată cu ramura main oficială.",
     "notGitInstall": "Această instalare nu include informații despre commit.",
     "checkFailed": "Nu s-au putut verifica actualizările.",
-    "contactsGithub": "Verificările sunt inițiate manual și contactează GitHub.",
     "autoUpdateCheck": "Verificare automată a actualizărilor",
-    "autoUpdateCheckHelp": "Verifică GitHub o dată pe zi dacă există o versiune nouă și afișează o notificare. Dezactivat implicit.",
-    "openReleases": "Deschide versiunile GitHub",
-    "restartAfterUpdate": "Repornește FreeLLMAPI după finalizarea compilării."
+    "restartAfterUpdate": "Repornește FreeLLMAPI după finalizarea compilării.",
+    "downloadUpdate": "Descarcă actualizarea",
+    "downloadingUpdate": "Se descarcă… {percent}%",
+    "restartToUpdate": "Repornește pentru actualizare",
+    "updateReadyHint": "Descărcat. FreeLLMAPI face o copie de rezervă a datelor, repornește și deschide noua versiune.",
+    "updateInstallFailed": "Actualizarea nu a putut fi instalată.",
+    "updateNow": "Actualizează acum",
+    "updatingContainer": "Se descarcă noua imagine și se repornește. Pagina se reîncarcă când FreeLLMAPI revine.",
+    "updateNowFailed": "Actualizatorul nu a acceptat cererea. Verifică dacă containerul watchtower rulează.",
+    "updateNowTimeout": "FreeLLMAPI nu a repornit după 5 minute. Verifică jurnalele containerului watchtower."
   },
   "models": {
     "title": "Modele",
@@ -341,7 +344,10 @@
     "weightSpeed": "Viteză",
     "weightIntelligence": "Inteligență",
     "weightRequired": "Cel puțin o greutate trebuie să fie peste zero.",
-    "scoreColumn": "Scorul"
+    "scoreColumn": "Scorul",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Presiunea routerului",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Înainte de actualizare"
   },
   "status": {
     "healthy": "Sănătos",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "Un asistent personal mereu activ care răspunde pe WhatsApp, Telegram, Discord și altele, de pe propria ta mașină.",
       "hermes": "Agentul auto-perfecționabil de la Nous Research, cu memorie persistentă și abilități, în terminal sau în aplicațiile de chat.",
-      "pi": "Un agent de terminal minimalist pe care îl modelezi cu propriile extensii, abilități și șabloane de prompturi."
+      "pi": "Un agent de terminal minimalist pe care îl modelezi cu propriile extensii, abilități și șabloane de prompturi.",
+      "reasonix": "Un agent de programare pentru terminal, nativ DeepSeek, construit în jurul cache-ului de prefix, ca sesiunile lungi să rămână ieftine."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Este instalată o versiune mai nouă de FreeLLMAPI.",
+    "reload": "Reîncarcă"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Redenumiți lanțul \"{oldName}\" în \"{name}\"? Clienții care apelau auto:{oldName} trebuie să treacă la auto:{name}.",
     "renamePlaceholder": "Numele nou al lanțului",
     "renameFailed": "Nu s-a putut redenumi lanțul."
+  },
+  "updates": {
+    "versionAvailable": "Versiunea {version} este disponibilă",
+    "versionReady": "Versiunea {version} este gata de instalare",
+    "releaseNotes": "Note de lansare",
+    "tryAgain": "Încearcă din nou",
+    "offline": "Verifică conexiunea la internet și încearcă din nou."
   }
 }

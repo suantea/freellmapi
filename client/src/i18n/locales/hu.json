@@ -152,21 +152,24 @@
     "compressionRunPreview": "Előnézet futtatása",
     "updatesTitle": "Frissítések",
     "checkForUpdates": "Ellenőrizd a frissítéseket",
-    "lastChecked": "Utoljára ellenőrizve: {when}",
-    "currentVersion": "Jelenlegi build:",
     "updateAvailable": "Frissítés érhető el",
-    "changelog": "Mi változott",
     "upToDate": "Naprakész",
     "buildAhead": "Ez a build megelőzi a hivatalos main ágat.",
     "buildDiverged": "Ez a build eltért a hivatalos main ágtól.",
     "buildUnknown": "Ez az egyéni build nem hasonlítható össze a hivatalos main ággal.",
     "notGitInstall": "Ez a telepítés nem tartalmaz commitinformációkat.",
     "checkFailed": "Nem sikerült ellenőrizni a frissítéseket.",
-    "contactsGithub": "Az ellenőrzések manuálisak, és kapcsolatba lépnek a GitHubbal.",
     "autoUpdateCheck": "Automatikus frissítésellenőrzés",
-    "autoUpdateCheckHelp": "Naponta egyszer ellenőrzi a GitHubon az új kiadást, és emlékeztetőt jelenít meg. Alapértelmezés szerint kikapcsolva.",
-    "openReleases": "GitHub-kiadások megnyitása",
-    "restartAfterUpdate": "A build befejezése után indítsa újra a FreeLLMAPI-t."
+    "restartAfterUpdate": "A build befejezése után indítsa újra a FreeLLMAPI-t.",
+    "downloadUpdate": "Frissítés letöltése",
+    "downloadingUpdate": "Letöltés… {percent}%",
+    "restartToUpdate": "Újraindítás a frissítéshez",
+    "updateReadyHint": "Letöltve. A FreeLLMAPI biztonsági mentést készít az adatairól, újraindul, és megnyitja az új verziót.",
+    "updateInstallFailed": "A frissítést nem sikerült telepíteni.",
+    "updateNow": "Frissítés most",
+    "updatingContainer": "Az új image letöltése és újraindítás. Az oldal újratöltődik, amikor a FreeLLMAPI visszatér.",
+    "updateNowFailed": "A frissítő nem fogadta el a kérést. Ellenőrizze, hogy fut-e a watchtower konténer.",
+    "updateNowTimeout": "A FreeLLMAPI 5 perc után sem indult újra. Nézze meg a watchtower konténer naplóit."
   },
   "models": {
     "title": "Modellek",
@@ -341,7 +344,10 @@
     "weightSpeed": "Sebesség",
     "weightIntelligence": "Intelligencia",
     "weightRequired": "Legalább egy súlynak nulla felett kell lennie.",
-    "scoreColumn": "Zene"
+    "scoreColumn": "Zene",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Router nyomás",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Frissítés előtt"
   },
   "status": {
     "healthy": "egészséges",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "Egy mindig elérhető személyes asszisztens, amely a saját gépedről válaszol a WhatsApp, a Telegram, a Discord és más alkalmazások üzeneteire.",
       "hermes": "A Nous Research önfejlesztő ügynöke tartós memóriával és készségekkel, terminálban vagy csevegőalkalmazásokban.",
-      "pi": "Minimalista terminálügynök, amelyet saját bővítményekkel, készségekkel és promptsablonokkal alakíthat."
+      "pi": "Minimalista terminálügynök, amelyet saját bővítményekkel, készségekkel és promptsablonokkal alakíthat.",
+      "reasonix": "DeepSeekre szabott terminálos kódolóügynök, amely a prefix-gyorsítótárra épül, így a hosszú munkamenetek is olcsók maradnak."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "A FreeLLMAPI újabb verziója van telepítve.",
+    "reload": "Újratöltés"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Lánc \"{oldName}\" átnevezése \"{name}\"-re? A(z) auto:{oldName}-t hívó ügyfeleknek át kell térniük auto:{name}-re.",
     "renamePlaceholder": "Új láncnév",
     "renameFailed": "Nem sikerült átnevezni a láncot."
+  },
+  "updates": {
+    "versionAvailable": "Elérhető a(z) {version} verzió",
+    "versionReady": "A(z) {version} verzió telepítésre kész",
+    "releaseNotes": "Kiadási jegyzetek",
+    "tryAgain": "Próbálja újra",
+    "offline": "Ellenőrizze az internetkapcsolatot, és próbálja újra."
   }
 }

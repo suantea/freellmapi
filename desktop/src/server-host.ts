@@ -12,13 +12,14 @@ import tls from 'node:tls';
 import type { Server } from 'node:http';
 import { createApp } from '../../server/src/app.js';
 import { initDb, getDb, getUnifiedApiKey } from '../../server/src/db/index.js';
-import { restoreProxySettings, flushProxyCache } from '../../server/src/lib/proxy.js';
+import { restoreProxySettings, flushProxyCache, getProxyMode, getProxyUrl, isProxyActive } from '../../server/src/lib/proxy.js';
 import { startHealthChecker, checkAllKeys } from '../../server/src/services/health.js';
 import { startCatalogSync } from '../../server/src/services/catalog-sync.js';
 import { startCooldownProbe } from '../../server/src/services/cooldown-probe.js';
 import { startCustomModelSync } from '../../server/src/services/custom-model-sync.js';
 import { startBuiltinModelDiscovery } from '../../server/src/services/builtin-model-discovery.js';
-import { startBackupScheduler } from '../../server/src/services/backups.js';
+import { startBackupScheduler, createBackup } from '../../server/src/services/backups.js';
+import { isAutoUpdateCheckEnabled } from '../../server/src/routes/update.js';
 import { cleanupExpiredCooldowns } from '../../server/src/services/ratelimit.js';
 import { loadCacheFromDb } from '../../server/src/services/cache.js';
 import { startWakeDetect } from '../../server/src/lib/wake-detect.js';
@@ -27,7 +28,20 @@ import { installLogRedaction } from '../../server/src/lib/log-redaction.js';
 import { userCount, createUser, createSession } from '../../server/src/services/auth.js';
 import { NodeScheduler } from '../../server/src/lib/scheduler.js';
 
-export { getDb, getUnifiedApiKey };
+export { getDb, getUnifiedApiKey, isAutoUpdateCheckEnabled };
+
+// Desktop updater → a full dump before an update installs, listed on the
+// Backups page as "Pre-update". Returns the file it wrote.
+/** The forward proxy the server's own requests use right now, or '' — read
+ * by the updater before every check so it leaves through the same route
+ * (#1432). A Fetch Relay is not a proxy Chromium can speak, so it is skipped. */
+export function outboundProxyUrl(): string {
+  return isProxyActive() && getProxyMode() === 'forward' ? getProxyUrl() : '';
+}
+
+export function backupBeforeUpdate(): string {
+  return createBackup(getDb(), { source: 'pre-update' }).filename;
+}
 
 export interface StartOptions {
   dbPath: string;

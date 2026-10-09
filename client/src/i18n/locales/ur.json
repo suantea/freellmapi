@@ -152,21 +152,24 @@
     "compressionRunPreview": "پیش منظر چلائیں",
     "updatesTitle": "اپ ڈیٹس",
     "checkForUpdates": "اپ ڈیٹس کے لیے چیک کریں۔",
-    "lastChecked": "آخری بار چیک کیا گیا: {when}",
-    "currentVersion": "موجودہ بلڈ:",
     "updateAvailable": "اپ ڈیٹ دستیاب ہے",
-    "changelog": "کیا بدلا ہے",
     "upToDate": "تازہ ترین",
     "buildAhead": "یہ بلڈ آفیشل main سے آگے ہے۔",
     "buildDiverged": "یہ بلڈ آفیشل main سے مختلف ہو گیا ہے۔",
     "buildUnknown": "اس کسٹم بلڈ کا آفیشل main سے موازنہ نہیں کیا جا سکتا۔",
     "notGitInstall": "اس انسٹالیشن میں commit کی معلومات شامل نہیں ہیں۔",
     "checkFailed": "اپ ڈیٹس کی جانچ نہیں ہو سکی۔",
-    "contactsGithub": "جانچ دستی طور پر کی جاتی ہے اور GitHub سے رابطہ کرتی ہے۔",
     "autoUpdateCheck": "خودکار اپ ڈیٹ جانچ",
-    "autoUpdateCheckHelp": "دن میں ایک بار نئی ریلیز کے لیے GitHub کی جانچ کرتا ہے اور یاد دہانی دکھاتا ہے۔ بطور ڈیفالٹ بند ہے۔",
-    "openReleases": "GitHub ریلیزز کھولیں",
-    "restartAfterUpdate": "بلڈ مکمل ہونے کے بعد FreeLLMAPI کو دوبارہ شروع کریں۔"
+    "restartAfterUpdate": "بلڈ مکمل ہونے کے بعد FreeLLMAPI کو دوبارہ شروع کریں۔",
+    "downloadUpdate": "اپ ڈیٹ ڈاؤن لوڈ کریں",
+    "downloadingUpdate": "ڈاؤن لوڈ ہو رہا ہے… {percent}%",
+    "restartToUpdate": "اپ ڈیٹ کے لیے دوبارہ شروع کریں",
+    "updateReadyHint": "ڈاؤن لوڈ ہو گیا۔ FreeLLMAPI آپ کے ڈیٹا کا بیک اپ لیتا ہے، دوبارہ شروع ہوتا ہے اور نیا ورژن کھولتا ہے۔",
+    "updateInstallFailed": "اپ ڈیٹ انسٹال نہیں ہو سکا۔",
+    "updateNow": "ابھی اپ ڈیٹ کریں",
+    "updatingContainer": "نئی امیج کھینچی جا رہی ہے اور دوبارہ شروع ہو رہا ہے۔ FreeLLMAPI واپس آنے پر یہ صفحہ دوبارہ لوڈ ہوگا۔",
+    "updateNowFailed": "اپ ڈیٹر نے درخواست قبول نہیں کی۔ چیک کریں کہ watchtower کنٹینر چل رہا ہے۔",
+    "updateNowTimeout": "5 منٹ بعد بھی FreeLLMAPI دوبارہ شروع نہیں ہوا۔ watchtower کنٹینر کے لاگز دیکھیں۔"
   },
   "models": {
     "title": "ماڈلز",
@@ -341,7 +344,10 @@
     "weightSpeed": "رفتار",
     "weightIntelligence": "ذہانت",
     "weightRequired": "کم از کم ایک وزن صفر سے اوپر ہونا چاہیے۔",
-    "scoreColumn": "سکور"
+    "scoreColumn": "سکور",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "راؤٹر کا دباؤ",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "اپ ڈیٹ سے پہلے"
   },
   "status": {
     "healthy": "صحت مند",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "ایک ہمیشہ فعال ذاتی معاون جو آپ کی اپنی مشین سے WhatsApp، Telegram، Discord اور دیگر پر جواب دیتا ہے۔",
       "hermes": "Nous Research کا خود کو بہتر بنانے والا ایجنٹ، مستقل میموری اور مہارتوں کے ساتھ، ٹرمینل میں یا چیٹ ایپس پر۔",
-      "pi": "ایک سادہ ٹرمینل ایجنٹ، جسے آپ اپنی ایکسٹینشنز، مہارتوں اور پرامپٹ ٹیمپلیٹس سے ڈھالتے ہیں۔"
+      "pi": "ایک سادہ ٹرمینل ایجنٹ، جسے آپ اپنی ایکسٹینشنز، مہارتوں اور پرامپٹ ٹیمپلیٹس سے ڈھالتے ہیں۔",
+      "reasonix": "DeepSeek کے لیے بنایا گیا ٹرمینل کوڈنگ ایجنٹ، جو پریفکس کیشنگ کے گرد بنا ہے تاکہ لمبے سیشن بھی سستے رہیں۔"
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "FreeLLMAPI کا نیا ورژن انسٹال ہو چکا ہے۔",
+    "reload": "دوبارہ لوڈ کریں"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "چین \"{oldName}\" کا نام \"{name}\" کریں؟ auto:{oldName} کال کرنے والے کلائنٹس کو auto:{name} پر جانا ہوگا۔",
     "renamePlaceholder": "نیا چین نام",
     "renameFailed": "چین کا نام تبدیل نہیں ہو سکا۔"
+  },
+  "updates": {
+    "versionAvailable": "ورژن {version} دستیاب ہے",
+    "versionReady": "ورژن {version} انسٹال کے لیے تیار ہے",
+    "releaseNotes": "ریلیز نوٹس",
+    "tryAgain": "دوبارہ کوشش کریں",
+    "offline": "اپنا انٹرنیٹ کنکشن چیک کریں اور دوبارہ کوشش کریں۔"
   }
 }

@@ -152,21 +152,24 @@
     "compressionRunPreview": "ప్రివ్యూ అమలు చేయండి",
     "updatesTitle": "నవీకరణలు",
     "checkForUpdates": "నవీకరణల కోసం తనిఖీ చేయండి",
-    "lastChecked": "చివరిగా తనిఖీ చేసినది: {when}",
-    "currentVersion": "ప్రస్తుత బిల్డ్:",
     "updateAvailable": "నవీకరణ అందుబాటులో ఉంది",
-    "changelog": "ఏమి మారింది",
     "upToDate": "తాజా స్థితిలో ఉంది",
     "buildAhead": "ఈ బిల్డ్ అధికారిక main కంటే ముందుంది.",
     "buildDiverged": "ఈ బిల్డ్ అధికారిక main నుండి వేరుగా మారింది.",
     "buildUnknown": "ఈ అనుకూల బిల్డ్‌ను అధికారిక mainతో పోల్చడం సాధ్యం కాదు.",
     "notGitInstall": "ఈ ఇన్‌స్టాలేషన్‌లో commit సమాచారం లేదు.",
     "checkFailed": "నవీకరణల కోసం తనిఖీ చేయడం సాధ్యం కాలేదు.",
-    "contactsGithub": "తనిఖీలు మాన్యువల్‌గా జరుగుతాయి మరియు GitHubను సంప్రదిస్తాయి.",
     "autoUpdateCheck": "స్వయంచాలక నవీకరణ తనిఖీ",
-    "autoUpdateCheckHelp": "రోజుకు ఒకసారి కొత్త విడుదల కోసం GitHubను తనిఖీ చేసి రిమైండర్‌ను చూపుతుంది. అప్రమేయంగా ఆఫ్‌లో ఉంటుంది.",
-    "openReleases": "GitHub విడుదలలను తెరవండి",
-    "restartAfterUpdate": "బిల్డ్ పూర్తయిన తర్వాత FreeLLMAPIని పునఃప్రారంభించండి."
+    "restartAfterUpdate": "బిల్డ్ పూర్తయిన తర్వాత FreeLLMAPIని పునఃప్రారంభించండి.",
+    "downloadUpdate": "అప్‌డేట్ డౌన్‌లోడ్ చేయండి",
+    "downloadingUpdate": "డౌన్‌లోడ్ అవుతోంది… {percent}%",
+    "restartToUpdate": "అప్‌డేట్ కోసం రీస్టార్ట్ చేయండి",
+    "updateReadyHint": "డౌన్‌లోడ్ అయింది. FreeLLMAPI మీ డేటాను బ్యాకప్ చేసి, రీస్టార్ట్ అయి కొత్త వెర్షన్‌ను తెరుస్తుంది.",
+    "updateInstallFailed": "అప్‌డేట్‌ను ఇన్‌స్టాల్ చేయలేకపోయాము.",
+    "updateNow": "ఇప్పుడే అప్‌డేట్ చేయండి",
+    "updatingContainer": "కొత్త ఇమేజ్‌ను తెచ్చి రీస్టార్ట్ అవుతోంది. FreeLLMAPI తిరిగి వచ్చాక ఈ పేజీ రీలోడ్ అవుతుంది.",
+    "updateNowFailed": "అప్‌డేటర్ అభ్యర్థనను అంగీకరించలేదు. watchtower కంటైనర్ నడుస్తోందో లేదో చూడండి.",
+    "updateNowTimeout": "5 నిమిషాల తర్వాత కూడా FreeLLMAPI రీస్టార్ట్ కాలేదు. watchtower కంటైనర్ లాగ్‌లను చూడండి."
   },
   "models": {
     "title": "మోడల్స్",
@@ -341,7 +344,10 @@
     "weightSpeed": "వేగం",
     "weightIntelligence": "ఇంటెలిజెన్స్",
     "weightRequired": "కనీసం ఒక బరువు తప్పనిసరిగా సున్నా కంటే ఎక్కువగా ఉండాలి.",
-    "scoreColumn": "స్కోర్"
+    "scoreColumn": "స్కోర్",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "రూటర్ ఒత్తిడి",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "అప్‌డేట్‌కు ముందు"
   },
   "status": {
     "healthy": "ఆరోగ్యకరమైన",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "మీ సొంత మెషీన్ నుండి WhatsApp, Telegram, Discord మరియు మరిన్నింటిలో సమాధానం ఇచ్చే, ఎప్పుడూ పనిచేసే వ్యక్తిగత సహాయకుడు.",
       "hermes": "Nous Research యొక్క స్వీయ-మెరుగుదల ఏజెంట్, శాశ్వత మెమరీ మరియు నైపుణ్యాలతో, టెర్మినల్‌లో లేదా చాట్ యాప్‌లలో.",
-      "pi": "మీ సొంత ఎక్స్‌టెన్షన్‌లు, నైపుణ్యాలు, ప్రాంప్ట్ టెంప్లేట్‌లతో మీరు తీర్చిదిద్దే కనీస టెర్మినల్ ఏజెంట్."
+      "pi": "మీ సొంత ఎక్స్‌టెన్షన్‌లు, నైపుణ్యాలు, ప్రాంప్ట్ టెంప్లేట్‌లతో మీరు తీర్చిదిద్దే కనీస టెర్మినల్ ఏజెంట్.",
+      "reasonix": "DeepSeek కోసం రూపొందించిన టెర్మినల్ కోడింగ్ ఏజెంట్; దీర్ఘ సెషన్లు కూడా చౌకగా ఉండేలా ప్రిఫిక్స్ క్యాషింగ్ చుట్టూ నిర్మించబడింది."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "FreeLLMAPI యొక్క కొత్త వెర్షన్ ఇన్‌స్టాల్ అయింది.",
+    "reload": "రీలోడ్"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "చైన్ \"{oldName}\" పేరును \"{name}\" గా మార్చాలా? auto:{oldName} ని కాల్ చేసే క్లయింట్లు auto:{name} కి మారాలి.",
     "renamePlaceholder": "కొత్త చైన్ పేరు",
     "renameFailed": "చైన్ పేరును మార్చడం సాధ్యం కాలేదు."
+  },
+  "updates": {
+    "versionAvailable": "వెర్షన్ {version} అందుబాటులో ఉంది",
+    "versionReady": "వెర్షన్ {version} ఇన్‌స్టాల్‌కు సిద్ధంగా ఉంది",
+    "releaseNotes": "విడుదల గమనికలు",
+    "tryAgain": "మళ్లీ ప్రయత్నించండి",
+    "offline": "మీ ఇంటర్నెట్ కనెక్షన్‌ను తనిఖీ చేసి మళ్లీ ప్రయత్నించండి."
   }
 }

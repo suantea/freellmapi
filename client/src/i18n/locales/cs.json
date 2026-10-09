@@ -152,21 +152,24 @@
     "compressionRunPreview": "Spustit náhled",
     "updatesTitle": "Aktualizace",
     "checkForUpdates": "Sledujte aktualizace",
-    "lastChecked": "Naposledy kontrolováno: {when}",
-    "currentVersion": "Aktuální sestavení:",
     "updateAvailable": "Je dostupná aktualizace",
-    "changelog": "Co se změnilo",
     "upToDate": "Vše je aktuální",
     "buildAhead": "Toto sestavení je před oficiální větví main.",
     "buildDiverged": "Toto sestavení se odchýlilo od oficiální větve main.",
     "buildUnknown": "Toto vlastní sestavení nelze porovnat s oficiální větví main.",
     "notGitInstall": "Tato instalace neobsahuje informace o commitu.",
     "checkFailed": "Aktualizace se nepodařilo zkontrolovat.",
-    "contactsGithub": "Kontroly se spouštějí ručně a kontaktují GitHub.",
     "autoUpdateCheck": "Automatická kontrola aktualizací",
-    "autoUpdateCheckHelp": "Jednou denně zkontroluje na GitHubu novou verzi a zobrazí připomenutí. Ve výchozím nastavení vypnuto.",
-    "openReleases": "Otevřít vydání na GitHubu",
-    "restartAfterUpdate": "Po dokončení sestavení restartujte FreeLLMAPI."
+    "restartAfterUpdate": "Po dokončení sestavení restartujte FreeLLMAPI.",
+    "downloadUpdate": "Stáhnout aktualizaci",
+    "downloadingUpdate": "Stahování… {percent} %",
+    "restartToUpdate": "Restartovat a aktualizovat",
+    "updateReadyHint": "Staženo. FreeLLMAPI zálohuje vaše data, restartuje se a otevře novou verzi.",
+    "updateInstallFailed": "Aktualizaci se nepodařilo nainstalovat.",
+    "updateNow": "Aktualizovat nyní",
+    "updatingContainer": "Stahuje se nový obraz a probíhá restart. Stránka se znovu načte, až bude FreeLLMAPI zpět.",
+    "updateNowFailed": "Aktualizátor požadavek nepřijal. Zkontrolujte, že kontejner watchtower běží.",
+    "updateNowTimeout": "FreeLLMAPI se ani po 5 minutách nerestartoval. Zkontrolujte logy kontejneru watchtower."
   },
   "models": {
     "title": "Modely",
@@ -341,7 +344,10 @@
     "weightSpeed": "Rychlost",
     "weightIntelligence": "Zpravodajství",
     "weightRequired": "Alespoň jedno závaží musí být nad nulou.",
-    "scoreColumn": "Hudba"
+    "scoreColumn": "Hudba",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Tlak frézky",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Před aktualizací"
   },
   "status": {
     "healthy": "zdravé",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "Osobní asistent, který je neustále k dispozici a z vašeho vlastního počítače odpovídá v aplikacích WhatsApp, Telegram, Discord a dalších.",
       "hermes": "Samozdokonalující se agent od Nous Research s trvalou pamětí a dovednostmi, v terminálu nebo v chatovacích aplikacích.",
-      "pi": "Minimalistický terminálový agent, který si přizpůsobíte vlastními rozšířeními, dovednostmi a šablonami promptů."
+      "pi": "Minimalistický terminálový agent, který si přizpůsobíte vlastními rozšířeními, dovednostmi a šablonami promptů.",
+      "reasonix": "Terminálový agent pro programování stavěný pro DeepSeek, postavený na cachování prefixů, aby dlouhé relace zůstaly levné."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Je nainstalována novější verze FreeLLMAPI.",
+    "reload": "Načíst znovu"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Přejmenovat řetězec \"{oldName}\" na \"{name}\"? Klienti volající auto:{oldName} musí přejít na auto:{name}.",
     "renamePlaceholder": "Nový název řetězce",
     "renameFailed": "Řetězec se nepodařilo přejmenovat."
+  },
+  "updates": {
+    "versionAvailable": "Je k dispozici verze {version}",
+    "versionReady": "Verze {version} je připravena k instalaci",
+    "releaseNotes": "Poznámky k vydání",
+    "tryAgain": "Zkusit znovu",
+    "offline": "Zkontrolujte připojení k internetu a zkuste to znovu."
   }
 }

@@ -152,21 +152,24 @@
     "compressionRunPreview": "ដំណើរការមើលជាមុន",
     "updatesTitle": "ការអាប់ដេត",
     "checkForUpdates": "ពិនិត្យមើលការអាប់ដេត",
-    "lastChecked": "ពិនិត្យចុងក្រោយ៖ {when}",
-    "currentVersion": "ប៊ីលបច្ចុប្បន្ន៖",
     "updateAvailable": "មានការអាប់ដេត",
-    "changelog": "អ្វីដែលបានផ្លាស់ប្តូរ",
     "upToDate": "ទាន់សម័យ",
     "buildAhead": "ប៊ីលនេះនាំមុខសាខា main ផ្លូវការ។",
     "buildDiverged": "ប៊ីលនេះបានបែកចេញពីសាខា main ផ្លូវការ។",
     "buildUnknown": "មិនអាចប្រៀបធៀបប៊ីលផ្ទាល់ខ្លួននេះជាមួយសាខា main ផ្លូវការបានទេ។",
     "notGitInstall": "ការដំឡើងនេះមិនមានព័ត៌មាន commit ទេ។",
     "checkFailed": "មិនអាចពិនិត្យរកការអាប់ដេតបានទេ។",
-    "contactsGithub": "ការពិនិត្យធ្វើឡើងដោយដៃ និងភ្ជាប់ទៅ GitHub។",
     "autoUpdateCheck": "ការពិនិត្យអាប់ដេតដោយស្វ័យប្រវត្តិ",
-    "autoUpdateCheckHelp": "ពិនិត្យ GitHub ម្ដងក្នុងមួយថ្ងៃរកមើលការចេញផ្សាយថ្មី ហើយបង្ហាញការរំលឹក។ បិទតាមលំនាំដើម។",
-    "openReleases": "បើក GitHub Releases",
-    "restartAfterUpdate": "ចាប់ផ្តើម FreeLLMAPI ឡើងវិញ បន្ទាប់ពីការបង្កើតបានបញ្ចប់។"
+    "restartAfterUpdate": "ចាប់ផ្តើម FreeLLMAPI ឡើងវិញ បន្ទាប់ពីការបង្កើតបានបញ្ចប់។",
+    "downloadUpdate": "ទាញយកបច្ចុប្បន្នភាព",
+    "downloadingUpdate": "កំពុងទាញយក… {percent}%",
+    "restartToUpdate": "ចាប់ផ្ដើមឡើងវិញដើម្បីធ្វើបច្ចុប្បន្នភាព",
+    "updateReadyHint": "បានទាញយករួច។ FreeLLMAPI បម្រុងទុកទិន្នន័យរបស់អ្នក ចាប់ផ្ដើមឡើងវិញ ហើយបើកកំណែថ្មី។",
+    "updateInstallFailed": "មិនអាចដំឡើងបច្ចុប្បន្នភាពបានទេ។",
+    "updateNow": "ធ្វើបច្ចុប្បន្នភាពឥឡូវនេះ",
+    "updatingContainer": "កំពុងទាញរូបភាពថ្មី ហើយចាប់ផ្ដើមឡើងវិញ។ ទំព័រនេះនឹងផ្ទុកឡើងវិញពេល FreeLLMAPI ត្រឡប់មកវិញ។",
+    "updateNowFailed": "កម្មវិធីធ្វើបច្ចុប្បន្នភាពមិនបានទទួលសំណើទេ។ ពិនិត្យថា container watchtower កំពុងដំណើរការ។",
+    "updateNowTimeout": "FreeLLMAPI មិនទាន់ចាប់ផ្ដើមឡើងវិញក្រោយ ៥ នាទី។ ពិនិត្យកំណត់ហេតុរបស់ container watchtower។"
   },
   "models": {
     "title": "ម៉ូដែល",
@@ -341,7 +344,10 @@
     "weightSpeed": "ល្បឿន",
     "weightIntelligence": "បញ្ញា",
     "weightRequired": "យ៉ាងហោចណាស់ទម្ងន់មួយត្រូវតែខ្ពស់ជាងសូន្យ។",
-    "scoreColumn": "ពិន្ទុ"
+    "scoreColumn": "ពិន្ទុ",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "សំពាធរ៉ោទ័រ",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "មុនបច្ចុប្បន្នភាព"
   },
   "status": {
     "healthy": "មានសុខភាពល្អ",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "ជំនួយការផ្ទាល់ខ្លួនដែលដំណើរការជានិច្ច ហើយឆ្លើយតបនៅលើ WhatsApp, Telegram, Discord និងផ្សេងទៀត ពីម៉ាស៊ីនរបស់អ្នកផ្ទាល់។",
       "hermes": "ភ្នាក់ងាររបស់ Nous Research ដែលកែលម្អខ្លួនឯង មានអង្គចងចាំអចិន្ត្រៃយ៍ និងជំនាញ នៅក្នុង terminal ឬលើកម្មវិធីជជែក។",
-      "pi": "ភ្នាក់ងារ terminal តូចចង្អៀត ដែលអ្នករៀបចំដោយផ្នែកបន្ថែម ជំនាញ និងគំរូ prompt ផ្ទាល់ខ្លួន។"
+      "pi": "ភ្នាក់ងារ terminal តូចចង្អៀត ដែលអ្នករៀបចំដោយផ្នែកបន្ថែម ជំនាញ និងគំរូ prompt ផ្ទាល់ខ្លួន។",
+      "reasonix": "ភ្នាក់ងារសរសេរកូដលើ terminal ដែលបង្កើតឡើងសម្រាប់ DeepSeek ផ្អែកលើ prefix caching ដើម្បីឱ្យវគ្គវែងៗនៅតែថោក។"
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "កំណែថ្មីជាងរបស់ FreeLLMAPI ត្រូវបានដំឡើង។",
+    "reload": "ផ្ទុកឡើងវិញ"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "ប្តូរឈ្មោះខ្សែសង្វាក់ \"{oldName}\" ទៅ \"{name}\"? កម្មវិធីដែលហៅ auto:{oldName} ត្រូវផ្លាស់ប្តូរទៅ auto:{name} ។",
     "renamePlaceholder": "ឈ្មោះខ្សែសង្វាក់ថ្មី",
     "renameFailed": "មិនអាចប្តូរឈ្មោះខ្សែសង្វាក់បានទេ។"
+  },
+  "updates": {
+    "versionAvailable": "កំណែ {version} មានហើយ",
+    "versionReady": "កំណែ {version} រួចរាល់សម្រាប់ដំឡើង",
+    "releaseNotes": "កំណត់ចំណាំការចេញផ្សាយ",
+    "tryAgain": "ព្យាយាមម្ដងទៀត",
+    "offline": "សូមពិនិត្យការតភ្ជាប់អ៊ីនធឺណិត ហើយព្យាយាមម្ដងទៀត។"
   }
 }

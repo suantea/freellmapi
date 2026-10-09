@@ -152,21 +152,24 @@
     "compressionRunPreview": "Voorbeeld uitvoeren",
     "updatesTitle": "Updates",
     "checkForUpdates": "Controleer op updates",
-    "lastChecked": "Laatst gecontroleerd: {when}",
-    "currentVersion": "Huidige build:",
     "updateAvailable": "Update beschikbaar",
-    "changelog": "Wat is er veranderd",
     "upToDate": "Up-to-date",
     "buildAhead": "Deze build loopt voor op de officiële main-branch.",
     "buildDiverged": "Deze build is afgeweken van de officiële main-branch.",
     "buildUnknown": "Deze aangepaste build kan niet worden vergeleken met de officiële main-branch.",
     "notGitInstall": "Deze installatie bevat geen commitinformatie.",
     "checkFailed": "Kan niet controleren op updates.",
-    "contactsGithub": "Controles worden handmatig uitgevoerd en maken contact met GitHub.",
     "autoUpdateCheck": "Automatische updatecontrole",
-    "autoUpdateCheckHelp": "Controleert GitHub eenmaal per dag op een nieuwe release en toont een herinnering. Standaard uitgeschakeld.",
-    "openReleases": "GitHub Releases openen",
-    "restartAfterUpdate": "Start FreeLLMAPI opnieuw nadat de build is voltooid."
+    "restartAfterUpdate": "Start FreeLLMAPI opnieuw nadat de build is voltooid.",
+    "downloadUpdate": "Update downloaden",
+    "downloadingUpdate": "Downloaden… {percent}%",
+    "restartToUpdate": "Herstarten om bij te werken",
+    "updateReadyHint": "Gedownload. FreeLLMAPI maakt een back-up van je gegevens, herstart en opent de nieuwe versie.",
+    "updateInstallFailed": "De update kon niet worden geïnstalleerd.",
+    "updateNow": "Nu bijwerken",
+    "updatingContainer": "De nieuwe image wordt opgehaald en herstart. Deze pagina laadt opnieuw zodra FreeLLMAPI terug is.",
+    "updateNowFailed": "De updater heeft het verzoek niet geaccepteerd. Controleer of de watchtower-container draait.",
+    "updateNowTimeout": "FreeLLMAPI is na 5 minuten niet herstart. Bekijk de logs van de watchtower-container."
   },
   "models": {
     "title": "Modellen",
@@ -341,7 +344,10 @@
     "weightSpeed": "Snelheid",
     "weightIntelligence": "Intelligentie",
     "weightRequired": "Minstens één gewicht moet boven nul liggen.",
-    "scoreColumn": "Partituur"
+    "scoreColumn": "Partituur",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Routerdruk",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Vóór update"
   },
   "status": {
     "healthy": "Gezond",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminalagent, geschreven in Rust, die elk OpenAI-compatibel endpoint aankan.",
       "openclaw": "Een altijd actieve persoonlijke assistent die vanaf je eigen machine antwoordt op WhatsApp, Telegram, Discord en meer.",
       "hermes": "De zelfverbeterende agent van Nous Research met blijvend geheugen en skills, in de terminal of in chat-apps.",
-      "pi": "Een minimalistische terminal-agent die je vormgeeft met je eigen extensies, skills en promptsjablonen."
+      "pi": "Een minimalistische terminal-agent die je vormgeeft met je eigen extensies, skills en promptsjablonen.",
+      "reasonix": "Een terminal-codeeragent gebouwd voor DeepSeek, rond prefix-caching, zodat lange sessies goedkoop blijven."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Er is een nieuwere versie van FreeLLMAPI geïnstalleerd.",
+    "reload": "Opnieuw laden"
   },
   "freeTier": {
     "poolsToggle": "Gratis-tierpools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Keten \"{oldName}\" hernoemen naar \"{name}\"? Clients die auto:{oldName} aanroepen moeten overstappen op auto:{name}.",
     "renamePlaceholder": "Nieuwe ketennaam",
     "renameFailed": "Kan de naam van die keten niet wijzigen."
+  },
+  "updates": {
+    "versionAvailable": "Versie {version} is beschikbaar",
+    "versionReady": "Versie {version} is klaar om te installeren",
+    "releaseNotes": "Release-opmerkingen",
+    "tryAgain": "Opnieuw proberen",
+    "offline": "Controleer je internetverbinding en probeer het opnieuw."
   }
 }

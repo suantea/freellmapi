@@ -152,21 +152,24 @@
     "compressionRunPreview": "အစမ်းကြည့်ရန်",
     "updatesTitle": "အပ်ဒိတ်များ",
     "checkForUpdates": "အပ်ဒိတ်များကို စစ်ဆေးပါ",
-    "lastChecked": "နောက်ဆုံးစစ်ဆေးသည့်နေ့: {when}",
-    "currentVersion": "လက်ရှိ build:",
     "updateAvailable": "အပ်ဒိတ် ရရှိနိုင်သည်",
-    "changelog": "ပြောင်းလဲထားသည့်အရာများ",
     "upToDate": "နောက်ဆုံးပေါ် ဖြစ်သည်",
     "buildAhead": "ဤ build သည် တရားဝင် main ထက် ရှေ့ရောက်နေသည်။",
     "buildDiverged": "ဤ build သည် တရားဝင် main မှ ကွဲထွက်သွားသည်။",
     "buildUnknown": "ဤစိတ်ကြိုက် build ကို တရားဝင် main နှင့် နှိုင်းယှဉ်၍ မရပါ။",
     "notGitInstall": "ဤထည့်သွင်းမှုတွင် commit အချက်အလက် မပါဝင်ပါ။",
     "checkFailed": "အပ်ဒိတ်များကို စစ်ဆေး၍ မရပါ။",
-    "contactsGithub": "စစ်ဆေးမှုများကို ကိုယ်တိုင်လုပ်ဆောင်ရပြီး GitHub သို့ ဆက်သွယ်သည်။",
     "autoUpdateCheck": "အလိုအလျောက် အပ်ဒိတ်စစ်ဆေးမှု",
-    "autoUpdateCheckHelp": "တစ်ရက်လျှင် တစ်ကြိမ် ဗားရှင်းအသစ်အတွက် GitHub ကို စစ်ဆေးပြီး သတိပေးချက် ပြသသည်။ မူရင်းအတိုင်း ပိတ်ထားသည်။",
-    "openReleases": "GitHub Releases ကို ဖွင့်ရန်",
-    "restartAfterUpdate": "build ပြီးဆုံးပြီးနောက် FreeLLMAPI ကို ပြန်လည်စတင်ပါ။"
+    "restartAfterUpdate": "build ပြီးဆုံးပြီးနောက် FreeLLMAPI ကို ပြန်လည်စတင်ပါ။",
+    "downloadUpdate": "အပ်ဒိတ်ကို ဒေါင်းလုဒ်လုပ်ရန်",
+    "downloadingUpdate": "ဒေါင်းလုဒ်လုပ်နေသည်… {percent}%",
+    "restartToUpdate": "အပ်ဒိတ်လုပ်ရန် ပြန်စတင်ပါ",
+    "updateReadyHint": "ဒေါင်းလုဒ်ပြီးပါပြီ။ FreeLLMAPI သည် သင့်ဒေတာကို အရန်သိမ်းပြီး ပြန်စတင်ကာ ဗားရှင်းအသစ်ကို ဖွင့်ပါမည်။",
+    "updateInstallFailed": "အပ်ဒိတ်ကို ထည့်သွင်း၍ မရပါ။",
+    "updateNow": "ယခု အပ်ဒိတ်လုပ်ရန်",
+    "updatingContainer": "image အသစ်ကို ဆွဲယူပြီး ပြန်စတင်နေသည်။ FreeLLMAPI ပြန်လာသောအခါ ဤစာမျက်နှာ ပြန်ဖွင့်ပါမည်။",
+    "updateNowFailed": "အပ်ဒိတ်လုပ်သူက တောင်းဆိုမှုကို မလက်ခံပါ။ watchtower container လည်ပတ်နေကြောင်း စစ်ဆေးပါ။",
+    "updateNowTimeout": "၅ မိနစ်ကြာသော်လည်း FreeLLMAPI ပြန်မစတင်သေးပါ။ watchtower container ၏ မှတ်တမ်းများကို စစ်ဆေးပါ။"
   },
   "models": {
     "title": "မော်ဒယ်များ",
@@ -341,7 +344,10 @@
     "weightSpeed": "အမြန်နှုန်း",
     "weightIntelligence": "ဉာဏ်ရည်",
     "weightRequired": "အနည်းဆုံး အလေးချိန်တစ်ခုသည် သုညထက် မြင့်ရမည်။",
-    "scoreColumn": "အမှတ်"
+    "scoreColumn": "အမှတ်",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "ရောတာဖိအား",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "အပ်ဒိတ်မတိုင်မီ"
   },
   "status": {
     "healthy": "ကျန်းမာသော",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "သင့်ကိုယ်ပိုင်စက်မှနေ၍ WhatsApp၊ Telegram၊ Discord နှင့် အခြားနေရာများတွင် ဖြေကြားပေးသော အမြဲအသင့်ရှိနေသည့် ကိုယ်ပိုင်လက်ထောက်။",
       "hermes": "Nous Research ၏ မိမိကိုယ်ကို တိုးတက်အောင်လုပ်နိုင်သော အေးဂျင့်၊ တည်မြဲသည့်မှတ်ဉာဏ်နှင့် ကျွမ်းကျင်မှုများပါဝင်ပြီး terminal တွင်ဖြစ်စေ chat အက်ပ်များတွင်ဖြစ်စေ အသုံးပြုနိုင်သည်။",
-      "pi": "သင့်ကိုယ်ပိုင် extension များ၊ ကျွမ်းကျင်မှုများနှင့် prompt template များဖြင့် ပုံဖော်နိုင်သော အနည်းဆုံး terminal အေးဂျင့်။"
+      "pi": "သင့်ကိုယ်ပိုင် extension များ၊ ကျွမ်းကျင်မှုများနှင့် prompt template များဖြင့် ပုံဖော်နိုင်သော အနည်းဆုံး terminal အေးဂျင့်။",
+      "reasonix": "DeepSeek အတွက် တည်ဆောက်ထားသော terminal coding agent ဖြစ်ပြီး ရှည်လျားသော session များ စျေးသက်သာစေရန် prefix caching ကို အခြေခံထားသည်။"
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "FreeLLMAPI ဗားရှင်းအသစ် ထည့်သွင်းပြီးပါပြီ။",
+    "reload": "ပြန်ဖွင့်ရန်"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "ချိန်း \"{oldName}\" ကို \"{name}\" အမည်ပြောင်းမလား? auto:{oldName} ကိုခေါ်ဆိုသော client များသည် auto:{name} သို့ ပြောင်းရမည်။",
     "renamePlaceholder": "ချိန်းအမည်အသစ်",
     "renameFailed": "ချိန်းအမည်ကို မပြောင်းနိုင်ပါ။"
+  },
+  "updates": {
+    "versionAvailable": "ဗားရှင်း {version} ရရှိနိုင်ပါပြီ",
+    "versionReady": "ဗားရှင်း {version} ထည့်သွင်းရန် အသင့်ဖြစ်ပါပြီ",
+    "releaseNotes": "ထုတ်ဝေမှု မှတ်စုများ",
+    "tryAgain": "ထပ်ကြိုးစားပါ",
+    "offline": "အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပြီး ထပ်ကြိုးစားပါ။"
   }
 }

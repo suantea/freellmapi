@@ -152,21 +152,24 @@
     "compressionRunPreview": "Kør forhåndsvisning",
     "updatesTitle": "Opdateringer",
     "checkForUpdates": "Tjek for opdateringer",
-    "lastChecked": "Sidst tjekket: {when}",
-    "currentVersion": "Nuværende build:",
     "updateAvailable": "Opdatering tilgængelig",
-    "changelog": "Hvad er ændret",
     "upToDate": "Opdateret",
     "buildAhead": "Denne build er foran den officielle main-gren.",
     "buildDiverged": "Denne build er divergeret fra den officielle main-gren.",
     "buildUnknown": "Denne tilpassede build kan ikke sammenlignes med den officielle main-gren.",
     "notGitInstall": "Denne installation indeholder ikke commit-oplysninger.",
     "checkFailed": "Det var ikke muligt at søge efter opdateringer.",
-    "contactsGithub": "Tjek udføres manuelt og kontakter GitHub.",
     "autoUpdateCheck": "Automatisk opdateringstjek",
-    "autoUpdateCheckHelp": "Tjekker GitHub én gang om dagen for en ny udgivelse og viser en påmindelse. Slået fra som standard.",
-    "openReleases": "Åbn GitHub-udgivelser",
-    "restartAfterUpdate": "Genstart FreeLLMAPI, når buildet er færdigt."
+    "restartAfterUpdate": "Genstart FreeLLMAPI, når buildet er færdigt.",
+    "downloadUpdate": "Hent opdatering",
+    "downloadingUpdate": "Henter… {percent} %",
+    "restartToUpdate": "Genstart for at opdatere",
+    "updateReadyHint": "Hentet. FreeLLMAPI tager backup af dine data, genstarter og åbner den nye version.",
+    "updateInstallFailed": "Opdateringen kunne ikke installeres.",
+    "updateNow": "Opdater nu",
+    "updatingContainer": "Henter det nye image og genstarter. Siden genindlæses, når FreeLLMAPI er tilbage.",
+    "updateNowFailed": "Opdateringstjenesten afviste anmodningen. Tjek at watchtower-containeren kører.",
+    "updateNowTimeout": "FreeLLMAPI er ikke genstartet efter 5 minutter. Tjek logfilerne for watchtower-containeren."
   },
   "models": {
     "title": "Modeller",
@@ -341,7 +344,10 @@
     "weightSpeed": "Hastighed",
     "weightIntelligence": "Intelligens",
     "weightRequired": "Mindst én vægt skal være over nul.",
-    "scoreColumn": "Score"
+    "scoreColumn": "Score",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Fræsertryk",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Før opdatering"
   },
   "status": {
     "healthy": "sundt",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "En altid tilgængelig personlig assistent, der svarer på WhatsApp, Telegram, Discord og mere fra din egen maskine.",
       "hermes": "Nous Researchs selvforbedrende agent med vedvarende hukommelse og færdigheder, i terminalen eller i chat-apps.",
-      "pi": "En minimal terminalagent, du former med dine egne udvidelser, færdigheder og prompt-skabeloner."
+      "pi": "En minimal terminalagent, du former med dine egne udvidelser, færdigheder og prompt-skabeloner.",
+      "reasonix": "En terminalbaseret kodeagent bygget til DeepSeek omkring prefix-caching, så lange sessioner forbliver billige."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "En nyere version af FreeLLMAPI er installeret.",
+    "reload": "Genindlæs"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Omdøb kæden \"{oldName}\" til \"{name}\"? Klients, der kalder auto:{oldName}, skal skifte til auto:{name}.",
     "renamePlaceholder": "Nyt kædenavn",
     "renameFailed": "Kæden kunne ikke omdøbes."
+  },
+  "updates": {
+    "versionAvailable": "Version {version} er tilgængelig",
+    "versionReady": "Version {version} er klar til installation",
+    "releaseNotes": "Udgivelsesnoter",
+    "tryAgain": "Prøv igen",
+    "offline": "Tjek din internetforbindelse, og prøv igen."
   }
 }

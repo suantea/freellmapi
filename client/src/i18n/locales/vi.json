@@ -152,21 +152,24 @@
     "compressionRunPreview": "Chạy xem trước",
     "updatesTitle": "Bản cập nhật",
     "checkForUpdates": "Kiểm tra các bản cập nhật",
-    "lastChecked": "Kiểm tra lần cuối: {when}",
-    "currentVersion": "Bản dựng hiện tại:",
     "updateAvailable": "Có bản cập nhật",
-    "changelog": "Có gì thay đổi",
     "upToDate": "Đã cập nhật",
     "buildAhead": "Bản dựng này đi trước nhánh main chính thức.",
     "buildDiverged": "Bản dựng này đã phân kỳ khỏi nhánh main chính thức.",
     "buildUnknown": "Không thể so sánh bản dựng tùy chỉnh này với nhánh main chính thức.",
     "notGitInstall": "Bản cài đặt này không có thông tin commit.",
     "checkFailed": "Không thể kiểm tra bản cập nhật.",
-    "contactsGithub": "Việc kiểm tra được thực hiện thủ công và có kết nối với GitHub.",
     "autoUpdateCheck": "Tự động kiểm tra cập nhật",
-    "autoUpdateCheckHelp": "Kiểm tra GitHub mỗi ngày một lần để tìm bản phát hành mới và hiển thị lời nhắc. Mặc định tắt.",
-    "openReleases": "Mở GitHub Releases",
-    "restartAfterUpdate": "Khởi động lại FreeLLMAPI sau khi hoàn tất bản dựng."
+    "restartAfterUpdate": "Khởi động lại FreeLLMAPI sau khi hoàn tất bản dựng.",
+    "downloadUpdate": "Tải bản cập nhật",
+    "downloadingUpdate": "Đang tải… {percent}%",
+    "restartToUpdate": "Khởi động lại để cập nhật",
+    "updateReadyHint": "Đã tải xong. FreeLLMAPI sao lưu dữ liệu của bạn, khởi động lại và mở phiên bản mới.",
+    "updateInstallFailed": "Không thể cài đặt bản cập nhật.",
+    "updateNow": "Cập nhật ngay",
+    "updatingContainer": "Đang kéo image mới và khởi động lại. Trang này sẽ tải lại khi FreeLLMAPI hoạt động trở lại.",
+    "updateNowFailed": "Trình cập nhật không chấp nhận yêu cầu. Hãy kiểm tra container watchtower đang chạy.",
+    "updateNowTimeout": "FreeLLMAPI chưa khởi động lại sau 5 phút. Hãy xem nhật ký của container watchtower."
   },
   "models": {
     "title": "Người mẫu",
@@ -341,7 +344,10 @@
     "weightSpeed": "Tốc độ",
     "weightIntelligence": "Tình báo",
     "weightRequired": "Ít nhất một trọng lượng phải trên 0.",
-    "scoreColumn": "Điểm"
+    "scoreColumn": "Điểm",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Áp lực bộ định tuyến",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Trước cập nhật"
   },
   "status": {
     "healthy": "khỏe mạnh",
@@ -1148,17 +1155,15 @@
       "atomcode": "Tác nhân dòng lệnh của AtomGit, viết bằng Rust, nhận mọi điểm cuối tương thích OpenAI.",
       "openclaw": "Trợ lý cá nhân luôn sẵn sàng, trả lời trên WhatsApp, Telegram, Discord và nhiều nền tảng khác ngay từ máy của bạn.",
       "hermes": "Tác nhân tự cải thiện của Nous Research với bộ nhớ lâu dài và kỹ năng, trong dòng lệnh hoặc trên các ứng dụng chat.",
-      "pi": "Một tác nhân dòng lệnh tối giản mà bạn định hình bằng tiện ích mở rộng, kỹ năng và mẫu prompt của riêng mình."
+      "pi": "Một tác nhân dòng lệnh tối giản mà bạn định hình bằng tiện ích mở rộng, kỹ năng và mẫu prompt của riêng mình.",
+      "reasonix": "Tác tử lập trình trên terminal dành riêng cho DeepSeek, xây dựng quanh bộ nhớ đệm tiền tố để các phiên dài vẫn rẻ."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Đã cài đặt phiên bản FreeLLMAPI mới hơn.",
+    "reload": "Tải lại"
   },
   "freeTier": {
     "poolsToggle": "Nhóm hạn mức miễn phí ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Đổi tên chuỗi \"{oldName}\" thành \"{name}\"? Các client gọi auto:{oldName} phải chuyển sang auto:{name}.",
     "renamePlaceholder": "Tên chuỗi mới",
     "renameFailed": "Không thể đổi tên chuỗi."
+  },
+  "updates": {
+    "versionAvailable": "Đã có phiên bản {version}",
+    "versionReady": "Phiên bản {version} đã sẵn sàng để cài đặt",
+    "releaseNotes": "Ghi chú phát hành",
+    "tryAgain": "Thử lại",
+    "offline": "Kiểm tra kết nối internet rồi thử lại."
   }
 }

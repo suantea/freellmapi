@@ -152,21 +152,24 @@
     "compressionRunPreview": "Endesha hakikisho",
     "updatesTitle": "Masasisho",
     "checkForUpdates": "Angalia masasisho",
-    "lastChecked": "Mara ya mwisho kuangaliwa: {when}",
-    "currentVersion": "Toleo la sasa:",
     "updateAvailable": "Sasisho linapatikana",
-    "changelog": "Kilichobadilika",
     "upToDate": "Imesasishwa",
     "buildAhead": "Toleo hili liko mbele ya tawi rasmi la main.",
     "buildDiverged": "Toleo hili limejitenga na tawi rasmi la main.",
     "buildUnknown": "Toleo hili maalum haliwezi kulinganishwa na tawi rasmi la main.",
     "notGitInstall": "Usakinishaji huu hauna taarifa za commit.",
     "checkFailed": "Imeshindikana kuangalia masasisho.",
-    "contactsGithub": "Ukaguzi hufanywa mwenyewe na huwasiliana na GitHub.",
     "autoUpdateCheck": "Ukaguzi wa masasisho otomatiki",
-    "autoUpdateCheckHelp": "Hukagua GitHub mara moja kwa siku kwa toleo jipya na kuonyesha ukumbusho. Imezimwa kwa chaguo-msingi.",
-    "openReleases": "Fungua Matoleo ya GitHub",
-    "restartAfterUpdate": "Anzisha upya FreeLLMAPI baada ya ujenzi kukamilika."
+    "restartAfterUpdate": "Anzisha upya FreeLLMAPI baada ya ujenzi kukamilika.",
+    "downloadUpdate": "Pakua sasisho",
+    "downloadingUpdate": "Inapakua… {percent}%",
+    "restartToUpdate": "Anzisha upya ili kusasisha",
+    "updateReadyHint": "Imepakuliwa. FreeLLMAPI huhifadhi nakala ya data yako, huanza upya na kufungua toleo jipya.",
+    "updateInstallFailed": "Sasisho halikuweza kusakinishwa.",
+    "updateNow": "Sasisha sasa",
+    "updatingContainer": "Inavuta picha mpya na kuanza upya. Ukurasa huu utapakia upya FreeLLMAPI itakaporudi.",
+    "updateNowFailed": "Kisasishaji hakikukubali ombi. Hakikisha kontena la watchtower linafanya kazi.",
+    "updateNowTimeout": "FreeLLMAPI haijaanza upya baada ya dakika 5. Angalia kumbukumbu za kontena la watchtower."
   },
   "models": {
     "title": "Mifano",
@@ -341,7 +344,10 @@
     "weightSpeed": "Kasi",
     "weightIntelligence": "Akili",
     "weightRequired": "Angalau uzito mmoja lazima uwe juu ya sifuri.",
-    "scoreColumn": "Alama"
+    "scoreColumn": "Alama",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Shinikizo la router",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Kabla ya sasisho"
   },
   "status": {
     "healthy": "afya",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "Msaidizi binafsi anayefanya kazi muda wote na kujibu kwenye WhatsApp, Telegram, Discord na zaidi kutoka kwenye mashine yako mwenyewe.",
       "hermes": "Wakala wa Nous Research anayejiboresha mwenyewe, mwenye kumbukumbu ya kudumu na ujuzi, kwenye terminal au kwenye programu za gumzo.",
-      "pi": "Wakala mdogo wa terminal unaomuunda kwa viendelezi, ujuzi na violezo vya maagizo vyako mwenyewe."
+      "pi": "Wakala mdogo wa terminal unaomuunda kwa viendelezi, ujuzi na violezo vya maagizo vyako mwenyewe.",
+      "reasonix": "Wakala wa kuandika msimbo kwenye terminal aliyejengwa kwa ajili ya DeepSeek, kwa msingi wa prefix caching ili vipindi virefu vibaki nafuu."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Toleo jipya la FreeLLMAPI limesakinishwa.",
+    "reload": "Pakia upya"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Badilisha jina la mnyororo \"{oldName}\" kuwa \"{name}\"? Wateja wanaoitia auto:{oldName} lazima wabadilike kwa auto:{name}.",
     "renamePlaceholder": "Jina jipya la mnyororo",
     "renameFailed": "Imeshindwa kubadilisha jina la mnyororo."
+  },
+  "updates": {
+    "versionAvailable": "Toleo {version} linapatikana",
+    "versionReady": "Toleo {version} liko tayari kusakinishwa",
+    "releaseNotes": "Maelezo ya toleo",
+    "tryAgain": "Jaribu tena",
+    "offline": "Kagua muunganisho wako wa intaneti kisha ujaribu tena."
   }
 }

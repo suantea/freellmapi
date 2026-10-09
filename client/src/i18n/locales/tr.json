@@ -152,21 +152,24 @@
     "compressionRunPreview": "Önizlemeyi çalıştır",
     "updatesTitle": "Güncellemeler",
     "checkForUpdates": "Güncellemeleri kontrol et",
-    "lastChecked": "Son kontrol: {when}",
-    "currentVersion": "Mevcut derleme:",
     "updateAvailable": "Güncelleme mevcut",
-    "changelog": "Neler değişti",
     "upToDate": "Güncel",
     "buildAhead": "Bu derleme resmi main dalının ilerisinde.",
     "buildDiverged": "Bu derleme resmi main dalından ayrışmış.",
     "buildUnknown": "Bu özel derleme resmi main dalıyla karşılaştırılamıyor.",
     "notGitInstall": "Bu kurulum commit bilgisi içermiyor.",
     "checkFailed": "Güncellemeler denetlenemedi.",
-    "contactsGithub": "Denetimler elle yapılır ve GitHub ile iletişim kurar.",
     "autoUpdateCheck": "Otomatik güncelleme denetimi",
-    "autoUpdateCheckHelp": "Yeni bir sürüm için günde bir kez GitHub'ı denetler ve bir hatırlatma gösterir. Varsayılan olarak kapalıdır.",
-    "openReleases": "GitHub sürümlerini aç",
-    "restartAfterUpdate": "Derleme tamamlandıktan sonra FreeLLMAPI'yi yeniden başlatın."
+    "restartAfterUpdate": "Derleme tamamlandıktan sonra FreeLLMAPI'yi yeniden başlatın.",
+    "downloadUpdate": "Güncellemeyi indir",
+    "downloadingUpdate": "İndiriliyor… %{percent}",
+    "restartToUpdate": "Güncellemek için yeniden başlat",
+    "updateReadyHint": "İndirildi. FreeLLMAPI verilerinizi yedekler, yeniden başlar ve yeni sürümü açar.",
+    "updateInstallFailed": "Güncelleme yüklenemedi.",
+    "updateNow": "Şimdi güncelle",
+    "updatingContainer": "Yeni imaj çekiliyor ve yeniden başlatılıyor. FreeLLMAPI geri geldiğinde bu sayfa yenilenecek.",
+    "updateNowFailed": "Güncelleyici isteği kabul etmedi. watchtower konteynerinin çalıştığından emin olun.",
+    "updateNowTimeout": "FreeLLMAPI 5 dakika sonra hâlâ yeniden başlamadı. watchtower konteynerinin günlüklerine bakın."
   },
   "models": {
     "title": "Modeller",
@@ -341,7 +344,10 @@
     "weightSpeed": "Hız",
     "weightIntelligence": "Zekâ",
     "weightRequired": "En az bir ağırlık sıfırın üzerinde olmalıdır.",
-    "scoreColumn": "Puan"
+    "scoreColumn": "Puan",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Yönlendirici baskısı",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Veritabanı dizinine göre göreli yol. Yedekler bu dizinin dışına yazılamaz.",
     "save": "Zamanlamayı kaydet",
-    "saved": "Kaydedildi"
+    "saved": "Kaydedildi",
+    "preUpdate": "Güncelleme öncesi"
   },
   "status": {
     "healthy": "sağlıklı",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit'in terminal ajanı; Rust ile yazılmış, OpenAI uyumlu her uç noktayı kabul eder.",
       "openclaw": "Kendi makinenizden WhatsApp, Telegram, Discord ve daha fazlasında yanıt veren, her zaman açık bir kişisel asistan.",
       "hermes": "Nous Research'ün kendini geliştiren ajanı; kalıcı bellek ve becerilerle, terminalde ya da sohbet uygulamalarında.",
-      "pi": "Kendi uzantılarınız, becerileriniz ve istem şablonlarınızla şekillendirdiğiniz minimal bir terminal ajanı."
+      "pi": "Kendi uzantılarınız, becerileriniz ve istem şablonlarınızla şekillendirdiğiniz minimal bir terminal ajanı.",
+      "reasonix": "DeepSeek için geliştirilmiş bir terminal kodlama ajanı; uzun oturumlar ucuz kalsın diye önek önbelleği etrafında kurulmuştur."
     }
   },
   "update": {
     "available": "Yeni sürüm mevcut",
-    "whatsNew": "v{version} sürümündeki yenilikler",
-    "publishedOn": "Yayımlanma: {date}",
-    "noNotes": "Bu sürüm için sürüm notu yayımlanmadı.",
-    "openRelease": "Sürüm sayfasını aç",
-    "dismissVersion": "Bu sürümü yoksay",
-    "dismiss": "Yoksay"
+    "dismiss": "Yoksay",
+    "newBuild": "FreeLLMAPI'nin daha yeni bir sürümü yüklü.",
+    "reload": "Yeniden yükle"
   },
   "freeTier": {
     "poolsToggle": "Ücretsiz katman havuzları ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "\"{oldName}\" zincirinin adı \"{name}\" olarak değiştirilsin mi? auto:{oldName} kullanan istemcilerin auto:{name} değerine geçmesi gerekir.",
     "renamePlaceholder": "Yeni zincir adı",
     "renameFailed": "Zincir yeniden adlandırılamadı."
+  },
+  "updates": {
+    "versionAvailable": "{version} sürümü kullanılabilir",
+    "versionReady": "{version} sürümü yüklenmeye hazır",
+    "releaseNotes": "Sürüm notları",
+    "tryAgain": "Tekrar dene",
+    "offline": "İnternet bağlantınızı kontrol edip tekrar deneyin."
   }
 }

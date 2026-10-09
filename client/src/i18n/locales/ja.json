@@ -152,21 +152,24 @@
     "compressionRunPreview": "プレビューを実行",
     "updatesTitle": "アップデート",
     "checkForUpdates": "アップデートをチェックする",
-    "lastChecked": "最終チェック日: {when}",
-    "currentVersion": "現在のビルド:",
     "updateAvailable": "アップデートがあります",
-    "changelog": "変更内容",
     "upToDate": "最新版です",
     "buildAhead": "このビルドは公式のmainより先行しています。",
     "buildDiverged": "このビルドは公式のmainから分岐しています。",
     "buildUnknown": "このカスタムビルドは公式のmainと比較できません。",
     "notGitInstall": "このインストールにはコミット情報が含まれていません。",
     "checkFailed": "アップデートを確認できませんでした。",
-    "contactsGithub": "確認は手動で行われ、GitHubに接続します。",
     "autoUpdateCheck": "自動アップデートチェック",
-    "autoUpdateCheckHelp": "1日1回、新しいリリースがないかGitHubを確認し、通知を表示します。既定では無効です。",
-    "openReleases": "GitHub Releasesを開く",
-    "restartAfterUpdate": "ビルド完了後にFreeLLMAPIを再起動してください。"
+    "restartAfterUpdate": "ビルド完了後にFreeLLMAPIを再起動してください。",
+    "downloadUpdate": "アップデートをダウンロード",
+    "downloadingUpdate": "ダウンロード中… {percent}%",
+    "restartToUpdate": "再起動してアップデート",
+    "updateReadyHint": "ダウンロード完了。FreeLLMAPI はデータをバックアップしてから再起動し、新しいバージョンを開きます。",
+    "updateInstallFailed": "アップデートをインストールできませんでした。",
+    "updateNow": "今すぐアップデート",
+    "updatingContainer": "新しいイメージを取得して再起動しています。FreeLLMAPI が戻るとこのページは再読み込みされます。",
+    "updateNowFailed": "アップデーターがリクエストを受け付けませんでした。watchtower コンテナが動いているか確認してください。",
+    "updateNowTimeout": "5 分経っても FreeLLMAPI が再起動していません。watchtower コンテナのログを確認してください。"
   },
   "models": {
     "title": "モデル",
@@ -341,7 +344,10 @@
     "weightSpeed": "速度",
     "weightIntelligence": "インテリジェンス",
     "weightRequired": "少なくとも 1 つの重みがゼロより大きくなければなりません。",
-    "scoreColumn": "スコア"
+    "scoreColumn": "スコア",
+    "minReliabilityFloor": "最低信頼性しきい値",
+    "minReliabilityFloorHint": "観測された成功率がこの値を下回ったモデルをルーティングから除外します。0.8 は 80% を意味します。空欄で無効 — 履歴が少なすぎるモデルは常に保持され、新しいモデルも試行され続けます。チェーン全体が空になることはありません。",
+    "minReliabilityFloorOff": "無効"
   },
   "penaltyInspector": {
     "title": "ルーターの圧力",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "アップデート前"
   },
   "status": {
     "healthy": "健康な",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit のターミナルエージェント。Rust 製で、OpenAI 互換のエンドポイントなら何でも使えます。",
       "openclaw": "自分のマシンから WhatsApp、Telegram、Discord などで応答する、常時稼働のパーソナルアシスタントです。",
       "hermes": "Nous Research の自己改善型エージェント。永続的なメモリとスキルを備え、ターミナルでもチャットアプリでも使えます。",
-      "pi": "自分の拡張機能、スキル、プロンプトテンプレートで形づくる、ミニマルなターミナルエージェント。"
+      "pi": "自分の拡張機能、スキル、プロンプトテンプレートで形づくる、ミニマルなターミナルエージェント。",
+      "reasonix": "DeepSeek ネイティブのターミナル向けコーディングエージェント。プレフィックスキャッシュを軸に設計され、長いセッションでも安く済みます。"
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "新しいバージョンの FreeLLMAPI がインストールされています。",
+    "reload": "再読み込み"
   },
   "freeTier": {
     "poolsToggle": "無料枠プール（{count}）",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "チェーン「{oldName}」を「{name}」に名前を変更しますか？ auto:{oldName} を呼び出しているクライアントは auto:{name} に切り替える必要があります。",
     "renamePlaceholder": "新しいチェーン名",
     "renameFailed": "チェーンの名前を変更できませんでした。"
+  },
+  "updates": {
+    "versionAvailable": "バージョン {version} が利用可能です",
+    "versionReady": "バージョン {version} をインストールする準備ができました",
+    "releaseNotes": "リリースノート",
+    "tryAgain": "再試行",
+    "offline": "インターネット接続を確認して、もう一度お試しください。"
   }
 }

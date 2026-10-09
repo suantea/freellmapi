@@ -152,21 +152,24 @@
     "compressionRunPreview": "Suorita esikatselu",
     "updatesTitle": "Päivitykset",
     "checkForUpdates": "Tarkista päivitykset",
-    "lastChecked": "Viimeksi tarkistettu: {when}",
-    "currentVersion": "Nykyinen koontiversio:",
     "updateAvailable": "Päivitys saatavilla",
-    "changelog": "Mikä muuttui",
     "upToDate": "Ajan tasalla",
     "buildAhead": "Tämä koontiversio on virallista main-haaraa edellä.",
     "buildDiverged": "Tämä koontiversio on erkaantunut virallisesta main-haarasta.",
     "buildUnknown": "Tätä mukautettua koontiversiota ei voi verrata viralliseen main-haaraan.",
     "notGitInstall": "Tämä asennus ei sisällä commit-tietoja.",
     "checkFailed": "Päivitysten tarkistaminen epäonnistui.",
-    "contactsGithub": "Tarkistukset tehdään manuaalisesti ja ne ottavat yhteyden GitHubiin.",
     "autoUpdateCheck": "Automaattinen päivitystarkistus",
-    "autoUpdateCheckHelp": "Tarkistaa GitHubista kerran päivässä, onko uutta julkaisua, ja näyttää muistutuksen. Oletuksena pois päältä.",
-    "openReleases": "Avaa GitHub-julkaisut",
-    "restartAfterUpdate": "Käynnistä FreeLLMAPI uudelleen koonnin valmistuttua."
+    "restartAfterUpdate": "Käynnistä FreeLLMAPI uudelleen koonnin valmistuttua.",
+    "downloadUpdate": "Lataa päivitys",
+    "downloadingUpdate": "Ladataan… {percent} %",
+    "restartToUpdate": "Käynnistä uudelleen päivittääksesi",
+    "updateReadyHint": "Ladattu. FreeLLMAPI varmuuskopioi tietosi, käynnistyy uudelleen ja avaa uuden version.",
+    "updateInstallFailed": "Päivitystä ei voitu asentaa.",
+    "updateNow": "Päivitä nyt",
+    "updatingContainer": "Ladataan uutta imagea ja käynnistetään uudelleen. Sivu latautuu uudelleen, kun FreeLLMAPI palaa.",
+    "updateNowFailed": "Päivittäjä ei hyväksynyt pyyntöä. Tarkista, että watchtower-kontti on käynnissä.",
+    "updateNowTimeout": "FreeLLMAPI ei ole käynnistynyt uudelleen 5 minuutissa. Tarkista watchtower-kontin lokit."
   },
   "models": {
     "title": "Mallit",
@@ -341,7 +344,10 @@
     "weightSpeed": "Nopeus",
     "weightIntelligence": "Tiedustelu",
     "weightRequired": "Vähintään yhden painon täytyy olla yli nollan.",
-    "scoreColumn": "Musiikki"
+    "scoreColumn": "Musiikki",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Jyrsimen paine",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Ennen päivitystä"
   },
   "status": {
     "healthy": "terve",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "Aina päällä oleva henkilökohtainen avustaja, joka vastaa omalta koneeltasi WhatsApp-, Telegram-, Discord- ja muissa sovelluksissa.",
       "hermes": "Nous Research -yhtiön itseään kehittävä agentti, jolla on pysyvä muisti ja taitoja, terminaalissa tai chat-sovelluksissa.",
-      "pi": "Minimalistinen terminaaliagentti, jota muokkaat omilla laajennuksilla, taidoilla ja kehotepohjilla."
+      "pi": "Minimalistinen terminaaliagentti, jota muokkaat omilla laajennuksilla, taidoilla ja kehotepohjilla.",
+      "reasonix": "DeepSeekille rakennettu päätteen koodausagentti, joka nojaa etuliitevälimuistiin, jotta pitkät istunnot pysyvät edullisina."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "FreeLLMAPI:n uudempi versio on asennettu.",
+    "reload": "Lataa uudelleen"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Nimetäänkö ketju \"{oldName}\" nimelle \"{name}\"? Kutsua auto:{oldName} käyttävien asiakkaiden on vaihdettava kutsuun auto:{name}.",
     "renamePlaceholder": "Uusi ketjun nimi",
     "renameFailed": "Ketjua ei voitu nimetä uudelleen."
+  },
+  "updates": {
+    "versionAvailable": "Versio {version} on saatavilla",
+    "versionReady": "Versio {version} on valmis asennettavaksi",
+    "releaseNotes": "Julkaisutiedot",
+    "tryAgain": "Yritä uudelleen",
+    "offline": "Tarkista internetyhteys ja yritä uudelleen."
   }
 }

@@ -152,21 +152,24 @@
     "compressionRunPreview": "تشغيل المعاينة",
     "updatesTitle": "التحديثات",
     "checkForUpdates": "التحقق من وجود تحديثات",
-    "lastChecked": "آخر فحص: {when}",
-    "currentVersion": "البنية الحالية:",
     "updateAvailable": "يتوفر تحديث",
-    "changelog": "ما الذي تغيّر",
     "upToDate": "محدّث",
     "buildAhead": "هذه البنية متقدمة على الفرع main الرسمي.",
     "buildDiverged": "تباعدت هذه البنية عن الفرع main الرسمي.",
     "buildUnknown": "لا يمكن مقارنة هذه البنية المخصصة بالفرع main الرسمي.",
     "notGitInstall": "لا يتضمن هذا التثبيت معلومات الالتزام.",
     "checkFailed": "تعذر التحقق من وجود تحديثات.",
-    "contactsGithub": "تُجرى عمليات التحقق يدويًا وتتصل بـ GitHub.",
     "autoUpdateCheck": "التحقق التلقائي من التحديثات",
-    "autoUpdateCheckHelp": "يتحقق من GitHub مرة واحدة يوميًا بحثًا عن إصدار جديد ويعرض تذكيرًا. مُعطَّل افتراضيًا.",
-    "openReleases": "فتح إصدارات GitHub",
-    "restartAfterUpdate": "أعد تشغيل FreeLLMAPI بعد اكتمال البنية."
+    "restartAfterUpdate": "أعد تشغيل FreeLLMAPI بعد اكتمال البنية.",
+    "downloadUpdate": "تنزيل التحديث",
+    "downloadingUpdate": "جارٍ التنزيل… {percent}%",
+    "restartToUpdate": "أعد التشغيل للتحديث",
+    "updateReadyHint": "اكتمل التنزيل. يحفظ FreeLLMAPI نسخة احتياطية من بياناتك ثم يعيد التشغيل ويفتح الإصدار الجديد.",
+    "updateInstallFailed": "تعذّر تثبيت التحديث.",
+    "updateNow": "حدّث الآن",
+    "updatingContainer": "جارٍ سحب الصورة الجديدة وإعادة التشغيل. ستُعاد تحميل هذه الصفحة عند عودة FreeLLMAPI.",
+    "updateNowFailed": "لم يقبل المحدِّث الطلب. تحقّق من أن حاوية watchtower تعمل.",
+    "updateNowTimeout": "لم يُعد FreeLLMAPI التشغيل بعد 5 دقائق. راجع سجلات حاوية watchtower."
   },
   "models": {
     "title": "نماذج",
@@ -341,7 +344,10 @@
     "weightSpeed": "السرعة",
     "weightIntelligence": "الذكاء",
     "weightRequired": "يجب أن يكون وزن واحد على الأقل أعلى من الصفر.",
-    "scoreColumn": "النتيجة"
+    "scoreColumn": "النتيجة",
+    "minReliabilityFloor": "الحد الأدنى للموثوقية",
+    "minReliabilityFloorHint": "يستبعد النموذج من التوجيه عندما تنخفض نسبة نجاحه المرصودة دون هذه القيمة. 0.8 تعني 80٪. اتركه فارغًا للتعطيل — تُحفظ دائمًا النماذج ذات السجلّ القليل حتى تظل النماذج الجديدة قابلة للتجربة. لا يُفرِّغ السلسلة كاملة أبدًا.",
+    "minReliabilityFloorOff": "معطّل"
   },
   "penaltyInspector": {
     "title": "ضغط جهاز التوجيه",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "قبل التحديث"
   },
   "status": {
     "healthy": "صحي",
@@ -1148,17 +1155,15 @@
       "atomcode": "وكيل الطرفية من AtomGit، مكتوب بلغة Rust، يقبل أي نقطة نهاية متوافقة مع OpenAI.",
       "openclaw": "مساعد شخصي يعمل على مدار الساعة ويرد على WhatsApp وTelegram وDiscord وغيرها من جهازك الخاص.",
       "hermes": "وكيل Nous Research ذاتي التحسين، بذاكرة دائمة ومهارات، في الطرفية أو على تطبيقات الدردشة.",
-      "pi": "إطار وكيل بسيط في الطرفية تُشكّله بإضافاتك ومهاراتك وقوالب أوامرك الخاصة."
+      "pi": "إطار وكيل بسيط في الطرفية تُشكّله بإضافاتك ومهاراتك وقوالب أوامرك الخاصة.",
+      "reasonix": "وكيل برمجة للطرفية مصمّم أصلًا لـ DeepSeek، مبني حول التخزين المؤقت للبادئات لتبقى الجلسات الطويلة رخيصة."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "تم تثبيت إصدار أحدث من FreeLLMAPI.",
+    "reload": "إعادة التحميل"
   },
   "freeTier": {
     "poolsToggle": "مجمّعات الطبقة المجانية ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "إعادة تسمية السلسلة \"{oldName}\" إلى \"{name}\"؟ يجب على العملاء الذين يستدعون auto:{oldName} التحول إلى auto:{name}.",
     "renamePlaceholder": "الاسم الجديد للسلسلة",
     "renameFailed": "تعذّرت إعادة تسمية السلسلة."
+  },
+  "updates": {
+    "versionAvailable": "الإصدار {version} متاح",
+    "versionReady": "الإصدار {version} جاهز للتثبيت",
+    "releaseNotes": "ملاحظات الإصدار",
+    "tryAgain": "أعد المحاولة",
+    "offline": "تحقّق من اتصالك بالإنترنت ثم أعد المحاولة."
   }
 }

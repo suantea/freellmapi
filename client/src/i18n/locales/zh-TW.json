@@ -152,21 +152,24 @@
     "compressionRunPreview": "執行預覽",
     "updatesTitle": "更新",
     "checkForUpdates": "檢查更新",
-    "lastChecked": "上次檢查：{when}",
-    "currentVersion": "目前建置：",
     "updateAvailable": "有可用更新",
-    "changelog": "更新內容",
     "upToDate": "已是最新版本",
     "buildAhead": "此建置領先官方 main 分支。",
     "buildDiverged": "此建置已偏離官方 main 分支。",
     "buildUnknown": "無法將此自訂建置與官方 main 分支進行比較。",
     "notGitInstall": "此安裝不包含 commit 資訊。",
     "checkFailed": "無法檢查更新。",
-    "contactsGithub": "檢查需手動執行，並會連線至 GitHub。",
     "autoUpdateCheck": "自動檢查更新",
-    "autoUpdateCheckHelp": "每天檢查一次 GitHub 上是否有新版本，並顯示提醒。預設關閉。",
-    "openReleases": "開啟 GitHub Releases",
-    "restartAfterUpdate": "建置完成後重新啟動 FreeLLMAPI。"
+    "restartAfterUpdate": "建置完成後重新啟動 FreeLLMAPI。",
+    "downloadUpdate": "下載更新",
+    "downloadingUpdate": "正在下載… {percent}%",
+    "restartToUpdate": "重新啟動以更新",
+    "updateReadyHint": "已下載。FreeLLMAPI 會先備份你的資料，然後重新啟動並開啟新版本。",
+    "updateInstallFailed": "無法安裝更新。",
+    "updateNow": "立即更新",
+    "updatingContainer": "正在拉取新映像並重新啟動。FreeLLMAPI 恢復後此頁面會自動重新載入。",
+    "updateNowFailed": "更新器未接受請求。請確認 watchtower 容器正在執行。",
+    "updateNowTimeout": "5 分鐘後 FreeLLMAPI 仍未重新啟動。請查看 watchtower 容器的記錄。"
   },
   "models": {
     "title": "模型",
@@ -341,7 +344,10 @@
     "weightSpeed": "速度",
     "weightIntelligence": "智慧",
     "weightRequired": "至少一個權重必須大於零。",
-    "scoreColumn": "分數"
+    "scoreColumn": "分數",
+    "minReliabilityFloor": "最低可靠性門檻",
+    "minReliabilityFloorHint": "模型實際成功率低於此值時不再參與路由。0.8 表示 80%。留空表示關閉——歷史樣本太少的模型始終保留，以便新模型仍有機會被嘗試。不會清空整條候選鏈。",
+    "minReliabilityFloorOff": "關閉"
   },
   "penaltyInspector": {
     "title": "路由壓力",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "更新前"
   },
   "status": {
     "healthy": "健康",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "一個常駐運作的個人助理，從你自己的機器上透過 WhatsApp、Telegram、Discord 等回應。",
       "hermes": "Nous Research 的自我改進代理，具備持久記憶與技能，可在終端機或聊天應用程式中使用。",
-      "pi": "一個極簡的終端機代理，用你自己的擴充功能、技能與提示詞範本來塑造它。"
+      "pi": "一個極簡的終端機代理，用你自己的擴充功能、技能與提示詞範本來塑造它。",
+      "reasonix": "為 DeepSeek 原生打造的終端程式設計代理，圍繞前綴快取設計，長時間工作階段也能維持低成本。"
     }
   },
   "update": {
     "available": "发现新版本",
-    "whatsNew": "v{version} 更新内容",
-    "publishedOn": "发布于 {date}",
-    "noNotes": "此版本未发布更新说明。",
-    "openRelease": "打开发布页",
-    "dismissVersion": "忽略此版本",
-    "dismiss": "忽略"
+    "dismiss": "忽略",
+    "newBuild": "已安裝較新版本的 FreeLLMAPI。",
+    "reload": "重新載入"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "將鏈「{oldName}」重新命名為「{name}」？呼叫 auto:{oldName} 的客戶端必須改用 auto:{name}。",
     "renamePlaceholder": "新鏈名稱",
     "renameFailed": "無法重新命名該鏈。"
+  },
+  "updates": {
+    "versionAvailable": "版本 {version} 可用",
+    "versionReady": "版本 {version} 已可安裝",
+    "releaseNotes": "版本資訊",
+    "tryAgain": "重試",
+    "offline": "請檢查網路連線後再試一次。"
   }
 }

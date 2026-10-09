@@ -152,21 +152,24 @@
     "compressionRunPreview": "Jalankan pratinjau",
     "updatesTitle": "Pembaruan",
     "checkForUpdates": "Periksa pembaruan",
-    "lastChecked": "Terakhir diperiksa: {when}",
-    "currentVersion": "Build saat ini:",
     "updateAvailable": "Pembaruan tersedia",
-    "changelog": "Yang berubah",
     "upToDate": "Sudah terbaru",
     "buildAhead": "Build ini lebih maju dari cabang main resmi.",
     "buildDiverged": "Build ini telah menyimpang dari cabang main resmi.",
     "buildUnknown": "Build khusus ini tidak dapat dibandingkan dengan cabang main resmi.",
     "notGitInstall": "Instalasi ini tidak menyertakan informasi commit.",
     "checkFailed": "Tidak dapat memeriksa pembaruan.",
-    "contactsGithub": "Pemeriksaan dilakukan secara manual dan menghubungi GitHub.",
     "autoUpdateCheck": "Pemeriksaan pembaruan otomatis",
-    "autoUpdateCheckHelp": "Memeriksa GitHub sekali sehari untuk rilis baru dan menampilkan pengingat. Nonaktif secara bawaan.",
-    "openReleases": "Buka Rilis GitHub",
-    "restartAfterUpdate": "Mulai ulang FreeLLMAPI setelah proses build selesai."
+    "restartAfterUpdate": "Mulai ulang FreeLLMAPI setelah proses build selesai.",
+    "downloadUpdate": "Unduh pembaruan",
+    "downloadingUpdate": "Mengunduh… {percent}%",
+    "restartToUpdate": "Mulai ulang untuk memperbarui",
+    "updateReadyHint": "Selesai diunduh. FreeLLMAPI mencadangkan data Anda, memulai ulang, lalu membuka versi baru.",
+    "updateInstallFailed": "Pembaruan tidak dapat dipasang.",
+    "updateNow": "Perbarui sekarang",
+    "updatingContainer": "Menarik image baru dan memulai ulang. Halaman ini dimuat ulang saat FreeLLMAPI kembali.",
+    "updateNowFailed": "Pembaru tidak menerima permintaan. Pastikan kontainer watchtower berjalan.",
+    "updateNowTimeout": "FreeLLMAPI belum dimulai ulang setelah 5 menit. Periksa log kontainer watchtower."
   },
   "models": {
     "title": "Model",
@@ -341,7 +344,10 @@
     "weightSpeed": "Kecepatan",
     "weightIntelligence": "Intelijen",
     "weightRequired": "Setidaknya satu bobot harus di atas nol.",
-    "scoreColumn": "Skor"
+    "scoreColumn": "Skor",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Tekanan router",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Sebelum pembaruan"
   },
   "status": {
     "healthy": "sehat",
@@ -1148,17 +1155,15 @@
       "atomcode": "Agen terminal dari AtomGit, ditulis dalam Rust, yang menerima endpoint apa pun yang kompatibel dengan OpenAI.",
       "openclaw": "Asisten pribadi yang selalu aktif dan menjawab di WhatsApp, Telegram, Discord, dan lainnya dari mesin Anda sendiri.",
       "hermes": "Agen dari Nous Research yang terus memperbaiki diri, dengan memori persisten dan keterampilan, di terminal atau di aplikasi chat.",
-      "pi": "Agen terminal minimalis yang Anda bentuk dengan ekstensi, keterampilan, dan templat prompt Anda sendiri."
+      "pi": "Agen terminal minimalis yang Anda bentuk dengan ekstensi, keterampilan, dan templat prompt Anda sendiri.",
+      "reasonix": "Agen coding terminal yang dibuat khusus untuk DeepSeek, dibangun di sekitar prefix caching agar sesi panjang tetap murah."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Versi FreeLLMAPI yang lebih baru telah terpasang.",
+    "reload": "Muat ulang"
   },
   "freeTier": {
     "poolsToggle": "Kumpulan tingkat gratis ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Ganti nama rantai \"{oldName}\" menjadi \"{name}\"? Klien yang memanggil auto:{oldName} harus beralih ke auto:{name}.",
     "renamePlaceholder": "Nama rantai baru",
     "renameFailed": "Tidak dapat mengganti nama rantai."
+  },
+  "updates": {
+    "versionAvailable": "Versi {version} tersedia",
+    "versionReady": "Versi {version} siap dipasang",
+    "releaseNotes": "Catatan rilis",
+    "tryAgain": "Coba lagi",
+    "offline": "Periksa koneksi internet Anda lalu coba lagi."
   }
 }

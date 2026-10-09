@@ -152,21 +152,24 @@
     "compressionRunPreview": "Запустити перегляд",
     "updatesTitle": "Оновлення",
     "checkForUpdates": "Перевірте наявність оновлень",
-    "lastChecked": "Востаннє перевірено: {when}",
-    "currentVersion": "Поточна збірка:",
     "updateAvailable": "Доступне оновлення",
-    "changelog": "Що змінилося",
     "upToDate": "Актуальна версія",
     "buildAhead": "Ця збірка випереджає офіційну гілку main.",
     "buildDiverged": "Ця збірка розійшлася з офіційною гілкою main.",
     "buildUnknown": "Цю користувацьку збірку неможливо порівняти з офіційною гілкою main.",
     "notGitInstall": "Ця інсталяція не містить інформації про commit.",
     "checkFailed": "Не вдалося перевірити наявність оновлень.",
-    "contactsGithub": "Перевірки запускаються вручну та звертаються до GitHub.",
     "autoUpdateCheck": "Автоматична перевірка оновлень",
-    "autoUpdateCheckHelp": "Раз на день перевіряє GitHub на новий випуск і показує нагадування. Типово вимкнено.",
-    "openReleases": "Відкрити релізи GitHub",
-    "restartAfterUpdate": "Перезапустіть FreeLLMAPI після завершення збірки."
+    "restartAfterUpdate": "Перезапустіть FreeLLMAPI після завершення збірки.",
+    "downloadUpdate": "Завантажити оновлення",
+    "downloadingUpdate": "Завантаження… {percent}%",
+    "restartToUpdate": "Перезапустити для оновлення",
+    "updateReadyHint": "Завантажено. FreeLLMAPI створює резервну копію даних, перезапускається й відкриває нову версію.",
+    "updateInstallFailed": "Не вдалося встановити оновлення.",
+    "updateNow": "Оновити зараз",
+    "updatingContainer": "Завантажується новий образ і виконується перезапуск. Сторінка перезавантажиться, коли FreeLLMAPI повернеться.",
+    "updateNowFailed": "Служба оновлення не прийняла запит. Перевірте, що контейнер watchtower запущено.",
+    "updateNowTimeout": "FreeLLMAPI не перезапустився за 5 хвилин. Перегляньте журнали контейнера watchtower."
   },
   "models": {
     "title": "Моделі",
@@ -341,7 +344,10 @@
     "weightSpeed": "швидкість",
     "weightIntelligence": "Інтелект",
     "weightRequired": "Принаймні одна вага повинна бути вище нуля.",
-    "scoreColumn": "Оцінка"
+    "scoreColumn": "Оцінка",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "Тиск фрезера",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "Перед оновленням"
   },
   "status": {
     "healthy": "здоровий",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "Завжди доступний персональний асистент, який відповідає у WhatsApp, Telegram, Discord та інших месенджерах просто з вашого комп'ютера.",
       "hermes": "Агент від Nous Research, що самовдосконалюється, з постійною пам'яттю та навичками — у терміналі або в чат-застосунках.",
-      "pi": "Мінімалістичний термінальний агент, який ви налаштовуєте власними розширеннями, навичками та шаблонами промптів."
+      "pi": "Мінімалістичний термінальний агент, який ви налаштовуєте власними розширеннями, навичками та шаблонами промптів.",
+      "reasonix": "Термінальний агент для програмування, створений під DeepSeek і побудований навколо кешування префіксів, щоб довгі сесії залишалися дешевими."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "Встановлено новішу версію FreeLLMAPI.",
+    "reload": "Перезавантажити"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "Перейменувати ланцюг \"{oldName}\" на \"{name}\"? Клієнти, що викликають auto:{oldName}, мають перейти на auto:{name}.",
     "renamePlaceholder": "Нова назва ланцюга",
     "renameFailed": "Не вдалося перейменувати ланцюг."
+  },
+  "updates": {
+    "versionAvailable": "Доступна версія {version}",
+    "versionReady": "Версія {version} готова до встановлення",
+    "releaseNotes": "Примітки до випуску",
+    "tryAgain": "Спробувати ще раз",
+    "offline": "Перевірте підключення до інтернету й спробуйте ще раз."
   }
 }

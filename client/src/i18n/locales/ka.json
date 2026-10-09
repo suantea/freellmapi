@@ -152,21 +152,24 @@
     "compressionRunPreview": "გადახედვის გაშვება",
     "updatesTitle": "განახლებები",
     "checkForUpdates": "შეამოწმეთ განახლებები",
-    "lastChecked": "ბოლო შემოწმება: {when}",
-    "currentVersion": "მიმდინარე ბილდი:",
     "updateAvailable": "განახლება ხელმისაწვდომია",
-    "changelog": "რა შეიცვალა",
     "upToDate": "განახლებულია",
     "buildAhead": "ეს ბილდი ოფიციალურ main შტოს უსწრებს.",
     "buildDiverged": "ეს ბილდი ოფიციალურ main შტოს ასცდა.",
     "buildUnknown": "ამ მორგებული ბილდის შედარება ოფიციალურ main შტოსთან შეუძლებელია.",
     "notGitInstall": "ეს ინსტალაცია კომიტების შესახებ ინფორმაციას არ შეიცავს.",
     "checkFailed": "განახლებების შემოწმება ვერ მოხერხდა.",
-    "contactsGithub": "შემოწმება ხელით სრულდება და GitHub-ს უკავშირდება.",
     "autoUpdateCheck": "განახლებების ავტომატური შემოწმება",
-    "autoUpdateCheckHelp": "დღეში ერთხელ ამოწმებს GitHub-ს ახალი გამოშვებისთვის და აჩვენებს შეხსენებას. ნაგულისხმევად გამორთულია.",
-    "openReleases": "GitHub-ის რელიზების გახსნა",
-    "restartAfterUpdate": "ბილდის დასრულების შემდეგ გადატვირთეთ FreeLLMAPI."
+    "restartAfterUpdate": "ბილდის დასრულების შემდეგ გადატვირთეთ FreeLLMAPI.",
+    "downloadUpdate": "განახლების ჩამოტვირთვა",
+    "downloadingUpdate": "იტვირთება… {percent}%",
+    "restartToUpdate": "გადატვირთვა განახლებისთვის",
+    "updateReadyHint": "ჩამოიტვირთა. FreeLLMAPI ქმნის თქვენი მონაცემების სარეზერვო ასლს, გადაიტვირთება და გახსნის ახალ ვერსიას.",
+    "updateInstallFailed": "განახლების დაყენება ვერ მოხერხდა.",
+    "updateNow": "ახლავე განახლება",
+    "updatingContainer": "ახალი იმიჯის ჩამოტვირთვა და გადატვირთვა. გვერდი გადაიტვირთება, როცა FreeLLMAPI დაბრუნდება.",
+    "updateNowFailed": "განახლების სერვისმა მოთხოვნა არ მიიღო. შეამოწმეთ, მუშაობს თუ არა watchtower კონტეინერი.",
+    "updateNowTimeout": "FreeLLMAPI 5 წუთის შემდეგაც არ გადაიტვირთა. შეამოწმეთ watchtower კონტეინერის ჟურნალები."
   },
   "models": {
     "title": "მოდელები",
@@ -341,7 +344,10 @@
     "weightSpeed": "სიჩქარე",
     "weightIntelligence": "დაზვერვა",
     "weightRequired": "მინიმუმ ერთი წონა უნდა იყოს ნულის ზემოთ.",
-    "scoreColumn": "ქულა"
+    "scoreColumn": "ქულა",
+    "minReliabilityFloor": "Minimum reliability floor",
+    "minReliabilityFloorHint": "Drop a model from routing once its observed success rate falls below this. 0.8 means 80%. Leave blank to disable — models with too little history are always kept so new models can still be tried. Never empties the whole chain.",
+    "minReliabilityFloorOff": "Disabled"
   },
   "penaltyInspector": {
     "title": "როუტერის წნევა",
@@ -725,7 +731,8 @@
     "pathPlaceholder": "backups",
     "pathHint": "Relative to the database directory. Backups cannot be written outside it.",
     "save": "Save schedule",
-    "saved": "Saved"
+    "saved": "Saved",
+    "preUpdate": "განახლებამდე"
   },
   "status": {
     "healthy": "ჯანსაღი",
@@ -1148,17 +1155,15 @@
       "atomcode": "AtomGit's terminal agent, written in Rust, that takes any OpenAI-compatible endpoint.",
       "openclaw": "მუდამ ჩართული პირადი ასისტენტი, რომელიც თქვენივე მანქანიდან პასუხობს WhatsApp-ში, Telegram-ში, Discord-სა და სხვაგან.",
       "hermes": "Nous Research-ის თვითგანვითარებადი აგენტი მუდმივი მეხსიერებითა და უნარებით, ტერმინალში ან ჩატის აპებში.",
-      "pi": "მინიმალისტური ტერმინალის აგენტი, რომელსაც საკუთარი გაფართოებებით, უნარებითა და მოთხოვნის შაბლონებით აწყობთ."
+      "pi": "მინიმალისტური ტერმინალის აგენტი, რომელსაც საკუთარი გაფართოებებით, უნარებითა და მოთხოვნის შაბლონებით აწყობთ.",
+      "reasonix": "DeepSeek-ისთვის შექმნილი ტერმინალის კოდირების აგენტი, აგებული პრეფიქსის ქეშირებაზე, რომ ხანგრძლივი სესიები იაფი დარჩეს."
     }
   },
   "update": {
     "available": "New version available",
-    "whatsNew": "What's new in v{version}",
-    "publishedOn": "Published {date}",
-    "noNotes": "No release notes were published for this version.",
-    "openRelease": "Open release page",
-    "dismissVersion": "Dismiss this version",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newBuild": "დაყენებულია FreeLLMAPI-ის უფრო ახალი ვერსია.",
+    "reload": "გადატვირთვა"
   },
   "freeTier": {
     "poolsToggle": "Free-tier pools ({count})",
@@ -1211,5 +1216,12 @@
     "renameConfirm": "გადარქვათ ჯაჭვს \"{oldName}\" სახელი \"{name}\"? კლიენტებმა, რომლებიც იძახიან auto:{oldName}, უნდა გადავიდნენ auto:{name}-ზე.",
     "renamePlaceholder": "ახალი ჯაჭვის სახელი",
     "renameFailed": "ამ ჯაჭვის გადარქმევა ვერ მოხერხდა."
+  },
+  "updates": {
+    "versionAvailable": "ხელმისაწვდომია ვერსია {version}",
+    "versionReady": "ვერსია {version} მზადაა დასაყენებლად",
+    "releaseNotes": "გამოშვების შენიშვნები",
+    "tryAgain": "ხელახლა ცდა",
+    "offline": "შეამოწმეთ ინტერნეტკავშირი და სცადეთ ხელახლა."
   }
 }
