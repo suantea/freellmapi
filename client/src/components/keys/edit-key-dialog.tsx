@@ -10,6 +10,7 @@ import { X } from 'lucide-react'
 import type { ApiKey } from '../../../../shared/types'
 import { useI18n } from '@/i18n'
 import { PLATFORMS } from './shared'
+import { GroupLabelField } from './group-label-field'
 
 type UpdateBody = {
   label?: string
@@ -145,18 +146,7 @@ export function EditKeyDialog({
             </div>
           )}
 
-          {isCustom && (
-            <div className="space-y-1.5">
-              <Label className="text-xs" htmlFor="edit-key-group">{t('keys.groupLabel')}</Label>
-              <Input
-                id="edit-key-group"
-                value={groupLabel}
-                onChange={e => setGroupLabel(e.target.value)}
-                placeholder={t('keys.groupLabelPlaceholder')}
-              />
-              <p className="text-[11px] text-muted-foreground">{t('keys.groupLabelHint')}</p>
-            </div>
-          )}
+          {isCustom && <GroupLabelField value={groupLabel} onChange={setGroupLabel} />}
 
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2">
